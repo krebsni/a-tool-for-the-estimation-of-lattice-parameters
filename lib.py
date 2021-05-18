@@ -25,4 +25,4 @@ from sage.all import *
 sys.path.append(os.path.dirname(__file__) + "/estimate-all-the-lwe-ntru-schemes.github.io")
 from estimator import estimator
 
-print("hello")
+# TODO: logging

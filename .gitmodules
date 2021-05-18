@@ -1,3 +1,3 @@
-[submodule "estimate-all-the-lwe-ntru-schemes.github.io"]
-	path = estimate-all-the-lwe-ntru-schemes.github.io
+[submodule "estimate_all_schemes"]
+	path = estimate_all_schemes
 	url = https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io
