@@ -3,7 +3,7 @@ from . import lib
 sec = lib.Sec(...)
 
 def estimation_example():
-    lwe = lib.LWE(...)
+    lwe = lib.Problem.LWE(...)
 
     if lib.is_secure(lwe, sec):
         pass # do things
@@ -24,8 +24,8 @@ def BGV_example():
         yield N, p, q
 
     def parameter_problem(N, p, q):
-        yield lib.RLWE(N, q, ...) # keys are secure
-        yield lib.RLWE(N, q, ...) # encryption is secure
+        yield lib.Problem.RLWE(N, q, ...) # keys are secure
+        yield lib.Problem.RLWE(N, q, ...) # encryption is secure
 
     N, p, q, security, ... = lib.generic_search(sec, (2**10, None, None), next_parameters, lib.unit_cost, parameter_problem)
     ...
@@ -50,13 +50,13 @@ def two_problem_search_example():
         return cost
 
     def parameter_problem(N, p, q, n, m, l):
-        lwe = lib.statistical_MLWE(sec, N, q, n + l, n + m + l, ...)
+        lwe = lib.Problem.statistical_MLWE(sec, n=N, q=q, n + l, n + m + l, ...)
         sigma = lwe.sigma
         min_sigma, max_sigma = ... # compute sigmas for application
         
         if min_sigma <= sigma <= max_sigma:
-            yield lib.MSIS(N, q, n, n + m + l, sigma, ...)
-            yield lib.MSIS(N, q, n, n + m + l, max_sigma, ...)
+            yield lib.Problem.MSIS(N, q, n, n + m + l, sigma, ...)
+            yield lib.Problem.MSIS(N, q, n, n + m + l, max_sigma, ...)
 
     N, p, q, n, m, l = lib.generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem)
         
