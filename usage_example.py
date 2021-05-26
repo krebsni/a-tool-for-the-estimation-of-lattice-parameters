@@ -43,9 +43,11 @@ def two_problem_search_example():
         yield N, p, q, n, m + 1, l
 
     def parameter_cost(N, p, q, n, m, l):
-        message = lib.bits(p) * N * l
-        rndness = lib.bits(q) * N * (n + m + l)
-        cmmtmnt = lib.bits(q) * N * n + message
+        message = lib.number_of_bits(p) * N * l
+        rndness = lib.number_of_bits(q) * N * (n + m + l)
+        cmmtmnt = lib.number_of_bits(q) * N * n + message
+        cost = cmmtmnt + rndness
+        return cost
 
     def parameter_problem(N, p, q, n, m, l):
         lwe = lib.statistical_MLWE(sec, N, q, n + l, n + m + l, ...)
