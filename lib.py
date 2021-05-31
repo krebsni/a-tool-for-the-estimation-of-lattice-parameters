@@ -25,6 +25,7 @@ import sys
 import traceback
 from attr.validators import instance_of
 import fire
+from sage.symbolic.constants import Pi
 import sympy
 import random
 import time
@@ -232,101 +233,52 @@ class NoiseRateDistribution():
     def Range(self, sec):
         return GaussianDistributionWithParameter(self.alpha * q).Range(q)
 
+# Norms # 
+class Norm:
+    """
+    Namespace for norms
+    """
+    # TODO: transformations
+    class L1:
+        pass
+    class L2:
+        pass
+    class Loo:
+        pass
 
 # Problem Variants # 
-class LindnerPeikert:
-    """
-    Calculate parameters of LWE as in [LP11] 
-    """
-
-class Regev:
-    """
-    Calculate parameters of LWE as in [Reg09]
-    """
-
 class Problem:
     """
     Namespace for processing problem instance parameter sets.
     """
+    # TODO: perhaps create error distribution class with flexibility for user to decide whether alpha/sigma...
     class LWE():
-        def __init__(self, n, alpha=None, q=None, m=None, model=None, all_attacks=False): 
+        def __init__(self, n, q=None, m=None, alpha=None, sigma=None, sigma_is_stddev=False): 
+            # TODO: parameter all_attacks in estimate function...
             # TODO: which parameters can be specified? Do we need to specify approximation factor beta/gamma?
             """
             :param q: modulus
             :param n: secret dimension
             :param m: number of samples
             :param alpha: noise rate
-            :param all_attacks (bool, optional): specify used attacks TODO
             """
+            # check soundness of parameters
+            if (not sigma and not alpha) or not n or not q or not m or n<0 or q<0 or m<0:
+                raise ValueError("Parameters not specified correctly")
+
             self.n = n
-            if model:
-                if isinstance(model, LindnerPeikert):
-                    lwe = estimator.Param.LindnerPeikert(n, m, dict=True)
-                elif isinstance(model, Regev):
-                    lwe = estimator.Param.Regev(n, m, dict=True)
-                else:
-                    raise ValueError("specified model currently not supported")
-            else:                    
-                if not alpha or not q or not m:
-                    raise ValueError("alpha, q and m must be specified")
+            self.q = q
+            self.m = m
+            if alpha:
                 self.alpha = alpha
-                self.q = q
-                self.m = m
-                
-            self.q = lwe["q"]
-            self.alpha = lwe["alpha"]
-            self.m = lwe["m"]
-
-            
-            self.strategies = {}
-            self.strategies["usvp"] = estimator.primal_usvp
-            if all_attacks:
-                self.strategies["usvp-drop"] = estimator.partial(
-                    estimator.drop_and_solve, estimator.primal_usvp, postprocess=False, decision=False, rotations=False)
-                self.strategies["usvp-guess"] = estimator.partial(
-                    estimator.guess_and_solve, estimator.primal_usvp)
-                self.strategies["dual"] = estimator.dual_scale
-                self.strategies["dual-drop-lll"] = estimator.partial(
-                    estimator.drop_and_solve, estimator.dual_scale, postprocess=True, use_lll=True)
-                self.strategies["dual-drop"] = estimator.partial(
-                    estimator.drop_and_solve, estimator.dual_scale, postprocess=True, use_lll=False)
-                self.strategies["dual-guess"] = estimator.partial(
-                    estimator.guess_and_solve, estimator.dual_scale)
-                self.strategies["decode"] = estimator.primal_decode
-            self.costless_strategies = {}
-            if all_attacks:
-                self.costless_strategies["mitm"] = estimator.mitm
-
-        def cost_search(self, tag, errorDistribution, secretDistribution=None):
-            if secretDistribution is None:
-                secretDistribution = errorDistribution
-
-            secretDistribution=True
-
-            arguments = [(tag, "LWE", strategy_name, estimator.partial(solver, q=self.Modulus, n=self.SecretDimension, m=self.ErrorDimension, alpha=errorDistribution.Alpha(self.Modulus), secret_distribution=secretDistribution), cost_asymptotic) for strategy_name, solver in self.strategies.items() for cost_asymptotic in range(len(cost_asymptotics.BKZ_COST_ASYMPTOTICS))]
-            arguments += [(tag, "LWE", strategy_name, estimator.partial(solver, q=self.Modulus, n=self.SecretDimension, m=self.ErrorDimension, alpha=errorDistribution.Alpha(self.Modulus), secretDistribution=secretDistribution), None) for strategy_name, solver in self.costless_strategies.items()]
-
-            return arguments
+            else:
+                self.alpha = alphaf(sigma, q, sigma_is_stddev=sigma_is_stddev)
 
         def __str__(self):
             return f"TODO"
 
-    class RLWE(LWE):
-        def __init__(self, n, q, m, alpha, all_attacks=False):
-            """
-            :param q: modulus
-            :param N: degree of polynomial
-            :param n: secret dimension
-            :param m: number of samples
-            :param sigma: Gaussian width parameter (not standard deviation)
-            :param all_attacks (bool, optional): specify used attacks TODO
-            """
-            # interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
-            # TODO: is this correct? 
-            super().__init__(n=n, q=q, alpha=alpha, m=N*m, all_attacks=all_attacks)
-    
-    class MLWE(RLWE):
-        def __init__(self, n, q, m, sigma, d, all_attacks=False):
+    class MLWE(LWE):
+        def __init__(self, n, d, q, m, alpha=None, sigma=None, sigma_is_stddev=False):
             """
             :param q: modulus
             :param N: degree of polynomial
@@ -334,114 +286,210 @@ class Problem:
             :param m: number of samples
             :param d: rank of module
             :param sigma: Gaussian width parameter (not standard deviation)
-            :param all_attacks (bool, optional): specify used attacks TODO
             """
-            # TODO: alpha or sigma? other params needed?
+            # # TODO: check if correct
+            use_reduction = False
+            if use_reduction:
+                # [AD17 Corollary 1 and p. 21]
+                # Psi =< alpha * n^(c+1/2) * sqrt(d) for some constant c
+                # [KNK20b p. 2 (Corollary 1 contains an error)] 
+                # Psi =< alpha * n^2 * sqrt(d)
+                # TODO: Where do KNK get factor 2 in the exponent from?
+                alpha_MLWE = estimator.alphaf(sigma, q)
+                alpha_RLWE = alpha_MLWE * n**2 * sqrt(d)
+                q_RLWE = q**d
+                # Note that the secret distribution in MLWE can be arbitrary,
+                # reduction to RLWE leads to uniform secret distribution U(R^V_q)
+                # Also note that the reduction only works for search-MLWE
+                # TODO: find reduction for decision-MLWE?
+                super().__init__(n=n, q=q_RLWE, alpha=alpha_RLWE, m=m)
+            
+            super().__init__(n=n*d, q=q, m=m, alpha=alpha, sigma=sigma, sigma_is_stddev=sigma_is_stddev)
 
-            # TODO: check if correct
-            # [AD17 Corollary 1 and p. 21]
-            # Psi =< alpha * n^(c+1/2) * sqrt(d) for some constant c
-            # [KNK20b p. 2 (Corollary 1 contains an error)] 
-            # Psi =< alpha * n^2 * sqrt(d)
-            # Where do KNK get factor 2 in the exponent from?
+    class RLWE(MLWE):
+        def __init__(self, n, q, m, alpha, sigma=None, sigma_is_stddev=False):
+            """
+            :param q: modulus
+            :param n: degree of polynomial
+            :param m: number of samples
+            :param sigma: Gaussian width parameter (not standard deviation)
+            """
+            # interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
+            # TODO: is this correct? 
+            super().__init__(n=n, d=1, q=q, m=m, alpha=alpha, sigma=sigma, sigma_is_stddev=sigma_is_stddev)
 
-            alpha_MLWE = estimator.alphaf(sigma, q)
-            alpha_RLWE = alpha_MLWE * n**2 * sqrt(d)
-            q_RLWE = q**d
-            # Note that the secret distribution in MLWE can be arbitrary,
-            # reduction to RLWE leads to uniform secret distribution U(R^V_q)
-            # Also note that the reduction only works for search-MLWE
-            # TODO: find reduction for decision-MLWE?
-            super().__init__(n=n, q=q_RLWE, alpha=alpha_RLWE, m=m, all_attacks=all_attacks)
+    class Statistical_Gaussian_MLWE(MLWE):
+        """
+        Statistically secure MLWE over Gaussian distribution [LPR13, Corollary 7.5]
+        """
+        def __init__(self, n, q, m, d):
+            """
+            :param sec: required bit security of MLWE instance
+            :param q: modulus
+            :param n: degree of polynomial
+            :param m: number of samples
+            :param beta: upper bound on norm of solution
+            :param d: rank of module
+            """
+            
+            # Holds for normal form? What if not normal form?
+            # Corollary 7.5 (variant of regularity theorem)
+            # For k is height, l width of matrix A, n degree, and q modulus:
+            #   if x is distributed according to Gaussian of width r > (2n * q^(k/l + 2/(nl)))
+            #   then Ax is within statistical distance 2^-n of uniform distribution over R_q^k
+            # TODO: check if this is correct
+            gaussian_width = 2 * n * q**(d / m + 2 / (n * m))
+            # gaussian_width is not standard deviation
+            alpha = alphaf(gaussian_width, q)
+            
+            # TODO: should we require n > 128 or n > 256 to ensure unconditional hardness or check if n > sec?
+            super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
 
-    class Statistical_MLWE():
-        pass
+    class Statistical_Uniform_MLWE(MLWE):
+        """
+        Statistically secure MLWE over Uniform distribution with invertible elements [BDLOP16]
+
+        MLWE problem instance where samples (A', h_A'(y)) are within statistical distance 2^(-128) of (A', u) for uniform u.   
+        """
+        def __init__(self, n, q, m, d, d_2):
+            """
+            :param sec: required bit security of MLWE instance
+            :param q: modulus (prime congruent to 2d_2 + 1(mod 4d_2))
+            :param n: degree of polynomial
+            :param m: number of samples
+            :param beta: upper bound on norm of solution
+            :param d: rank of module
+            :param d_2: 1 < d_2 < N and d_2 is a power of 2
+            """
+            # [BDLOP16, Lemma 4]
+            # Map of parameters in Lemma to use here:
+            #   q => q
+            #   k => m
+            #   n => d
+            #   d => d_2
+            #   N => n
+            # Then the lemma reads as follows:
+            #   q^(d_2/m) * 2^(256/(m*n)) =< 2beta < 1/sqrt(d_2) * q^(1/d_2)
+            # Prerequisites: 1 < d_2 < N must a power of 2 and q must be a prime congruent to 2d_2 + 1(mod 4d_2)
+            # TODO: check prerequisites?
+            lower = q**(d_2 / m) * 2**(256 / (m * n))
+            upper = 1 / sqrt(d_2) * q**(1 / d_2)
+            beta = None # TODO
+            alpha = None # TODO
+            raise NotImplementedError("Currently not supported.")
+
+            super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
 
     class SIS():
-        """
+        def __init__(self, n, q, m, beta, norm):
+            """
             :param q: modulus
             :param n: secret dimension
             :param m: number of samples
             :param beta: upper bound on norm of solution
-            :param all_attacks (bool, optional): specify used attacks TODO
-        """
-        def __init__(self, n, q, m, all_attacks=False):
+            :param norm: used norm of upper bound
+            """
             self.q = q
             self.n = n
             self.m = m
-            self.strategies = {}
-            self.strategies["reduction"] = SIS_lattice_reduce
-            if all_attacks:
-                # TODO: add more attacks
-                pass
-            self.costless_strategies = {}
-            if all_attacks:
-                self.costless_strategies["combinatorial"] = SIS_combinatorial
-                # TODO: maybe add something like BKW-cost from [ACFFP12] but it needs unlimited m
+            self.beta = beta
+            # TODO: norm transformation
 
-        def cost_search(self, tag, errorDistribution, secretDistribution=None):
-            n, k = self.Dimensions
-            N = self.PolynomialDegree
+    class MSIS(SIS):
+        def __init__(self, n, d, q, m, beta, norm):
+            """
+            :param q: modulus
+            :param d: rank of module
+            :param n: degree of polynomial
+            :param m: number of samples
+            :param beta: upper bound on norm of solution
+            :param norm: used norm of upper bound
+            """
+            # TODO: parameter if beta is not given but instead gaussian/uniform distribution? or helper function?
+            
+            use_reduction = False
+            if use_reduction:
+                # [KNK20b Corollary 2] Reduction from M-SIS_(q^k, m^k, beta') to R-SIS_(q, m, beta)
+                # Needs L2 norm
+                # Conditions
+                # rank d:           sqrt(n * m) * q^(1/m) < (q/sqrt(m)^(d-1))^(1/(2*d-1))
+                # norm constraint:  sqrt(n * m) * q^(1/m) =< beta < (q/sqrt(m)^(d-1))^(1/(2*d-1))
+                # k positive integer > 1 => choose k = 2
+                # Calculation
+                # q = q_RSIS^k => q_RSIS = q^(1/k)
+                # m = m_RSIS^k => m_RSIS = m^(1/k)
+                # beta = m_RSIS^(k*(d-1)/2) * beta_RSIS^(k*(2*d - 1)) = m^((d-1)/2) * beta_RSIS^(k*(2*d - 1))
+                #   => beta_RSIS = (beta / (m^((d - 1) / 2)))^(1 / (k * (2 * d - 1)))
+                # TODO: transform beta to L2 norm
+                k = 2
+                lower = sqrt(n * m) * q**(1 / m)
+                upper = (q / sqrt(m)**(d-1))**(1 / (2 * d - 1))
+                if lower <= beta and beta < upper:
+                    q_RSIS = round(q**(1/k))
+                    m_RSIS = round(m**(1/k))
+                    beta_RSIS = (beta / (m**((d - 1) / 2)))**(1 / (k * (2 * d - 1)))
+                super().__init__(n=n, q=q_RSIS, beta=beta_RSIS, m=m, norm=L2)
+            
+            else:
+                super().__init__(n=n*d, q=q, m=m, beta=beta, norm=norm)
 
-            secretDistribution=True
 
-            arguments = [(tag, "SIS", strategy_name, estimator.partial(solver, q=self.Modulus, n=n, m=k, beta=errorDistribution.Range(self.Modulus)[1], secret_distribution=secretDistribution), cost_asymptotic) for strategy_name, solver in self.strategies.items() for cost_asymptotic in range(len(cost_asymptotics.BKZ_COST_ASYMPTOTICS))]
-            arguments += [(tag, "SIS", strategy_name, estimator.partial(solver, q=self.Modulus, n=n, m=k, beta=errorDistribution.Range(self.Modulus)[1], secret_distribution=secretDistribution), None) for strategy_name, solver in self.costless_strategies.items()]
+    class Statistical_MSIS(MSIS):
+        """
+        Statistically secure MSIS [DOTT21, section 4.1]
+        """
+        def __init__(self, sec, n, d, q, m):
+            """
+            :param sec: required bit security of MLWE instance
+            :param q: modulus
+            :param n: degree of polynomial
+            :param m: number of samples (or width of matrix)
+            :param beta: upper bound on norm of solution
+            :param d: rank of module (or height of matrix)
+            """
+            
+            # [DOTT21, section 4.1]
+            # Parameters used:
+            #   m': width of matrix A_1
+            #   m:  height of matrix A_1
+            #   B:  bound of secret
+            #   sigma:  Gaussian parameter (not stddev)
+            # Map of parameters in section to parameters in this function:
+            #   s => sigma
+            #   N => n
+            #   m' => m
+            #   m => d
+            #   d => d_2
+            # bound B: 
+            #   B = s*sqrt(m' * N)
+            # Euclidean ball of radius 2B in R_q^m':
+            #   B_m'(0, 2B) << (2*pi*e/(m' * N))^(m' * N/2) * (2*B)^(m' * N)
+            #   
+            # Scheme is statistically binding if:
+            #   |B_m'(0, 2B)|/q^(mN) = 2^(-sec)
+            #   ((2*pi*e/(m' * N))^(1/2) * (2*B))^(m' * N) = 2^(-sec) * q^(m*N)
+            #   B = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2)
+            #   s = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2) / sqrt(m' * N)
+            #
+            # Mapping of formula to parameters in this function
+            #   sigma = 2^(-sec/(m * n)) * q^(d/m)/2 * (m * n / (2 * pi * e))^(1/2) / sqrt(m * n)
 
-            return arguments
+            # TODO: use sage for increased precision?
+            sigma = 2**(-sec / (m * n)) * q**(d / m) / 2 * (m * n / (2 * pi * e))**(1 / 2) / sqrt(m * n)
+            alpha = alphaf(sigma, q)
+            super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
 
-    class RSIS(SIS):
-        def __init__(self, n, q, beta, m, all_attacks=False):
+
+    class RSIS(MSIS):
+        def __init__(self, n, q, m, beta, norm):
             """
             :param q: modulus
             :param n: degree of polynomial
             :param m: number of samples
             :param beta: upper bound on norm of solution
-            :param all_attacks (bool, optional): specify used attacks TODO
             """
             # interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
-            # TODO: is this correct? 
-            super().__init__(n=n, q=q, beta=beta, m=m, all_attacks=all_attacks)
-
-    class MSIS(RSIS):
-        def __init__(self, n, q, beta, m, d, all_attacks=False):
-            """
-            :param q: modulus
-            :param n: degree of polynomial
-            :param m: number of samples
-            :param beta: upper bound on norm of solution
-            :param d: rank of module
-            :param all_attacks (bool, optional): specify used attacks TODO
-            """
-            # TODO: perhaps simpler approach as simply viewing MSIS as SIS instance? 
-            # we could take n_SIS = n * d
-            # what about number of samples?
-
-
-            # TODO: other params needed?
-            # [KNK20b Corollary 2] 
-            # Needs L2 norm
-            # Conditions
-            # rank d:           sqrt(n * m) * q^(1/m) < (q/sqrt(m)^(d-1))^(1/(2*d-1))
-            # norm constraint:  sqrt(n * m) * q^(1/m) =< beta < (q/sqrt(m)^(d-1))^(1/(2*d-1))
-            # k positive integer > 1 => choose k = 2
-            # Calculation
-            # q = q_RSIS^k => q_RSIS = q^(1/k)
-            # m = m_RSIS^k => m_RSIS = m^(1/k)
-            # beta = m_RSIS^(k*(d-1)/2) * beta_RSIS^(k*(2*d - 1)) = m^((d-1)/2) * beta_RSIS^(k*(2*d - 1))
-            #   => beta_RSIS = (beta / (m^((d - 1) / 2)))^(1 / (k * (2 * d - 1)))
-            k = 2
-            lower = sqrt(n * m) * q**(1 / m)
-            upper = (q / sqrt(m)**(d-1))**(1 / (2 * d - 1))
-            if lower <= beta and beta < upper:
-                q_RSIS = round(q**(1/k))
-                m_RSIS = round(m**(1/k))
-                beta_RSIS = (beta / (m**((d - 1) / 2)))**(1 / (k * (2 * d - 1)))
-            else:
-                # TODO: find other estimates? For now not supported
-                raise NotImplementedError(f"Error. This function does not support the input parameter set: \
-                                          ({n}, {q}, {m}, {beta}).")
-            super().__init__(n=n, q=q_RSIS, beta=beta_RSIS, m=m, all_attacks=all_attacks)
+            super().__init__(n=n, d=1, q=q, m=m, beta=beta, norm=norm)
 
 
     # TODO: secret_distribution? e.g. binary/ternary
@@ -457,49 +505,59 @@ def estimate(problem):
     sec = None
     return sec
 
-def unit_cost(*argv):
+def unit_cost():
     """
     Unit cost for given parameter set
     """
-    # TODO: how to set cost? perhaps memory size of matrix
-    # TODO: how to extract parameters? fix sequence or use keywords?
-    cost = 0
-    return cost
+    return 0 # ensure that new ones are added at the end
+    # TODO: perhaps another generic search without unit cost
+
+class Parameter_Set:
+    """
+    Helper class to order parameter sets in list 
+    """
+    parameter_cost = unit_cost
+    def __init__(self, parameters):
+        self.parameters = parameters
+    
+    def __lt__(self, other):
+        # reversed sorting to pop from sorted list
+        return self.parameter_cost(*self.parameters) > self.parameter_cost(*self.parameters)
+
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem):
-    """[summary]
+    """TODO: summary
 
     :param sec: required security level in bits
-    :param initial_parameters: 
-    :param next_parameters: [description]
-    :param parameter_cost: [description]
-    :param parameter_problem: [description]
+    :param initial_parameters: initial parameter set of search
+    :param next_parameters: function yielding possibly multiple new parameter sets with previous parameter set as input
+    :param parameter_cost: cost function of a parameter set used in the scheme to determine to order currently queued parameter sets. Use lib.unit_cost if sequence does not matter
+    :param parameter_problem: function yielding possibly multiple problem instances with a paramter set as input
 
-    Returns:
-        [type]: [description]
+    :returns: parameter set fulfulling security condition
     """
-    # TODO: check validity of parameters given the problem?
-    # check functions?
+    # TODO: check validity of parameters
+    # TODO: test
+    # TODO: search vs decision?
+    Parameter_Set.parameter_cost = parameter_cost
 
-    current_parameter_sets = [initial_parameters]
+    current_parameter_sets = [Parameter_Set(initial_parameters)]
     current_sec = 0
-    while True:
-        for current_parameter_set in current_parameter_sets:
+    while current_parameter_sets:
 
-            i = 0; secure = True
-            for problem_instance in parameter_problem(*current_parameter_set): 
-                i += 1
-                current_sec = estimate(problem_instance)
-                if current_sec < sec:
-                    # "early" termination
-                    secure = false; break
+        current_parameter_set = current_parameter_sets.pop().parameters # remove last
+        i = 0; secure = True
+        for problem_instance in parameter_problem(*current_parameter_set): 
+            current_sec = estimate(problem_instance)
+            if current_sec < sec:
+                # "early" termination
+                secure = false; break
 
-            if secure and i > 0:
-                # Only if all problem instances of a parameter set pass
-                # TODO: return only one or multiple options? 
-                return current_parameter_set + current_sec # TODO: change to dictionary?
+        if secure and i > 0:
+            # Only if all problem instances of a parameter set pass
+            # TODO: possibly extra class/dict with additional information...
+            return (current_parameter_set, current_sec) 
             
-        current_parameter_sets = [x for params in current_parameter_sets for x in next_parameters(*params)]
-        current_parameter_sets.sort(key=lambda params : parameter_cost(*params))
-
-        # TODO: parameter_cost function only affects the current parameters candidates in the list of next parameters
+        # TODO: check if correct
+        for parameter_set in next_parameters(*current_parameter_set):
+            bisect.insort_left(current_parameter_sets, Parameter_Set(parameter_set))
