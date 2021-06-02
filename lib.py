@@ -25,7 +25,7 @@ import sys
 import traceback
 from attr.validators import instance_of
 import fire
-from sage.symbolic.constants import Pi
+from sage.all import *
 import sympy
 import random
 import time
@@ -33,7 +33,6 @@ from datetime import timedelta
 import bisect
 from collections import deque
 import multiprocessing
-from sage.all import *
 from collections import OrderedDict
 from functools import partial
 from sage.arith.srange import srange
@@ -49,7 +48,6 @@ from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
 from sage.rings.infinity import PlusInfinity
 from sage.structure.element import parent
 from sage.symbolic.all import pi, e
-from sage import random_prime as make_prime
 from scipy.optimize import newton
 import sage.crypto.lwe
 sys.path.append(os.path.dirname(__file__) + "/estimate_all")
@@ -104,7 +102,8 @@ def SIS_lattice_reduce(n, q, m, beta, secret_distribution, reduction_cost_model)
         delta_0 = RR((beta / (q ** (n / d))) ** (1 / d))
         log_delta_0 = log(delta_0, 2)
 
-    else: # TODO: beta = 1 in L2-norm would only hold for vectors with exactly one 1 entry (all others 0)!?
+    else: # TODO: beta = 1 in L2-norm would only hold for vectors with exactly one 1 entry (all others 0)!? 
+        # TODO: trivial, solution in linear time...
         ## [APS15, 3.3]
         ## abs(x) = delta_0 ^ m  vol(L) ^ (1 / m)
         ##        = delta_0 ^ m  q ^ (n / m) # "in many applications" 
@@ -193,6 +192,60 @@ class Norm:
         pass
     class Loo:
         pass
+
+# Error Parameter Conversion (Addition to functions in estimator.py)
+def alpha_to_stddevf(alpha, q):
+    """
+    noise rate α, modulus q → standard deviation
+
+    :param alpha: noise rate
+    :param q: modulus `0 < q`
+
+    :returns: σ = α/q 
+    """
+    return RR(alpha * q)
+
+
+# Distributions # 
+class Gaussian():
+    
+    def get_alpha(self):
+        return self.alpha
+    
+    def get_q(self):
+        return self.q
+
+    def get_sigma(self):
+        return self.sigma
+
+class Gaussian_alpha(Gaussian):
+    def __init__(self, alpha, q):
+        self.alpha = RR(alpha)
+        self.q = q
+        self.stddev = stddevf(self.alpha, q)
+        self.sigma = sigmaf(self.stddev)
+
+class Gaussian_stddev(Gaussian):
+    """
+    Helper class for Gaussian distribution that takes standard deviation as input.
+    """
+    def __init__(self, stddev, q):
+        self.stddev = RR(stddev)
+        self.sigma = sigmaf(self.stddev)
+        self.alpha = alphaf(self.sigma, q)
+        self.q = q
+
+class Gaussian_sigma(Gaussian):
+    """
+    Helper class for Gaussian distribution that takes sigma as input (sigma is not standard deviation).
+    stddev = σ/sqrt(2π)
+    """
+    def __init__(self, sigma, q):
+        self.sigma = sigma
+        self.sigma = stddevf(sigma)
+        self.alpha = alphaf(sigma, q)
+        self.q = q
+
 
 # Problem Variants # 
 class Problem:
