@@ -60,7 +60,6 @@ import logging
 
 oo = PlusInfinity()
 
-# TODO: import sigma/alpha conversion functions from estimator?
 # TODO: logging
 
 # Utility #
@@ -69,75 +68,77 @@ def number_of_bits(v):
         return oo
     else:
         return ceil(log(abs(v), 2).n())
-
+        
 
 # SIS attacks#
-def SIS_lattice_reduce(q, n, m, beta, secret_distribution, reduction_cost_model):
-    # d is lattice dimesion (number of samples)
-    # beta is norm of solution
-    # k is block size (also beta in other sources)
-    # B is bitsize of entries
+def SIS_lattice_reduce(n, q, m, beta, secret_distribution, reduction_cost_model):
+    """ 
+    Finds optimal lattice subdimension d and root-Hermite factor delta_0 for lattice reduction.
 
+    :param n: height of matrix
+    :param m: width of matrix
+    :param q: modulus
+    :param beta: L2-norm bound of solution TODO: [RS10] works with L2-norm. What about [APS15]?
+    """
+    if beta > 1: # Condition is not a requirement for [RS10] but we would divide by log(beta) which is <= 0
+        # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
+        ## [RS10, Proposition 1]
+        ## d = min{x : q ^ (2n /x) =< beta}
+        ## q ^ (2n / x) =< beta
+        ## 2n / x log q =< log beta
+        ## x >= 2n log q / log beta
 
-    if beta > 1: # not a requirement for [RR10] but we would divide by log(beta) which is <= 0
-        assert(n > 128) # Requirement of [RR10, Proposition 1]
-        assert(q >= n * n) # Requirement of [RR10, Proposition 1]
-        ## [RR10, Proposition 1]
-        ## d = min{x : q ^ (2n /x) <= beta}
-        ## q ^ (2n / x) <= beta
-        ## 2n / x log q <= log beta
-        ## x => 2n log q / log beta
+        # Requirements
+        if n < 128 or q < n*n: 
+            raise ValueError("Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction.")
+        # Calculate optimal dimension for delta-HSVP solver
         d = ceil(2 * n * log(q, 2) / log(beta, 2)) 
         if d > m:
             d = m
+        
+        ## [RS10, Conjecture 2]
+        # Requirements
+        if q < n**2 or m <= n * log(log(q, 2), 2): # second condition to ensure that m = Omega(n log q)
+            raise ValueError("Violation of requirements of [RS10, Conjecture 2] during SIS lattice reduction.")
+        # Calculate approximation factor for delta-HSVP solver
         delta_0 = RR((beta / (q ** (n / d))) ** (1 / d))
         log_delta_0 = log(delta_0, 2)
-    else:
-        ## [APS15, 3.3]
-        ## abs(x) = delta_0 ^ m  vol(L) ^ (1 / m) # x is SIS solution, L is lattice
-        ##        = delta_0 ^ m  q ^ (n / m) # "in many applications"
-        ## beta   = delta_0 ^ m  q ^ (n / m)
-        ## delta_0 ^ m = beta / q ^ (n / m)
-        ## m log delta_0 = log beta - n / m log q
-        ## log delta_0 = log beta / m  - n / m^2 log q
 
-        ## optimal dimension m = sqrt(n log q / log delta_0)
-        ## log delta_0 = log beta / m  - n / m^2 log q
-        ## log delta_0 = log beta / sqrt(n log q / log delta_0) - n / (n log q / log delta_0) log q
-        ## log delta_0 = log beta / sqrt(n log q / log delta_0) - log delta_0
-        ## 2 log delta_0 = log beta / sqrt(n log q / log delta_0)
-        ## 4 log^2 delta_0 = log^2 beta / (n log q / log delta_0) 
-        ## 4 log delta_0 = log^2 beta / (n log q)
-        ## log delta_0 = log^2 beta / (4n log q)
-        log_delta_0 = log(beta, 2) ** 2 / (4 * n * log(q, 2))
-        d = sqrt(n * log(q, 2) / log_delta_0) 
+    else: # TODO: beta = 1 in L2-norm would only hold for vectors with exactly one 1 entry (all others 0)!?
+        ## [APS15, 3.3]
+        ## abs(x) = delta_0 ^ m  vol(L) ^ (1 / m)
+        ##        = delta_0 ^ m  q ^ (n / m) # "in many applications" 
+        #       TODO: what if not in the given application? 
+        #       cf. [Pla18, p. 66] here vol(L(A)) = q^(m-n)!
+        ## beta   = delta_0 ^ m  q ^ (n / m)
+        ## log delta_0 = log beta / m  - n / m^2 log q          (I)
+
+        ## optimal dimension m = sqrt(n log q / log delta_0)    (II)
+        ## (II) in (I):
+        ##      log delta_0 = log beta / sqrt(n log q / log delta_0) - n / (n log q / log delta_0) log q
+        ##      log delta_0 = log beta / sqrt(n log q / log delta_0) - log delta_0
+        ##      log delta_0 = log beta / (2 sqrt(n log q / log delta_0))
+        ##      log delta_0 = log^2 beta / (4n log q) 
+        
+        log_delta_0 = RR(log(beta, 2)**2 / (4 * n * log(q, 2)))
+        d = sqrt(n * log(q, 2) / log_delta_0)
         if d > m:
             d = m
-            log_delta_0 = log(beta, 2) / m - n * log(q, 2) / (m ** 2)
+            log_delta_0 = log(beta, 2) / m - n * log(q, 2) / (m**2) # (I)
 
+    if delta_0 < 1: # intractable
+        ret = None # estimator.Cost([("rop", estimator.oo)]) # TODO: what to return?
 
-    if delta_0 < 1: # not useful
-        ret = None # estimator.Cost([("rop", estimator.oo)])
     elif beta < q: # standard case
-        def g(x, i):
-            y = RR(2)
-            for _ in range(i):
-                y = RR(x * log(y, 2))
-            return y
-        ## [APS15]
-        ## delta_0 = k ^ (1 / 2k)
-        ## k / log k = 1 / 2 log delta_0
-        ## [APS15, Lemma 5]
-        ## log(k) >= 1: k >= g_n(1 / 2 log delta_0)
-        ## log(k) >  2: k = g_oo(1 / 2 log delta_0)
-        
-
-        k = estimator.betaf(2**log_delta_0)
+        k = estimator.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
         B = log(q, 2)
-        cost = reduction_cost_model(k, d, B)
+
+        cost = reduction_cost_model(k, d, B) 
         ret = estimator.Cost([("rop", cost)])
-    else: # not a hard problem
+
+    else: # not a hard problem, trivial solution exists
         ret = estimator.Cost([("rop", min(n, d) ** 2.376)])
+        
     return ret
 
 def SIS_combinatorial(q, n, m, beta, secret_distribution, reduction_cost_model):
@@ -179,59 +180,6 @@ def SIS_combinatorial(q, n, m, beta, secret_distribution, reduction_cost_model):
         return estimator.Cost([("rop", cost)])
     else: # not a hard problem
         ret = estimator.Cost([("rop", min(n, m) ** 2.376)])
-
-# Distributions # # TODO: necessary to implement here? More needed?
-class UniformDistribution():
-    def __init__(self, a, b=None):
-        if b is None:
-            b = a
-            a = -a
-
-        self.range = (a, b)
-
-    def Alpha(self, q):
-        v = estimator.SDis.variance(self.range)
-        s = sqrt(v)
-        return estimator.alphaf(s, q, sigma_is_stddev=True)
-
-    def Range(self, q):
-        return self.range
-
-class GaussianDistributionWithStdDev():
-    def __init__(self, stddev):
-        self.stddev = stddev
-
-    def Alpha(self, q):
-        return estimator.alphaf(self.stddev, q, sigma_is_stddev=True)
-
-    def Range(self, q):
-        return GaussianDistributionWithParameter(sqrt(2 * pi) * self.stddev).Range(q)
-
-class GaussianDistributionWithParameter():
-    def __init__(self, s):
-        self.s = s
-
-    def Alpha(self, q):
-        return estimator.alphaf(self.s, q, sigma_is_stddev=False)
-
-    def Range(self, q):
-        # Pr[X >= t] <= 2 exp(-pi t^2 / s^2)
-        # Pr[X >= ts] <= 2 exp(-pi t^2)
-        # Pr[X >= ts pi^{-1/2}] <= 2 exp(-t^2)
-        # Pr[X >= sqrt(t) s pi^{-1/2}] <= 2 exp(-t)
-        sec = 100
-        b = sqrt(sec) * self.s * sqrt(pi)
-        return (-b, b)
-
-class NoiseRateDistribution():
-    def __init__(self, alpha):
-        self.alpha = alpha
-
-    def Alpha(self, q):
-        return self.alpha
-
-    def Range(self, sec):
-        return GaussianDistributionWithParameter(self.alpha * q).Range(q)
 
 # Norms # 
 class Norm:
@@ -290,17 +238,17 @@ class Problem:
             # # TODO: check if correct
             use_reduction = False
             if use_reduction:
-                # [AD17 Corollary 1 and p. 21]
-                # Psi =< alpha * n^(c+1/2) * sqrt(d) for some constant c
-                # [KNK20b p. 2 (Corollary 1 contains an error)] 
-                # Psi =< alpha * n^2 * sqrt(d)
+                ## [AD17 Corollary 1 and p. 21]
+                ## Psi =< alpha * n^(c+1/2) * sqrt(d) for some constant c
+                ## [KNK20b p. 2 (Corollary 1 contains an error)] 
+                ## Psi =< alpha * n^2 * sqrt(d)
                 # TODO: Where do KNK get factor 2 in the exponent from?
                 alpha_MLWE = estimator.alphaf(sigma, q)
-                alpha_RLWE = alpha_MLWE * n**2 * sqrt(d)
+                alpha_RLWE = RR(alpha_MLWE * n**2 * sqrt(d))
                 q_RLWE = q**d
-                # Note that the secret distribution in MLWE can be arbitrary,
-                # reduction to RLWE leads to uniform secret distribution U(R^V_q)
-                # Also note that the reduction only works for search-MLWE
+                ## Note that the secret distribution in MLWE can be arbitrary,
+                ## reduction to RLWE leads to uniform secret distribution U(R^V_q)
+                ## Also note that the reduction only works for search-MLWE
                 # TODO: find reduction for decision-MLWE?
                 super().__init__(n=n, q=q_RLWE, alpha=alpha_RLWE, m=m)
             
@@ -314,7 +262,7 @@ class Problem:
             :param m: number of samples
             :param sigma: Gaussian width parameter (not standard deviation)
             """
-            # interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
+            ## interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
             # TODO: is this correct? 
             super().__init__(n=n, d=1, q=q, m=m, alpha=alpha, sigma=sigma, sigma_is_stddev=sigma_is_stddev)
 
@@ -333,12 +281,12 @@ class Problem:
             """
             
             # Holds for normal form? What if not normal form?
-            # Corollary 7.5 (variant of regularity theorem)
-            # For k is height, l width of matrix A, n degree, and q modulus:
-            #   if x is distributed according to Gaussian of width r > (2n * q^(k/l + 2/(nl)))
-            #   then Ax is within statistical distance 2^-n of uniform distribution over R_q^k
+            ## Corollary 7.5 (variant of regularity theorem)
+            ## For k is height, l width of matrix A, n degree, and q modulus:
+            ##   if x is distributed according to Gaussian of width r > (2n * q^(k/l + 2/(nl)))
+            ##   then Ax is within statistical distance 2^-n of uniform distribution over R_q^k
             # TODO: check if this is correct
-            gaussian_width = 2 * n * q**(d / m + 2 / (n * m))
+            gaussian_width = RR(2 * n * q**(d / m + 2 / (n * m)))
             # gaussian_width is not standard deviation
             alpha = alphaf(gaussian_width, q)
             
@@ -361,19 +309,19 @@ class Problem:
             :param d: rank of module
             :param d_2: 1 < d_2 < N and d_2 is a power of 2
             """
-            # [BDLOP16, Lemma 4]
-            # Map of parameters in Lemma to use here:
-            #   q => q
-            #   k => m
-            #   n => d
-            #   d => d_2
-            #   N => n
-            # Then the lemma reads as follows:
-            #   q^(d_2/m) * 2^(256/(m*n)) =< 2beta < 1/sqrt(d_2) * q^(1/d_2)
-            # Prerequisites: 1 < d_2 < N must a power of 2 and q must be a prime congruent to 2d_2 + 1(mod 4d_2)
+            ## [BDLOP16, Lemma 4]
+            ## Map of parameters in Lemma to use here:
+            ##   q => q
+            ##   k => m
+            ##   n => d
+            ##   d => d_2
+            ##   N => n
+            ## Then the lemma reads as follows:
+            ##   q^(d_2/m) * 2^(256/(m*n)) =< 2beta < 1/sqrt(d_2) * q^(1/d_2)
+            ## Prerequisites: 1 < d_2 < N must a power of 2 and q must be a prime congruent to 2d_2 + 1(mod 4d_2)
             # TODO: check prerequisites?
-            lower = q**(d_2 / m) * 2**(256 / (m * n))
-            upper = 1 / sqrt(d_2) * q**(1 / d_2)
+            lower = RR(q**(d_2 / m) * 2**(256 / (m * n)))
+            upper = RR(1 / sqrt(d_2) * q**(1 / d_2))
             beta = None # TODO
             alpha = None # TODO
             raise NotImplementedError("Currently not supported.")
@@ -409,25 +357,25 @@ class Problem:
             
             use_reduction = False
             if use_reduction:
-                # [KNK20b Corollary 2] Reduction from M-SIS_(q^k, m^k, beta') to R-SIS_(q, m, beta)
-                # Needs L2 norm
-                # Conditions
-                # rank d:           sqrt(n * m) * q^(1/m) < (q/sqrt(m)^(d-1))^(1/(2*d-1))
-                # norm constraint:  sqrt(n * m) * q^(1/m) =< beta < (q/sqrt(m)^(d-1))^(1/(2*d-1))
-                # k positive integer > 1 => choose k = 2
-                # Calculation
-                # q = q_RSIS^k => q_RSIS = q^(1/k)
-                # m = m_RSIS^k => m_RSIS = m^(1/k)
-                # beta = m_RSIS^(k*(d-1)/2) * beta_RSIS^(k*(2*d - 1)) = m^((d-1)/2) * beta_RSIS^(k*(2*d - 1))
-                #   => beta_RSIS = (beta / (m^((d - 1) / 2)))^(1 / (k * (2 * d - 1)))
+                ## [KNK20b Corollary 2] Reduction from M-SIS_(q^k, m^k, beta') to R-SIS_(q, m, beta)
+                ## TODO: Needs L2 norm
+                ## Conditions
+                ## rank d:           sqrt(n * m) * q^(1/m) < (q/sqrt(m)^(d-1))^(1/(2*d-1))
+                ## norm constraint:  sqrt(n * m) * q^(1/m) =< beta < (q/sqrt(m)^(d-1))^(1/(2*d-1))
+                ## k positive integer > 1 => choose k = 2
+                ## Calculation
+                ## q = q_RSIS^k => q_RSIS = q^(1/k)
+                ## m = m_RSIS^k => m_RSIS = m^(1/k)
+                ## beta = m_RSIS^(k*(d-1)/2) * beta_RSIS^(k*(2*d - 1)) = m^((d-1)/2) * beta_RSIS^(k*(2*d - 1))
+                ##   => beta_RSIS = (beta / (m^((d - 1) / 2)))^(1 / (k * (2 * d - 1)))
                 # TODO: transform beta to L2 norm
                 k = 2
-                lower = sqrt(n * m) * q**(1 / m)
-                upper = (q / sqrt(m)**(d-1))**(1 / (2 * d - 1))
+                lower = RR(sqrt(n * m) * q**(1 / m))
+                upper = RR((q / sqrt(m)**(d-1))**(1 / (2 * d - 1)))
                 if lower <= beta and beta < upper:
-                    q_RSIS = round(q**(1/k))
-                    m_RSIS = round(m**(1/k))
-                    beta_RSIS = (beta / (m**((d - 1) / 2)))**(1 / (k * (2 * d - 1)))
+                    q_RSIS = RR(round(q**(1/k)))
+                    m_RSIS = RR(round(m**(1/k)))
+                    beta_RSIS = RR((beta / (m**((d - 1) / 2)))**(1 / (k * (2 * d - 1))))
                 super().__init__(n=n, q=q_RSIS, beta=beta_RSIS, m=m, norm=L2)
             
             else:
@@ -448,34 +396,38 @@ class Problem:
             :param d: rank of module (or height of matrix)
             """
             
-            # [DOTT21, section 4.1]
-            # Parameters used:
-            #   m': width of matrix A_1
-            #   m:  height of matrix A_1
-            #   B:  bound of secret
-            #   sigma:  Gaussian parameter (not stddev)
-            # Map of parameters in section to parameters in this function:
-            #   s => sigma
-            #   N => n
-            #   m' => m
-            #   m => d
-            #   d => d_2
-            # bound B: 
-            #   B = s*sqrt(m' * N)
-            # Euclidean ball of radius 2B in R_q^m':
-            #   B_m'(0, 2B) << (2*pi*e/(m' * N))^(m' * N/2) * (2*B)^(m' * N)
-            #   
-            # Scheme is statistically binding if:
-            #   |B_m'(0, 2B)|/q^(mN) = 2^(-sec)
-            #   ((2*pi*e/(m' * N))^(1/2) * (2*B))^(m' * N) = 2^(-sec) * q^(m*N)
-            #   B = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2)
-            #   s = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2) / sqrt(m' * N)
-            #
-            # Mapping of formula to parameters in this function
-            #   sigma = 2^(-sec/(m * n)) * q^(d/m)/2 * (m * n / (2 * pi * e))^(1/2) / sqrt(m * n)
+            ## [DOTT21, section 4.1]
+            ## Parameters used:
+            ##   m': width of matrix A_1
+            ##   m:  height of matrix A_1
+            ##   B:  bound of secret
+            ##   sigma:  Gaussian parameter (not stddev)
+            ## Map of parameters in section to parameters in this function:
+            ##   s => sigma
+            ##   N => n
+            ##   m' => m
+            ##   m => d
+            ##   d => d_2
+            ## bound B: 
+            ##   +----------------------+
+            ##   |  B = s*sqrt(m' * N)  |
+            ##   +----------------------+
+            ## Euclidean ball of radius 2B in R_q^m':
+            ##   B_m'(0, 2B) << (2*pi*e/(m' * N))^(m' * N/2) * (2*B)^(m' * N)
+            ##   
+            ## Scheme is statistically binding if:
+            ##   |B_m'(0, 2B)|/q^(mN) = 2^(-sec)
+            ##   ((2*pi*e/(m' * N))^(1/2) * (2*B))^(m' * N) = 2^(-sec) * q^(m*N)
+            ##   B = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2)
+            ##   +------------------------------------------------------------------------------------+
+            ##   |  s = 2^(-sec/(m' * N)) * q^(m/m')/2 * (m' * N / (2 * pi * e))^(1/2) / sqrt(m' * N) |
+            ##   +------------------------------------------------------------------------------------+
+            ##
+            ## Mapping of formula to parameters in this function
+            ##   sigma = 2^(-sec/(m * n)) * q^(d/m)/2 * (m * n / (2 * pi * e))^(1/2) / sqrt(m * n)
 
             # TODO: use sage for increased precision?
-            sigma = 2**(-sec / (m * n)) * q**(d / m) / 2 * (m * n / (2 * pi * e))**(1 / 2) / sqrt(m * n)
+            sigma = RR(2**(-sec / (m * n)) * q**(d / m) / 2 * (m * n / (2 * pi * e))**(1 / 2) / sqrt(m * n))
             alpha = alphaf(sigma, q)
             super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
 
@@ -488,7 +440,7 @@ class Problem:
             :param m: number of samples
             :param beta: upper bound on norm of solution
             """
-            # interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
+            ## We interpret the coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
             super().__init__(n=n, d=1, q=q, m=m, beta=beta, norm=norm)
 
 
