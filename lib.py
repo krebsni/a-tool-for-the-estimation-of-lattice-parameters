@@ -14,51 +14,50 @@ NOTATION:
 
 AUTHOR:
     Nicolai Krebs - 2021
-
-Literature:
-    [KNK20b]
 """
 
+try: # sage-related imports do not work with sphinx for documentation
+    import os
+    import sys
+    import traceback
+    from attr.validators import instance_of
+    import fire
+    from sage.symbolic.constants import Pi
+    import sympy
+    import random
+    import time
+    from datetime import timedelta
+    import bisect
+    from collections import deque
+    import multiprocessing
+    from sage.all import *
+    from collections import OrderedDict
+    from functools import partial
+    from sage.arith.srange import srange
+    from sage.calculus.var import var
+    from sage.functions.log import exp, log
+    from sage.functions.other import ceil, sqrt, floor, binomial
+    from sage.all import erf
+    from sage.interfaces.magma import magma
+    from sage.misc.all import cached_function
+    from sage.misc.all import prod
+    from sage.numerical.optimize import find_root
+    from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
+    from sage.rings.infinity import PlusInfinity
+    from sage.structure.element import parent
+    from sage.symbolic.all import pi, e
+    from sage import random_prime as make_prime
+    from scipy.optimize import newton
+    import sage.crypto.lwe
+    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
+    from estimator import estimator
+    from estimator.estimator import *
+    import cost_asymptotics
+    import logging
 
-import os
-import sys
-import traceback
-from attr.validators import instance_of
-import fire
-from sage.symbolic.constants import Pi
-import sympy
-import random
-import time
-from datetime import timedelta
-import bisect
-from collections import deque
-import multiprocessing
-from sage.all import *
-from collections import OrderedDict
-from functools import partial
-from sage.arith.srange import srange
-from sage.calculus.var import var
-from sage.functions.log import exp, log
-from sage.functions.other import ceil, sqrt, floor, binomial
-from sage.all import erf
-from sage.interfaces.magma import magma
-from sage.misc.all import cached_function
-from sage.misc.all import prod
-from sage.numerical.optimize import find_root
-from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
-from sage.rings.infinity import PlusInfinity
-from sage.structure.element import parent
-from sage.symbolic.all import pi, e
-from sage import random_prime as make_prime
-from scipy.optimize import newton
-import sage.crypto.lwe
-sys.path.append(os.path.dirname(__file__) + "/estimate_all")
-from estimator import estimator
-from estimator.estimator import *
-import cost_asymptotics
-import logging
-
-oo = PlusInfinity()
+    oo = PlusInfinity()
+except:
+    pass
 
 # TODO: logging
 
@@ -78,7 +77,7 @@ def SIS_lattice_reduce(n, q, m, beta, secret_distribution, reduction_cost_model)
     :param n: height of matrix
     :param m: width of matrix
     :param q: modulus
-    :param beta: L2-norm bound of solution TODO: [RS10] works with L2-norm. What about [APS15]?
+    :param beta: L2-norm bound of solution TODO: [RS10]_ works with L2-norm. What about [APS15]_?
     """
     if beta > 1: # Condition is not a requirement for [RS10] but we would divide by log(beta) which is <= 0
         # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
@@ -295,9 +294,9 @@ class Problem:
 
     class Statistical_Uniform_MLWE(MLWE):
         """
-        Statistically secure MLWE over Uniform distribution with invertible elements [BDLOP16]
+        Statistically secure MLWE over Uniform distribution with invertible elements [BDLOP16]_
 
-        MLWE problem instance where samples (A', h_A'(y)) are within statistical distance 2^(-128) of (A', u) for uniform u.   
+        MLWE problem instance where samples :math:`(A', h_A'(y))` are within statistical distance 2^(-128) of (A', u) for uniform u.
         """
         def __init__(self, n, q, m, d, d_2):
             """
@@ -513,3 +512,12 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         # TODO: check if correct
         for parameter_set in next_parameters(*current_parameter_set):
             bisect.insort_left(current_parameter_sets, Parameter_Set(parameter_set))
+
+if __name__ == "__main__":
+    class Commandline:
+        def doc(self):
+            # requires sphinx (e.g. "pip install sphinx")
+            os.system("sphinx-apidoc -o doc . usage_example.py") # EXCLUDE usage_example for now as it does not "compile" at all
+            os.system("sphinx-build doc doc/html")
+
+    fire.Fire(Commandline)
