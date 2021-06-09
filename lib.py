@@ -181,15 +181,128 @@ def SIS_combinatorial(q, n, m, beta, secret_distribution, reduction_cost_model):
 # Norms # 
 class Norm:
     """
-    Namespace for norms
+    Namespace for norms and norm transformations.
+
+    Let :math:`n` be the dimension of the vector and with a slight abuse of notation :math:`L_i` represent the value of :math:`L_i`-norm of the vector. From section 2.1 in :cite:`BDLOP18` we have:
+    
+    #. :math:`\;\;L_1 \leq \sqrt{n} L_2`
+    #. :math:`\;\;L_1 \leq n L_\infty`
+    #. :math:`\;\;L_2 \leq \sqrt{n} L_\infty \;\;\;(\\text{since }  \sqrt{n} L_2 \leq n L_\infty)`
+    #. :math:`\;\;L_\infty \leq L_1`
+
+    
+    And from Theorem 7 in :cite:`DPSZ12`:
+    
+    5. :math:`\;\;L_\infty \leq C_\infty`
+    6. :math:`\;\;C_\infty \leq L_1`
+ 
     """
     # TODO: transformations
-    class L1:
+    class Base_Norm():
         pass
-    class L2:
-        pass
-    class Loo:
-        pass
+
+
+    class L1(Base_Norm):
+        def to_L2(value, dimension):
+            """
+            :param value: value of :math:`L_1`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_2`-norm of the vector
+            """
+            return value * sqrt(dimension)
+
+        def to_Loo(value):
+            """
+            :param value: value of :math:`L_1`-norm of a vector
+            :returns: upper bound of :math:`L_\infty`-norm of the vector
+            """
+            return value
+
+        def to_Coo(value):
+            """
+            :param value: value of :math:`L_1`-norm of a vector
+            :returns: upper bound of :math:`C_\infty`-norm of the vector
+            """
+            return value
+            
+
+    class L2(Base_Norm):
+        def to_L1(value, dimension):
+            """
+            :param value: value of :math:`L_2`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_1`-norm of the vector
+            """
+            return value * sqrt(dimension)
+
+        def to_Loo(value, dimension):
+            """
+            :param value: value of :math:`L_\_2`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_\infty`-norm of the vector
+            """
+            return value * sqrt(dimension)
+
+        def to_Coo(value, dimension):
+            """
+            :param value: value of :math:`L_2`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`C_\infty`-norm of the vector
+            """
+            return value * sqrt(dimension)
+        
+
+    class Loo(Base_Norm):
+        def to_L1(value, dimension):
+            """
+            :param value: value of :math:`L_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_1`-norm of the vector
+            """
+            return value * dimension
+
+        def to_L2(value, dimension):
+            """
+            :param value: value of :math:`L_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_2`-norm of the vector
+            """
+            return value * sqrt(dimension)
+
+        def to_Coo(value, dimension):
+            """
+            :param value: value of :math:`L_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`C_\infty`-norm of the vector
+            """
+            return value * dimension
+
+
+    class Coo(Base_Norm):
+        def to_L1(value, dimension):
+            """
+            :param value: value of :math:`C_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_1`-norm of the vector
+            """
+            return value * dimension
+
+        def to_L2(value, dimension):
+            """
+            :param value: value of :math:`C_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_2`-norm of the vector
+            """
+            return value * sqrt(dimension)
+
+        def to_Loo(value):
+            """
+            :param value: value of :math:`C_\infty`-norm of a vector
+            :param dimension: dimension of the vector
+            :returns: upper bound of :math:`L_\infty`-norm of the vector
+            """
+            return value
+
 
 # Error Parameter Conversion (Addition to functions in estimator.py)
 def alpha_to_stddevf(alpha, q):
@@ -527,6 +640,8 @@ class Problem:
             self.q = q
             self.m = m
             self.beta = beta
+            if not issubclass(norm, Norm.Base_Norm):
+                raise ValueError("Norm must be subclass of Base_Norm.")
             self.norm = norm
         
         def estimate_cost(self, cost_model, attack_configuration, use_reduction=False):
@@ -550,8 +665,10 @@ class Problem:
             # TODO
             use_reduction = False
             if use_reduction:
-                
-                # TODO: transform beta to L2 norm
+                # transform to L2-norm
+                self.beta = self.norm.to_L2(self.beta, self.n*self.d) # TODO: is that the correct dimension of secret vector?
+                self.norm = Norm.L2
+
                 # TODO: check preconditions
                 k = 2
                 lower = RR(sqrt(self.n * self.m) * self.q**(1 / self.m))
