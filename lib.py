@@ -318,7 +318,7 @@ def alpha_to_stddevf(alpha, q):
 
 
 # Distributions # 
-# TODO: support all distributions that estimator supports?
+# TODO: support all distributions that estimator supports? binary/ternary
 # TODO: if we change q (e.g. in reduction), what values change?
 class Uniform():
     def __init__(self, a, b=None):
@@ -523,7 +523,23 @@ class Problem:
 
     class Statistical_Gaussian_MLWE(MLWE):
         """
-        Statistically secure MLWE over Gaussian distribution [LPR13, Corollary 7.5]
+        Statistically secure MLWE over Gaussian distribution according to :cite:`LPR13`.
+        
+        Mapping of parameters in paper to use here:
+
+        ============================= =========== ====================
+        Parameters in :cite:`LPR13`   Use Here    Represents
+        ============================= =========== ====================
+        :math:`q`                     :math:`q`   modulus
+        :math:`l`                     :math:`m`   width of matrix
+        :math:`k`                     :math:`d`   height of matrix
+        :math:`n`                     :math:`n`   degree of polynomial
+        ============================= =========== ====================
+
+        Then Corollary 7.5 combined with Theorem 7.4 in :cite:`LPR13` reads as follows:
+        Let :math:`R` be the ring of integers in the :math:`m'`th cyclotomic number field :math:`K` of degree :math:`n`, and :math:`q \geq 2` an integer. For positive integers :math:`d \leq m \leq poly(n)`, let :math:`A = [ I_{[d]} \mid \\bar{A}] \in (R_q)^{[d] \\times [m]}`, where :math:`I_{[d]} \in (R_q)^{[d] \\times [d]}` is the identity matrix and :math:`\\bar{A} \in (R_q)^{[d] \\times [m-d]}` is uniformly random. Then with probability :math:`1 - 2^{-\Omega(n)}` over the choice of :math:`\\bar{A}`, the distribution of :math:`A\mathbf{x} \in (R_q)^{[d]}` where each coordinate of :math:`\mathbf{x} \in (R_q)^{[m]}` is chosen from a discrete Gaussian distribution of paramete :math:`r > 2n \cdot q^{d / m + 2/(n m)}` over :math:`R`, satisfies that the probability of each of the :math:`q^{n d}` possible outcomes is in the interval :math:`(1 \pm 2^{-\Omega(n)}) q^{-n d}` (and in particular is within statistical distance :math:`2^{-\Omega(n)}` of the uniform distribution over :math:`(R_q)^{[d]}`).
+        
+
         """
         def __init__(self, n, d, q, m):
             """
@@ -541,12 +557,13 @@ class Problem:
             ##   if x is distributed according to Gaussian of width r > (2n * q^(k/l + 2/(nl)))
             ##   then Ax is within statistical distance 2^-n of uniform distribution over R_q^k
             # TODO: check if this is correct
-            gaussian_width = RR(2 * n * q**(d / m + 2 / (n * m)))
+            s = RR(2 * n * q**(d / m + 2 / (n * m)))
             # gaussian_width is not standard deviation
-            alpha = alphaf(gaussian_width, q)
+            alpha = alphaf(s, q)
             
             # TODO: should we require n > 128 or n > 256 to ensure unconditional hardness or check if n > sec?
             super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
+
 
     class Statistical_Uniform_MLWE():
         """
@@ -598,7 +615,7 @@ class Problem:
             self.alpha = alpha
 
     class SIS():
-        def __init__(self, n, q, m, beta, norm):
+        def __init__(self, n, q, m, secret_distribution, norm):
             """
             :param q: modulus
             :param n: secret dimension
@@ -609,6 +626,7 @@ class Problem:
             self.q = q
             self.n = n
             self.m = m
+            # TODO: get beta from secret distribution
             self.beta = beta
             self.norm = norm
             # TODO: norm transformation
@@ -716,7 +734,7 @@ class Problem:
         """
         def __init__(self, sec, n, d, q, m):
             """
-            :param sec: required bit security of MLWE instance
+            :param sec: required bit security of MSIS instance
             :param q: modulus
             :param n: degree of polynomial
             :param m: number of samples (or width of matrix)
@@ -726,7 +744,12 @@ class Problem:
             # TODO: use sage for increased precision?
             sigma = RR(2**(-sec / (m * n)) * q**(d / m) / 2 * (m * n / (2 * pi * e))**(1 / 2) / sqrt(m * n))
             alpha = alphaf(sigma, q)
-            super().__init__(n=n, d=d, q=q, m=m, alpha=alpha)
+            # TODO: Do we need alpha or beta here?
+            secret_distribution = Gaussian_alpha(alpha, q)
+            super().__init__(n=n, d=d, q=q, m=m, secret_distribution=secret_distribution)
+        
+        def get_alpha(self):
+            return self.secret_distribution.get_alpha()
 
 
     class RSIS(MSIS):
@@ -741,7 +764,7 @@ class Problem:
             super().__init__(n=n, d=1, q=q, m=m, beta=beta, norm=norm)
 
 
-    # TODO: secret_distribution? e.g. binary/ternary
+    
 
 def is_secure(problem, sec):
     if estimate(problem) < sec:
