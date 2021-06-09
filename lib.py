@@ -220,9 +220,12 @@ class Uniform():
 
     def get_alpha(self, q):
         """
-        Calculates noise rate :math:`\\alpha` of approximately equivalent Gaussian distribution
+        Calculates noise rate :math:`\\alpha` of approximately equivalent Gaussian distribution.
+
+        TODO: describe how it is calculated?
 
         :param q: modulus
+        :returns: noise rate :math:`\\alpha`
         """
         variance = SDis.variance(self.range)
         return alphaf(sqrt(variance), q, sigma_is_stddev=True)
@@ -233,41 +236,62 @@ class Uniform():
 
 class Gaussian():
     def get_alpha(self): # TODO: perhaps calculate alpha via q and sigma
+        """
+        :returns: noise rate :math:`\\alpha`
+        """
         return self.alpha
     
     def get_stddev(self):
-        return self.stddev
-
-    def get_sigma(self):
+        """
+        :returns: standard deviation :math:`\sigma`
+        """
         return self.sigma
+
+    def get_s(self):
+        """
+        :returns: Gaussian width parameter :math:`s = \\sigma \cdot \sqrt{2\pi}`
+        """
+        return self.s
 
 class Gaussian_alpha(Gaussian):
     """
-    Helper class for Gaussian distribution that takes noise rate :math:`\\alpha` and modulus q as input. 
+    Helper class for Gaussian distribution. 
     """
     def __init__(self, alpha, q):
+        """
+        :param sigma: noise rate :math:`\\alpha`
+        :param q: modulus
+        """
         self.alpha = RR(alpha)
         # TODO: Do we actually need stddev/sigma?
-        self.stddev = stddevf(self.alpha, q)
-        self.sigma = sigmaf(self.stddev)
+        self.sigma = stddevf(self.alpha, q)
+        self.s = sigmaf(self.stddev)
 
-class Gaussian_stddev(Gaussian):
+class Gaussian_sigma(Gaussian):
     """
-    Helper class for Gaussian distribution that takes the standard deviation as input.
+    Helper class for Gaussian distribution.
     """
-    def __init__(self, stddev, q):
-        self.stddev = RR(stddev)
-        self.sigma = sigmaf(self.stddev)
+    def __init__(self, sigma, q):
+        """
+        :param sigma: standard deviation :math:`\sigma`
+        :param q: modulus
+        """
+        self.sigma = RR(sigma)
+        self.s = sigmaf(self.sigma)
         self.alpha = alphaf(self.sigma, q)
 
 class Gaussian_s(Gaussian):
     """
-    Helper class for Gaussian distribution that takes :math:`s = \\sigma \cdot \sqrt{2\pi}` as input.
+    Helper class for Gaussian distribution.
     """
-    def __init__(self, sigma, q):
-        self.sigma = sigma
-        self.sigma = stddevf(sigma)
-        self.alpha = alphaf(sigma, q)
+    def __init__(self, s, q):
+        """
+        :param sigma: Gaussian width :math:`s = \\sigma \cdot \sqrt{2\pi}`
+        :param q: modulus
+        """
+        self.s = s
+        self.sigma = stddevf(self.s)
+        self.alpha = alphaf(s, q)
 
 
 # Problem Variants # 
