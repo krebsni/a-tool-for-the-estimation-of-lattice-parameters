@@ -17,10 +17,6 @@ AUTHOR:
 
 """
 
-from typing import Dict
-from sage.misc.functional import N
-
-
 try: # sage-related imports do not work with sphinx for documentation
     import os
     import sys
@@ -55,6 +51,7 @@ try: # sage-related imports do not work with sphinx for documentation
     # from sage.symbolic.all import pi, e
     # from sage import random_prime as make_prime
     # import sage.crypto.lwe
+    # from sage.misc.functional import N
     sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from estimator import estimator
     from estimator.estimator import *
@@ -80,7 +77,6 @@ class Attacks:
     """
     Namespace for attacks 
     """
-    
     class Attack_Configuration():
         # TODO: documentation
         def __init__(self, classical, quantum, sieving, enumeration):
@@ -97,10 +93,13 @@ class Attacks:
 
     def reduction_cost_models(attack_configuration):
         """
-        Returns filtered list of reduction cost models from cost_asymptotics in `estimate-all-the-lwe-ntru-schemes <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io>` 
+        Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         """
+        if not isinstance(attack_configuration, Attacks.Attack_Configuration):
+            raise ValueError("attack_configuration must be instance of Attacks.Attack_Configuration")
+
         bkz_cost_models = cost_asymptotics.BKZ_COST_ASYMPTOTICS
         if attack_configuration.quantum and not attack_configuration.classical:
             bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
@@ -111,7 +110,7 @@ class Attacks:
         elif attack_configuration.enumeration and not attack_configuration.sieving:
             bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
         return bkz_cost_models
-        # TODO: add other cost models?
+        # TODO: other cost models?
     
 
     class SIS:
@@ -366,200 +365,200 @@ def alpha_to_stddevf(alpha, q):
     return stddevf(RR(alpha * q))
 
 
-# Distributions # 
 # TODO: if we change q (e.g. in reduction), what values change?
-# TODO: abstract parent class Distributions? only design issue...
-class Uniform():
-    def __init__(self, a=None, b=None, h=None, uniform_mod_q=False):
-        """
-        :param a: lower bound if b is specified, else take range [-a, a]
-        :param b: upper bound, optional
-        :param h: exactly :math:`h` components are :math:`\in [a,…,b]∖\{0\}`, all other components are zero
-        :param uniform_mod_q: uniform mod q, if True no other value must be specified
-        """
-        if (not a and not uniform_mod_q) or (a and uniform_mod_q):
-            raise ValueError("Either a must have a value or uniform must be True.")
-        self.uniform_mod_q = uniform_mod_q
-        if not uniform_mod_q:
-            if b is None:
-                b = a
-                a = -a
-            self.range = (a, b)
-            self.h = h
+class Distributions:
+    """
+    Namespace for distributions
+    """
+    class Uniform():
+        def __init__(self, a=None, b=None, h=None, uniform_mod_q=False):
+            """
+            :param a: lower bound if b is specified, else take range [-a, a]
+            :param b: upper bound, optional
+            :param h: exactly :math:`h` components are :math:`\in [a,…,b]∖\{0\}`, all other components are zero
+            :param uniform_mod_q: uniform mod q, if True no other value must be specified
+            """
+            if (not a and not uniform_mod_q) or (a and uniform_mod_q):
+                raise ValueError("Either a must have a value or uniform must be True.")
+            self.uniform_mod_q = uniform_mod_q
+            if not uniform_mod_q:
+                if b is None:
+                    b = a
+                    a = -a
+                self.range = (a, b)
+                self.h = h
 
-    def get_alpha(self, q, n=None):
-        r"""
-        Calculates noise rate :math:`\alpha` of approximately equivalent Gaussian distribution.
+        def get_alpha(self, q, n=None):
+            r"""
+            Calculates noise rate :math:`\alpha` of approximately equivalent Gaussian distribution.
 
-        TODO: describe how it is calculated?
+            TODO: describe how it is calculated?
 
-        :param q: modulus
-        :param n: secret dimension, only needed for uniform mod q and sparse secrets
-        :returns: noise rate :math:`\alpha`
-        """
-        variance = SDis.variance(self._convert_for_lwe_estimator(), q=q, n=n)
-        return alphaf(sqrt(variance), q, sigma_is_stddev=True)
+            :param q: modulus
+            :param n: secret dimension, only needed for uniform mod q and sparse secrets
+            :returns: noise rate :math:`\alpha`
+            """
+            variance = SDis.variance(self._convert_for_lwe_estimator(), q=q, n=n)
+            return alphaf(sqrt(variance), q, sigma_is_stddev=True)
 
-    def get_range(self, q=None):
-        """
-        :param q: only needed for uniform mod q
-        """
-        if self.uniform_mod_q:
-            return (0, q)
-        else:
-            return self.range
+        def get_range(self, q=None):
+            """
+            :param q: only needed for uniform mod q
+            """
+            if self.uniform_mod_q:
+                return (0, q)
+            else:
+                return self.range
 
-    def _convert_for_lwe_estimator(self):
-        """
-        Convert uniform distribution into format accepted by the lwe-estimator 
-        """
-        if self.uniform_mod_q:
-            return "uniform"
-        elif self.h:
-            return (self.range, self.h)
-        else:
-            return self.range()
+        def _convert_for_lwe_estimator(self):
+            """
+            Convert uniform distribution into format accepted by the lwe-estimator 
+            """
+            if self.uniform_mod_q:
+                return "uniform"
+            elif self.h:
+                return (self.range, self.h)
+            else:
+                return self.range()
 
 
-class Gaussian(Norm.Base_Norm, ABC):
-    @abstractmethod
-    def __init__(self):
-        # TODO: bad style, parent class accesses child attributes
-        pass
+    class Gaussian(Norm.Base_Norm, ABC):
+        @abstractmethod
+        def __init__(self):
+            # TODO: bad style, parent class accesses child attributes
+            pass
 
-    def get_alpha(self): # TODO: perhaps calculate alpha via q and sigma
-        r"""
-        :returns: noise rate :math:`\alpha`
-        """
-        return self.alpha
-    
-    def get_stddev(self):
-        """
-        :returns: standard deviation :math:`\sigma`
-        """
-        return self.sigma
-
-    def get_s(self):
-        """
-        :returns: Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`
-        """
-        return self.s
-
-    def to_L1(self):
-        r"""
-        Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian. Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
+        def get_alpha(self): # TODO: perhaps calculate alpha via q and sigma
+            r"""
+            :returns: noise rate :math:`\alpha`
+            """
+            return self.alpha
         
-        TODO: what if sampling is not component-wise?
+        def get_stddev(self):
+            """
+            :returns: standard deviation :math:`\sigma`
+            """
+            return self.sigma
 
-        .. _to_L1:
+        def get_s(self):
+            """
+            :returns: Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`
+            """
+            return self.s
 
-        For a Gaussian distribution, we have that: 
+        def to_L1(self):
+            r"""
+            Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian. Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
+            
+            TODO: what if sampling is not component-wise?
 
-        .. math::
-            \text{Pr}\left[ |X| \geq x\right] &\leq 2 e^{-\pi x^2/s^2}\\
-            \text{Pr}\left[ |X| \geq x s\right] &\leq 2 e^{-\pi x^2}\\
-            \text{Pr}\left[ |X| \geq \frac{x s}{\sqrt{\pi}}\right] &\leq 2 e^{-x^2}\\
-            \text{Pr}\left[ |X| \geq \frac{\sqrt{x} s}{\sqrt{\pi}}\right] &\leq 2 e^{-x}
+            .. _to_L1:
 
-        We require :math:`2 e^{-x} \approx 2^{-128}` and obtain :math:`x = 90`. Hence, we can estimate our bound as :math:`\sqrt{90} s / \sqrt{\pi}`.
+            For a Gaussian distribution, we have that: 
 
-        :returns: upper bound of :math:`L_1`-norm of vector
+            .. math::
+                \text{Pr}\left[ |X| \geq x\right] &\leq 2 e^{-\pi x^2/s^2}\\
+                \text{Pr}\left[ |X| \geq x s\right] &\leq 2 e^{-\pi x^2}\\
+                \text{Pr}\left[ |X| \geq \frac{x s}{\sqrt{\pi}}\right] &\leq 2 e^{-x^2}\\
+                \text{Pr}\left[ |X| \geq \frac{\sqrt{x} s}{\sqrt{\pi}}\right] &\leq 2 e^{-x}
+
+            We require :math:`2 e^{-x} \approx 2^{-128}` and obtain :math:`x = 90`. Hence, we can estimate our bound as :math:`\sqrt{90} s / \sqrt{\pi}`.
+
+            :returns: upper bound of :math:`L_1`-norm of vector
+            """
+            try:
+                dimension = self.dimension
+            except:
+                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
+            bound = sqrt(90) * self.s / sqrt(pi)
+            return Norm.Lp(bound, dimension, oo).to_L1()
+
+        def to_L2(self):
+            r"""
+            Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
+
+            :returns: upper bound of :math:`L_2`-norm of vector
+            """
+            try:
+                dimension = self.dimension
+            except:
+                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
+            bound = sqrt(90) * self.s / sqrt(pi)
+            return Norm.Lp(bound, dimension, oo).to_L2()
+
+        def to_Loo(self):
+            r"""
+            Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
+
+            :returns: upper bound of :math:`L_\infty`-norm of vector
+            """
+            try:
+                dimension = self.dimension
+            except:
+                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
+            bound = sqrt(90) * self.s / sqrt(pi)
+            return Norm.Lp(bound, dimension, oo).to_Loo()
+
+        def to_Coo(self):
+            r"""
+            Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
+
+            :returns: upper bound of :math:`C_\infty`-norm of vector
+            """
+            try:
+                dimension = self.dimension
+            except:
+                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
+            bound = sqrt(90) * self.s / sqrt(pi)
+            return Norm.Lp(bound, dimension, oo).to_Coo()
+
+        def _convert_for_lwe_estimator(self):
+            """
+            For secret distribution, implies that secret distribution follows error distribution (others not supported)
+            """
+            return "normal" 
+            # TODO what happens if both secret and error distribution are Gaussian but not the same?
+
+
+    class Gaussian_alpha(Gaussian):
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        return Norm.Lp(bound, dimension, oo).to_L1()
-
-    def to_L2(self):
-        r"""
-        Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
-
-        :returns: upper bound of :math:`L_2`-norm of vector
+        Helper class for Gaussian distribution. 
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        return Norm.Lp(bound, dimension, oo).to_L2()
+        def __init__(self, alpha, q):
+            r"""
+            :param sigma: noise rate :math:`\alpha`
+            :param q: modulus
+            """
+            self.alpha = RR(alpha)
+            # TODO: Do we actually need stddev/sigma?
+            self.sigma = stddevf(self.alpha, q)
+            self.s = sigmaf(self.stddev)
 
-    def to_Loo(self):
-        r"""
-        Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
-
-        :returns: upper bound of :math:`L_\infty`-norm of vector
+    class Gaussian_sigma(Gaussian):
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        return Norm.Lp(bound, dimension, oo).to_Loo()
-
-    def to_Coo(self):
-        r"""
-        Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). Before the function call the dimension attribute of the object must be set manually (e.g. 'secret_distribution.dimension = n'). 
-
-        :returns: upper bound of :math:`C_\infty`-norm of vector
+        Helper class for Gaussian distribution.
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        return Norm.Lp(bound, dimension, oo).to_Coo()
+        def __init__(self, sigma, q):
+            """
+            :param sigma: standard deviation :math:`\sigma`
+            :param q: modulus
+            """
+            self.sigma = RR(sigma)
+            self.s = sigmaf(self.sigma)
+            self.alpha = alphaf(self.sigma, q)
 
-    def _convert_for_lwe_estimator(self):
+    class Gaussian_s(Gaussian):
         """
-        For secret distribution, implies that secret distribution follows error distribution (others not supported)
+        Helper class for Gaussian distribution.
         """
-        return "normal" 
-        # TODO what happens if both secret and error distribution are Gaussian but not the same?
-
-
-class Gaussian_alpha(Gaussian):
-    """
-    Helper class for Gaussian distribution. 
-    """
-    def __init__(self, alpha, q):
-        r"""
-        :param sigma: noise rate :math:`\alpha`
-        :param q: modulus
-        """
-        self.alpha = RR(alpha)
-        # TODO: Do we actually need stddev/sigma?
-        self.sigma = stddevf(self.alpha, q)
-        self.s = sigmaf(self.stddev)
-
-class Gaussian_sigma(Gaussian):
-    """
-    Helper class for Gaussian distribution.
-    """
-    def __init__(self, sigma, q):
-        """
-        :param sigma: standard deviation :math:`\sigma`
-        :param q: modulus
-        """
-        self.sigma = RR(sigma)
-        self.s = sigmaf(self.sigma)
-        self.alpha = alphaf(self.sigma, q)
-
-class Gaussian_s(Gaussian):
-    """
-    Helper class for Gaussian distribution.
-    """
-    def __init__(self, s, q):
-        """
-        :param sigma: Gaussian width :math:`s = \sigma \cdot \sqrt{2\pi}`
-        :param q: modulus
-        """
-        self.s = s
-        self.sigma = stddevf(self.s)
-        self.alpha = alphaf(s, q)
-
-
+        def __init__(self, s, q):
+            """
+            :param sigma: Gaussian width :math:`s = \sigma \cdot \sqrt{2\pi}`
+            :param q: modulus
+            """
+            self.s = s
+            self.sigma = stddevf(self.s)
+            self.alpha = alphaf(s, q)
 
 
 # Problem Variants # 
@@ -666,8 +665,8 @@ class Problem:
             :param d: rank of module
             :param q: modulus
             :param m: number of samples
-            :param secret_distribution: secret distribution (instance of subclass of :class:`Gaussian` or :class:`Uniform`)
-            :param error_distribution: secret distribution (instance of subclass of :class:`Gaussian` or :class:`Uniform`)
+            :param secret_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
+            :param error_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
             """
             # TODO: check soundness of parameters
             self.n = n
@@ -720,8 +719,8 @@ class Problem:
             :param n: degree of polynomial
             :param q: modulus
             :param m: number of samples
-            :param secret_distribution: secret distribution (subclass of :class:`Gaussian` or :class:`Uniform`)
-            :param error_distribution: secret distribution (subclass of :class:`Gaussian` or :class:`Uniform`)
+            :param secret_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
+            :param error_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
             """
             ## interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
             # TODO: is this correct? 
