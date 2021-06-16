@@ -140,9 +140,9 @@ class Attacks:
             :param n: height of matrix
             :param m: width of matrix
             :param q: modulus
-            :param beta: L2-norm bound of solution TODO: :cite:p:`RS10` works with L2-norm?
+            :param bound: bound of solution, must be instance of :class:`Norm.Base_norm` 
             """
-            beta = bound.to_L2()
+            beta = bound.to_L2() # we need L2 norm TODO: check
             if 1 < beta < q: # Condition is not a requirement for [RS10] but we would divide by log(beta) which is <= 0
                 # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
 
@@ -163,7 +163,7 @@ class Attacks:
                 log_delta_0 = log(delta_0, 2)
 
                 if delta_0 < 1: # intractable
-                    ret = None # estimator.Cost([("rop", estimator.oo)]) # TODO: what to return?
+                    ret = estimator.Cost([("rop", oo)]) # TODO: what to return?
 
                 else: # standard case
                     k = estimator.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
@@ -174,7 +174,7 @@ class Attacks:
                     ret = estimator.Cost([("rop", cost)]) # TODO
 
             else: # not a hard problem, trivial solution exists
-                ret = estimator.Cost([("rop", n ** 2.376)]) # TODO
+                ret = estimator.Cost([("rop", 0), ("trivial", True)]) # TODO
                 
             return ret
 
@@ -197,7 +197,7 @@ class Attacks:
             :param q: modulus
             :param bound: bound of solution, must be instance of :class:`Norm.Base_norm`
             """
-            beta = bound.to_Loo()
+            beta = bound.to_Loo() # we need Loo norm
             if beta < q:
                 # find optimal k
                 k = 1
@@ -225,7 +225,7 @@ class Attacks:
                 return estimator.Cost([("rop", cost)]) # TODO other information?
 
             else: # not a hard problem, trivial solution exists
-                ret = estimator.Cost([("rop", min(n, m) ** 2.376)]) # TODO
+                ret = estimator.Cost([("rop", 0), ("trivial", True)]) # TODO
 
 # Norms # 
 class Norm:
@@ -699,8 +699,8 @@ class Problem:
                 alpha_MLWE = self.error_distribution.get_alpha()
                 alpha_RLWE = RR(alpha_MLWE * self.n**2 * sqrt(self.d))
                 q_RLWE = self.q**self.d
-                secret_distribution_RLWE = Uniform(0, self.q) # TODO: is this correct?
-                error_distribution_RLWE = Gaussian_alpha(alpha_RLWE, q_RLWE)
+                secret_distribution_RLWE = Distributions.Uniform(0, self.q) # TODO: is this correct?
+                error_distribution_RLWE = Distributions.Gaussian_alpha(alpha_RLWE, q_RLWE)
                 rlwe = Problem.RLWE(n=self.n, q=q_RLWE, m=self.m, secret_distribution=secret_distribution_RLWE, 
                                    error_distribution=error_distribution_RLWE)
 
@@ -986,7 +986,7 @@ class Problem:
             sigma = RR(2**(-sec / (m * n)) * q**(d / m) / 2 * (m * n / (2 * pi * e))**(1 / 2) / sqrt(m * n))
             alpha = alphaf(sigma, q)
             # TODO: Do we need alpha or beta here?
-            secret_distribution = Gaussian_alpha(alpha, q)
+            secret_distribution = Distributions.Gaussian_alpha(alpha, q)
             super().__init__(n=n, d=d, q=q, m=m, secret_distribution=secret_distribution)
         
         def get_alpha(self):
