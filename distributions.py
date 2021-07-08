@@ -3,11 +3,11 @@ TODO: documentation
 """
 
 try: # sage-related imports do not work with sphinx for documentation
+    from abc import ABC, abstractmethod
     import norm
     import problem
     import sys
     import os
-    from abc import ABC, abstractmethod
     from sage.functions.log import log
     from sage.functions.other import ceil, sqrt
     from sage.rings.all import QQ, RR
@@ -93,7 +93,6 @@ class Uniform(norm.Base_Norm, Distribution):
         else:
             return self.range()
     
-    # TODO: is normal trafo always componentwise?
     def to_L1(self, dimension):
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_L1()
@@ -109,7 +108,6 @@ class Uniform(norm.Base_Norm, Distribution):
     def to_Coo(self, dimension):
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_Coo()
-
 
 
 class Gaussian(norm.Base_Norm, ABC, Distribution):
@@ -138,42 +136,57 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         """
         return self.s
 
-    def to_L1(self, dimension):
+    def to_Lp(sec, s, componentwise, dimension):
         r"""
-        Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian. 
+        Transforms Gaussian width into norm :math:`L_p`-norm of a vector whose coefficients are distributed according to a Gaussian. 
         
-        .. _to_L1:
+        .. _to_Lp:
 
         For a Gaussian distribution, we have that: 
 
         .. math::
             \text{Pr}\left[ |X| \geq x\right] &\leq 2 e^{-\pi x^2/s^2}\\
-            \text{Pr}\left[ |X| \geq x s\right] &\leq 2 e^{-\pi x^2}\\
-            \text{Pr}\left[ |X| \geq \frac{x s}{\sqrt{\pi}}\right] &\leq 2 e^{-x^2}\\
-            \text{Pr}\left[ |X| \geq \frac{\sqrt{x} s}{\sqrt{\pi}}\right] &\leq 2 e^{-x}
 
-        We require :math:`2 e^{-x} \approx 2^{-sec}` and obtain :math:`x = \lceil\ln 2^{sec + 1}\rceil`. Hence, we can estimate our bound as :math:`\sqrt{90} s / \sqrt{\pi}`.
+        We require :math:`2 e^{-\pi x^2/s^2} \approx 2^{-sec}`, hence
+
+        .. math::
+            2 e^{-\pi x^2/s^2} &\approx 2^{-sec}\\
+            -\pi \frac{x^2}{s^2} &\approx (-sec - 1)\ln (2)\\
+            x  &\approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}\\
+        
+        :param sec: required security for statistical Gaussian to Lp-bound transformation
+        :param s: Gaussian width parameter :math:`s` (not standard deviation)
+        :param componentwise: if `True`, Gaussian over coefficients, else over :math:`L_2`-norm
+        :param dimension: dimension of the vector
+        
+        :returns: upper bound of :math:`L_\infty`-norm of vector if componentwise, else :math:`L_2`-norm
+        """
+        bound = sqrt(log(2.0)(sec + 1)) * s / sqrt(pi)
+        if componentwise:
+            return norm.Lp(bound, dimension, oo)
+        else:
+            return norm.Lp(bound, dimension, 2)
+
+    def to_L1(self, dimension):
+        r"""
+        Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of vector
         """
-        # TODO: global constant gaussian_statistical_sec oder so, optional parameter, default auf global, durchschleifen, ...
+        # TODO: global constant gaussian_statistical_sec oder so, optional parameter, default auf global, durchschleifen, ...also in other to_LPs
         if self.sec:
             sec = self.sec
         else:
-            sec = problem.statistical_sec # TODO
+            sec = problem.statistical_sec
 
         # TODO: check
-        bound = sqrt(ceil(log(2**(sec + 1)))) * self.s / sqrt(pi)
-        if self.componentwise:
-            return norm.Lp(bound, dimension, oo).to_L1(dimension)
-        else:
-            return norm.Lp(bound, dimension, 2).to_L1(dimension)
+        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_L1(dimension)
         
 
-    def to_L2(self, dimension): # TODO
+    def to_L2(self, dimension):
         r"""
-        Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). 
+        Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
         
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of vector
@@ -182,15 +195,16 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
             dimension = self.dimension
         except:
             raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        if self.componentwise:
-            return norm.Lp(bound, dimension, oo).to_L2(dimension)
+        if self.sec:
+            sec = self.sec
         else:
-            return norm.Lp(bound, dimension, 2).to_L2(dimension)
+            sec = problem.statistical_sec # TODO also in other to_LPs
+
+        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_L2(dimension)
 
     def to_Loo(self, dimension):
         r"""
-        Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_). 
+        Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of vector
@@ -199,24 +213,26 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
             dimension = self.dimension
         except:
             raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        bound = sqrt(90) * self.s / sqrt(pi)
-        if self.componentwise:
-            return norm.Lp(bound, dimension, oo).to_Loo(dimension)
+        if self.sec:
+            sec = self.sec
         else:
-            return norm.Lp(bound, dimension, 2).to_Loo(dimension)
+            sec = problem.statistical_sec # TODO also in other to_LPs
+
+        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_Loo(dimension)
 
     def to_Coo(self, dimension):
         r"""
-        Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_L1`_).
+        Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of vector
         """
-        bound = sqrt(90) * self.s / sqrt(pi)
-        if self.componentwise:
-            return norm.Lp(bound, dimension, oo).to_Coo(dimension)
+        if self.sec:
+            sec = self.sec
         else:
-            return norm.Lp(bound, dimension, 2).to_Coo(dimension)
+            sec = problem.statistical_sec # TODO also in other to_LPs
+
+        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_Coo(dimension)
 
     def _convert_for_lwe_estimator(self):
         """

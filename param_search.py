@@ -80,7 +80,7 @@ def unit_cost():
     # TODO: perhaps another generic search without unit cost
 
 
-class Parameter_Set:
+class Parameter_Set():
     """
     Helper class to order parameter sets in list 
     """
@@ -91,7 +91,7 @@ class Parameter_Set:
     
     def __lt__(self, other):
         # reversed sorting to pop from sorted list
-        return self.parameter_cost(*self.parameters) > self.parameter_cost(*self.parameters)
+        return self.parameter_cost(*self.parameters) > other.parameter_cost(*self.parameters) # TODO check
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
@@ -100,6 +100,8 @@ def is_secure(problem : Base_Problem, sec):
         return True
     else:
         return False
+    
+    # beliebig viele problem instances als parameter + sec ... => kein extra loop in generic_search notwendig
 
 
 def estimate(problem : Base_Problem, attack_configuration : Attack_Configuration, debug):
@@ -129,7 +131,6 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
     problem.statistical_sec = sec # TODO add to other places, too, does that work?
     current_parameter_sets = [Parameter_Set(initial_parameters)]
-    current_sec = 0
     while current_parameter_sets:
 
         current_parameter_set = current_parameter_sets.pop().parameters # remove last
@@ -137,6 +138,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         # TODO: possible to run parallel
         for problem_instance in parameter_problem(*current_parameter_set): 
 
+            # TODO: logging?
             res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration, 
                                                     debug=DEBUG)
             if not res.is_secure:
@@ -144,8 +146,8 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
         if secure and i > 0:
             # Only if all problem instances of a parameter set pass
-            # TODO: possibly extra class/dict with additional information...
-            return (current_parameter_set, current_sec) 
+            # TODO: logging?
+            return (current_parameter_set, res) 
             
         # TODO: check if correct
         for parameter_set in next_parameters(*current_parameter_set):
