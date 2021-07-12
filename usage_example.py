@@ -1,22 +1,29 @@
+#!/usr/bin/env sage
+
+import sys
+import os
 from attacks import Attack_Configuration
-from estimator import *
+import param_search, distributions, norm, problem
+sys.path.append(os.path.dirname(__file__) + "/estimate_all")
 from estimator import estimator as est
-import param_search, attacks, distributions, norm, problem
+import sage.all 
+from sage.rings.all import QQ
 
 sec = param_search.SECURITY # can be any value, also used in Gaussian to bound trafo and statistically secure variants
+DEBUG = True
 
 def estimation_example():
     problem.statistical_sec = sec
     n = 128
-    q = param_search.make_prime(n=2^128, lbound=2^127)
+    q = param_search.make_prime(n=2^64, lbound=2^63)
     m = 256
-    alpha = est.alphaf(2*q) # TODO
+    alpha = est.alphaf(2.0*q, q, sigma_is_stddev=True) # TODO
     sec_dis = distributions.Gaussian_alpha(alpha=alpha, q=q, sec=sec)
     err_dis = sec_dis
     config = Attack_Configuration()
-    lwe = problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, attack_configuration=config, debug=True)
+    lwe = problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
 
-    if param_search.is_secure(lwe, sec):
+    if param_search.is_secure(parameter_problem=[lwe], sec=sec, attack_configuration=config, debug=DEBUG):
         pass # do things
     
     # or maybe
@@ -31,16 +38,15 @@ def BGV_example():
     attack_configuration = Attack_Configuration()
     def next_parameters(N, p, q):
         N = 2 * N
-        p = ... # find p depending on new N
-        q = ... # find q depending on new N and p
+        p = 1 # find p depending on new N
+        q = 1 # find q depending on new N and p
         yield N, p, q
 
     def parameter_problem(N, p, q):
-        yield problem.RLWE(N, q, ...) # keys are secure
-        yield problem.RLWE(N, q, ...) # encryption is secure
+        yield problem.RLWE(N, q) # keys are secure
+        yield problem.RLWE(N, q) # encryption is secure
 
-    N, p, q, security, ... = param_search.generic_search(sec, (2**10, None, None), next_parameters, param_search.unit_cost, parameter_problem, attack_configuration)
-    ...
+    N, p, q, security = param_search.generic_search(sec, (2**10, None, None), next_parameters, param_search.unit_cost, parameter_problem, attack_configuration)
 
 def two_problem_search_example():
     # k: width (over R_q) of commitment matrices
@@ -70,14 +76,24 @@ def two_problem_search_example():
         return cost
 
     def parameter_problem(N, p, q, n, m, l):
-        lwe = problem.Statistical_Uniform_MLWE(sec=sec, n=N, q=q, d=n + l, m=n + m + l)
-        sigma = lwe.sigma
-        min_sigma, max_sigma = lwe.get_sigma_bounds()
+        lwe : problem.Statistical_Uniform_MLWE = problem.Statistical_Uniform_MLWE(sec=sec, n=N, q=q, d=n + l, m=n + m + l)
+
+        # TODO: Question: what was the though with the sigmas here?
+        # sigma = lwe.sigma
+        # min_sigma, max_sigma = lwe.get_sigma_bounds()
         
-        if min_sigma <= sigma <= max_sigma:
-            yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=sigma)
-            yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=max_sigma)
+        # if min_sigma <= sigma <= max_sigma:
+        #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=sigma)
+        #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=max_sigma)
             # TODO: is the above correct (i.e. value for d)? Why sigma? SIS requires beta (norm bound of solution)
             # TODO: how to transform norm bound in BDLOP16 into stddev?
 
+        min_beta, max_beta = lwe.get_beta_bounds()
+        yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, bound=min_beta)
+        yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, bound=max_beta)
+        
+
     n, p, q, n, m, l = param_search.generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, attack_configuration)
+
+if __name__ == "__main__":
+    estimation_example()

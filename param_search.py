@@ -16,12 +16,12 @@ AUTHOR:
     Nicolai Krebs - 2021
 
 """
-from attacks import Attack_Configuration
-from norm import Base_Norm
-from problem import Base_Problem
-
 
 try: # sage-related imports do not work with sphinx for documentation
+    from typing import Generator, Iterator
+    from attacks import Attack_Configuration
+    from norm import Base_Norm
+    from problem import Base_Problem
     import norm
     import attacks
     import problem
@@ -42,6 +42,7 @@ try: # sage-related imports do not work with sphinx for documentation
     from functools import partial
     from scipy.optimize import newton
     from abc import ABC, abstractmethod
+    import sage.all 
     from sage.functions.log import exp, log
     from sage.functions.other import ceil, sqrt, floor, binomial
     from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
@@ -54,7 +55,7 @@ try: # sage-related imports do not work with sphinx for documentation
 
     oo = est.PlusInfinity()
 except:
-    pass
+    raise
 
 # TODO: logging
 
@@ -95,19 +96,36 @@ class Parameter_Set():
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
-def is_secure(problem : Base_Problem, sec):
-    if estimate(problem) < sec:
-        return True
-    else:
-        return False
+def is_secure(parameter_problem : Iterator[Base_Problem], sec, attack_configuration : Attack_Configuration, debug=DEBUG):
+    i = 0; secure = True
+    # TODO: possibly  run parallel
+    # TODO: what results to return?
+    best_result = None # result with lowest sec
+    for problem_instance in parameter_problem: 
+        res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration, 
+                                                debug=DEBUG)
+        if not res.is_secure:
+            secure = False; break
+        if best_result["rop"] > res.results["rop"]:
+            best_result = res.results
+    
+    if i == 0:
+        raise ValueError("Empty Problem")
+    
+    return {"secure": secure, "res": res}
     
     # beliebig viele problem instances als parameter + sec ... => kein extra loop in generic_search notwendig
 
 
-def estimate(problem : Base_Problem, attack_configuration : Attack_Configuration, debug):
-    # TODO run cost estimation for given parameter set of problem
-    res = problem.estimate_cost(attack_configuration=attack_configuration, debug=debug)
-    return res
+def estimate(parameter_problem : Iterator[Base_Problem], attack_configuration : Attack_Configuration, debug):
+    # TODO: run parallel
+    best_result = None # result with lowest sec
+    for problem_instance in parameter_problem: 
+        res = problem_instance.estimate_cost(attack_configuration=attack_configuration, 
+                                                debug=DEBUG)
+        if best_result["rop"] > res.results["rop"]:
+            best_result = res.results    
+    return best_result
 
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 

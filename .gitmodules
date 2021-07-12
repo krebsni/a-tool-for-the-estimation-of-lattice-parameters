@@ -1,3 +1,6 @@
 [submodule "estimate_all"]
 	path = estimate_all
-	url = https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io
+	url = https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io.git
+[submodule "estimator"]
+	path = estimator
+	url = https://bitbucket.org/malb/lwe-estimator.git

@@ -8,6 +8,7 @@ try: # sage-related imports do not work with sphinx for documentation
     import problem
     import sys
     import os
+    import sage.all
     from sage.functions.log import log
     from sage.functions.other import ceil, sqrt
     from sage.rings.all import QQ, RR
@@ -17,7 +18,6 @@ try: # sage-related imports do not work with sphinx for documentation
     oo = est.PlusInfinity()
 except:
     pass
-
 
 
 # Error Parameter Conversion (extension to functions in estimator.py)
@@ -30,7 +30,7 @@ def alpha_to_stddevf(alpha, q):
 
     :returns: :math:`\sigma = \alpha \cdot q / \sqrt{2\pi}` 
     """
-    return est.stddevf(RR(alpha * q))    
+    return est.stddevf(alpha * q)    
 
 
 class Distribution():
@@ -136,7 +136,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         """
         return self.s
 
-    def to_Lp(sec, s, componentwise, dimension):
+    def to_Lp(self, sec=None, dimension=None):
         r"""
         Transforms Gaussian width into norm :math:`L_p`-norm of a vector whose coefficients are distributed according to a Gaussian. 
         
@@ -161,78 +161,60 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         
         :returns: upper bound of :math:`L_\infty`-norm of vector if componentwise, else :math:`L_2`-norm
         """
-        bound = sqrt(log(2.0)(sec + 1)) * s / sqrt(pi)
-        if componentwise:
+        if not sec:
+            if self.sec:
+                sec = self.sec
+            else:
+                sec = problem.statistical_sec # TODO: or exception?
+
+        if not dimension:
+            if not self.dimension:
+                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'") # TODO consistent, maybe per parameter?
+        else:
+            self.dimension = dimension
+
+        bound = self.s * sqrt(log(2.0)(sec + 1)  / pi)
+        if self.componentwise:
             return norm.Lp(bound, dimension, oo)
         else:
             return norm.Lp(bound, dimension, 2)
 
-    def to_L1(self, dimension):
+    def to_L1(self, sec=None, dimension=None):
         r"""
         Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of vector
         """
-        # TODO: global constant gaussian_statistical_sec oder so, optional parameter, default auf global, durchschleifen, ...also in other to_LPs
-        if self.sec:
-            sec = self.sec
-        else:
-            sec = problem.statistical_sec
-
-        # TODO: check
-        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_L1(dimension)
+        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_L1(dimension)
         
 
-    def to_L2(self, dimension):
+    def to_L2(self, sec=None, dimension=None):
         r"""
         Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
         
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of vector
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        if self.sec:
-            sec = self.sec
-        else:
-            sec = problem.statistical_sec # TODO also in other to_LPs
+        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_L2(dimension)
 
-        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_L2(dimension)
-
-    def to_Loo(self, dimension):
+    def to_Loo(self, sec=None, dimension=None):
         r"""
         Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_). 
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of vector
         """
-        try:
-            dimension = self.dimension
-        except:
-            raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'")
-        if self.sec:
-            sec = self.sec
-        else:
-            sec = problem.statistical_sec # TODO also in other to_LPs
+        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_Loo(dimension)
 
-        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_Loo(dimension)
-
-    def to_Coo(self, dimension):
+    def to_Coo(self, sec=None, dimension=None):
         r"""
         Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of vector
         """
-        if self.sec:
-            sec = self.sec
-        else:
-            sec = problem.statistical_sec # TODO also in other to_LPs
-
-        return Gaussian.to_Lp(sec=sec, s=self.s, componentwise=self.componentwise, dimension=dimension).to_Coo(dimension)
+        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_Coo(dimension)
 
     def _convert_for_lwe_estimator(self):
         """
@@ -252,10 +234,10 @@ class Gaussian_alpha(Gaussian):
         :param componentwise: if `True`, Gaussian over coefficients, else over :math:`L_2`-norm
         :param sec: required security for statistical Gaussian to Lp-bound transformation
         """
-        self.alpha = RR(alpha)
+        self.alpha = alpha
         # TODO: Do we actually need stddev/sigma?
-        self.sigma = est.stddevf(self.alpha, q)
-        self.s = est.sigmaf(self.stddev)
+        self.sigma = alpha_to_stddevf(self.alpha, q)
+        self.s = est.sigmaf(self.sigma)
         self.componentwise = componentwise
         self.sec = sec
 
@@ -271,7 +253,7 @@ class Gaussian_sigma(Gaussian):
         :param componentwise: if `True`, Gaussian over coefficients, else over :math:`L_2`-norm
         :param sec: required security for statistical Gaussian to Lp-bound transformation
         """
-        self.sigma = RR(sigma)
+        self.sigma = sigma
         self.s = est.sigmaf(self.sigma)
         self.alpha = est.alphaf(self.sigma, q)
         self.componentwise = componentwise

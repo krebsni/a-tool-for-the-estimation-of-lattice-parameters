@@ -5,13 +5,14 @@ TODO: documentation
 try:
     import sys
     import os
+    import sage.all
     from sage.functions.log import log
     from sage.functions.other import ceil, sqrt
     from sage.rings.all import QQ, RR
     from sage.symbolic.all import pi
     sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from estimator import estimator as est
-    import cost_asymptotics
+    from cost_asymptotics import BKZ_COST_ASYMPTOTICS
     oo = est.PlusInfinity()
 except:
     pass
@@ -43,26 +44,24 @@ class Attack_Configuration():
         self.dual_use_lll = dual_use_lll
 
 
-def reduction_cost_models(attack_configuration):
-    """
-    Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
+    def reduction_cost_models(self):
+        """
+        Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
 
-    :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
-    """
-    if not isinstance(attack_configuration, Attack_Configuration):
-        raise ValueError("attack_configuration must be instance of Attacks.Attack_Configuration")
+        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        """
 
-    bkz_cost_models = cost_asymptotics.BKZ_COST_ASYMPTOTICS
-    if attack_configuration.quantum and not attack_configuration.classical:
-        bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
-    elif attack_configuration.classical and not attack_configuration.quantum:
-        bkz_cost_models = [c for c in bkz_cost_models if "Classical" in c["group"]]
-    if attack_configuration.sieving and not attack_configuration.enumeration:
-        bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["group"]]
-    elif attack_configuration.enumeration and not attack_configuration.sieving:
-        bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
-    return bkz_cost_models
-    # TODO: other cost models?
+        bkz_cost_models = BKZ_COST_ASYMPTOTICS
+        if self.quantum and not self.classical:
+            bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
+        elif self.classical and not self.quantum:
+            bkz_cost_models = [c for c in bkz_cost_models if "Classical" in c["group"]]
+        if self.sieving and not self.enumeration:
+            bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["group"]]
+        elif self.enumeration and not self.sieving:
+            bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
+        return bkz_cost_models
+        # TODO: other cost models?
 
 
 class SIS:

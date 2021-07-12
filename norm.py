@@ -17,15 +17,12 @@ And from Theorem 7 in :cite:`DPSZ12`:
 # TODO: norm transformations documentation
 """
 
-
-
-from abc import abstractmethod
-
-
 try: # sage-related imports do not work with sphinx for documentation
     import sys
     import os
     from abc import ABC
+    from abc import abstractmethod
+    import sage.all
     from sage.functions.other import sqrt
     sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from estimator import estimator as est
