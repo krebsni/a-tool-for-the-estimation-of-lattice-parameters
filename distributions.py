@@ -39,6 +39,9 @@ class Distribution():
 # TODO: if we change q (e.g. in reduction), what values change?
 # TODO: perhaps don't include 
 class Uniform(norm.Base_Norm, Distribution):
+    """ 
+    TODO
+    """
 
     def __init__(self, a=None, b=None, h=None, uniform_mod_q=False, q=None):
         """
@@ -58,7 +61,7 @@ class Uniform(norm.Base_Norm, Distribution):
             self.range = (a, b)
             self.h = h
         else:
-            if not q:
+            if q is None:
                 raise ValueError("q must be set for uniform_mod_q uniform distribution.")
             else:
                 self.range = (0, q)
@@ -108,11 +111,15 @@ class Uniform(norm.Base_Norm, Distribution):
     def to_Coo(self, dimension):
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_Coo()
+    
+    def __str__(self) -> str:
+        return "Uniform [" + str(self._convert_for_lwe_estimator()) + "]" # TODO: perhaps change
 
 
 class Gaussian(norm.Base_Norm, ABC, Distribution):
-    # TODO: add parameter, gaussian over L2 or gaussian over coefficients => change to_Lp
-    # TODO: if gaussian over L2 also alpha has to be converted...
+    """ 
+    TODO
+    """
 
     @abstractmethod
     def __init__(self):
@@ -155,29 +162,27 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
             x  &\approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}\\
         
         :param sec: required security for statistical Gaussian to Lp-bound transformation
-        :param s: Gaussian width parameter :math:`s` (not standard deviation)
-        :param componentwise: if `True`, Gaussian over coefficients, else over :math:`L_2`-norm
         :param dimension: dimension of the vector
         
         :returns: upper bound of :math:`L_\infty`-norm of vector if componentwise, else :math:`L_2`-norm
         """
-        if not sec:
+        if sec is None:
             if self.sec:
                 sec = self.sec
             else:
                 sec = problem.statistical_sec # TODO: or exception?
 
-        if not dimension:
-            if not self.dimension:
+        if dimension is None:
+            if self.dimension is None:
                 raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'") # TODO consistent, maybe per parameter?
         else:
             self.dimension = dimension
 
-        bound = self.s * sqrt(log(2.0)(sec + 1)  / pi)
+        bound = self.s * sqrt(log(2.0)* (sec + 1)  / pi)
         if self.componentwise:
-            return norm.Lp(bound, dimension, oo)
+            return norm.Lp(value=bound, p=oo, dimension=dimension)
         else:
-            return norm.Lp(bound, dimension, 2)
+            return norm.Lp(value=bound, p=2, dimension=dimension)
 
     def to_L1(self, sec=None, dimension=None):
         r"""
@@ -186,7 +191,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of vector
         """
-        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_L1(dimension)
+        return self.to_Lp(sec=sec, dimension=dimension).to_L1(dimension=dimension)
         
 
     def to_L2(self, sec=None, dimension=None):
@@ -196,7 +201,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of vector
         """
-        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_L2(dimension)
+        return self.to_Lp(sec=sec, dimension=dimension).to_L2(dimension=dimension)
 
     def to_Loo(self, sec=None, dimension=None):
         r"""
@@ -205,7 +210,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of vector
         """
-        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_Loo(dimension)
+        return self.to_Lp(sec=sec, dimension=dimension).to_Loo(dimension=dimension)
 
     def to_Coo(self, sec=None, dimension=None):
         r"""
@@ -214,7 +219,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of vector
         """
-        return Gaussian.to_Lp(sec=sec, dimension=dimension).to_Coo(dimension)
+        return self.to_Lp(sec=sec, dimension=dimension).to_Coo(dimension=dimension)
 
     def _convert_for_lwe_estimator(self):
         """
@@ -222,10 +227,13 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         """
         return "normal" 
 
+    def __str__(self) -> str:
+        return f"Gaussian [sigma={self.sigma}, s={self.s}, alpha={self.alpha}, componentwise={self.componentwise}, sec={self.sec}"
+
 
 class Gaussian_alpha(Gaussian):
-    """
-    Helper class for Gaussian distribution. 
+    r"""
+    Helper class for Gaussian distribution with input parameter :math:`\alpha`. 
     """
     def __init__(self, alpha, q, componentwise=True, sec=None):
         r"""
@@ -244,7 +252,7 @@ class Gaussian_alpha(Gaussian):
 
 class Gaussian_sigma(Gaussian):
     """
-    Helper class for Gaussian distribution.
+    Helper class for Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
     """
     def __init__(self, sigma, q, componentwise=True, sec=None):
         """
@@ -262,7 +270,7 @@ class Gaussian_sigma(Gaussian):
 
 class Gaussian_s(Gaussian):
     """
-    Helper class for Gaussian distribution.
+    Helper class for Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
     """
     def __init__(self, s, q, componentwise=True, sec=None):
         """
@@ -275,4 +283,4 @@ class Gaussian_s(Gaussian):
         self.sigma = est.stddevf(self.s)
         self.alpha = est.alphaf(s, q)
         self.componentwise = componentwise
-        self.sec = sec
+        self.sec = sec 

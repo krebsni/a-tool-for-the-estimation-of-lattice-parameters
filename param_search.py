@@ -17,6 +17,9 @@ AUTHOR:
 
 """
 
+from problem import Estimate_Res
+
+
 try: # sage-related imports do not work with sphinx for documentation
     from typing import Generator, Iterator
     from attacks import Attack_Configuration
@@ -57,10 +60,10 @@ try: # sage-related imports do not work with sphinx for documentation
 except:
     raise
 
-# TODO: logging
-
-# Debug
-DEBUG = True
+## Logging ##
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
+# TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
 # Security parameter
 SECURITY = 128
@@ -96,34 +99,37 @@ class Parameter_Set():
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
-def is_secure(parameter_problem : Iterator[Base_Problem], sec, attack_configuration : Attack_Configuration, debug=DEBUG):
+def is_secure(parameter_problem : Iterator[Base_Problem], sec, attack_configuration : Attack_Configuration):
     i = 0; secure = True
     # TODO: possibly  run parallel
-    # TODO: what results to return?
-    best_result = None # result with lowest sec
+    best_res = Estimate_Res(is_secure=False, results={"rop": oo}) # result with lowest sec
     for problem_instance in parameter_problem: 
-        res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration, 
-                                                debug=DEBUG)
+        i += 1
+        logger.info("Estimating cost of: " + str(problem_instance) + "...")
+        res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration)
+        if "error" in res.results.keys():
+            print(res.results["error"]) # TODO error handling
+        elif best_res.results["rop"] > res.results["rop"]:
+            best_res = res
         if not res.is_secure:
-            secure = False; break
-        if best_result["rop"] > res.results["rop"]:
-            best_result = res.results
+            break
     
     if i == 0:
         raise ValueError("Empty Problem")
-    
-    return {"secure": secure, "res": res}
+    return best_res
     
     # beliebig viele problem instances als parameter + sec ... => kein extra loop in generic_search notwendig
 
 
-def estimate(parameter_problem : Iterator[Base_Problem], attack_configuration : Attack_Configuration, debug):
+def estimate(parameter_problem : Iterator[Base_Problem], attack_configuration : Attack_Configuration):
     # TODO: run parallel
-    best_result = None # result with lowest sec
+    best_result = {"rop": oo} # result with lowest sec
     for problem_instance in parameter_problem: 
-        res = problem_instance.estimate_cost(attack_configuration=attack_configuration, 
-                                                debug=DEBUG)
-        if best_result["rop"] > res.results["rop"]:
+        logger.info("Estimating cost of: " + str(problem_instance))
+        res = problem_instance.estimate_cost(attack_configuration=attack_configuration)
+        if "error" in res.results.keys():
+            print(res.results["error"]) # TODO error handling
+        elif best_result["rop"] > res.results["rop"]:
             best_result = res.results    
     return best_result
 
@@ -157,8 +163,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         for problem_instance in parameter_problem(*current_parameter_set): 
 
             # TODO: logging?
-            res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration, 
-                                                    debug=DEBUG)
+            res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration)
             if not res.is_secure:
                 secure = False; break
 

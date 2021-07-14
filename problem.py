@@ -1,13 +1,19 @@
 r""" 
 TODO: documentation
 """
+
+
 try: # sage-related imports do not work with sphinx for documentation
     from abc import ABC, abstractmethod
     import distributions
+    from collections import OrderedDict
+    import time
     import attacks
     import norm
     import sys
     import os
+    import logging
+    import traceback
     from multiprocessing import Value
     from attacks import Attack_Configuration
     from distributions import Distribution, Gaussian_s, Gaussian_sigma
@@ -21,11 +27,17 @@ try: # sage-related imports do not work with sphinx for documentation
     sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from estimator import estimator as est
     oo = est.PlusInfinity()
+    import param_search
 except:
     pass
 
+
+## Logging ##
+logger = logging.getLogger(__name__)
+
+
 statistical_sec = 128 #: for statistical security
-DEBUG = True
+
 
 # Helper class
 class Estimate_Res():
@@ -48,7 +60,7 @@ class Base_Problem(ABC):
         pass
 
     @abstractmethod
-    def estimate_cost(self, sec=None, attack_configuration=None, debug=False) -> Estimate_Res:
+    def estimate_cost(self, sec=None, attack_configuration=None) -> Estimate_Res:
         pass
 
     @abstractmethod
@@ -72,7 +84,6 @@ class LWE(Base_Problem):
         :param secret_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param error_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
-        :param debug: foward exceptions if set to `True`
         """
         # check soundness of parameters
         if not n or not q or not m or n<0 or q<0 or m<0:
@@ -87,20 +98,20 @@ class LWE(Base_Problem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def estimate_cost(self, attack_configuration, sec=None, debug=False) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None) -> Estimate_Res:
         """
         Estimates the cost of an attack on the LWE instance, lazy evaluation if `sec` is set.
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
-        :param debug: if `True`, an exception is passed, else result field of return value contains entry `"error"` with exception message
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """ 
         if not isinstance(attack_configuration, attacks.Attack_Configuration):
             raise ValueError("attack_configuration must be instance of Attack_Configuration")
         
-        secret_distribution = self.secret_distribution._convert_for_lwe_estimator()            
+        secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
+        logger.debug(str(secret_distribution))           
         alpha = self.error_distribution.get_alpha()
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
         if secret_distribution == "normal" and self.secret_distribution.get_alpha() != alpha:
@@ -115,170 +126,107 @@ class LWE(Base_Problem):
         dropped = False
         best_cost = {"rop": oo}
 
-        # TODO: parallel execution?
+        # TODO: parallel execution? perhaps split not by cost models but algorithms
         # TODO: run in parallel? same in Problem.SIS.estimate_cost()
         #   test first.. one might be quite slow => waiting takes too long. Find a way of stopping the one that runs longer?
         #   TODO: lazy parameter => if true extra object for running when compare operator is applied... only run when needed, otherwise no early termination... 
         # TODO: sec parameter to gaussian bound trafo... 
         # TODO: add logging and statistics for runtime?
-        try:
-            for cost_model in cost_models:
-                cname = cost_model["name"]
-                reduction_cost_model = cost_model["reduction_cost_model"]
-                success_probability = cost_model["success_probability"]
-
-                # Estimate attacks. Similar to estimate_lwe function in estimator.py
-                if "mitm" not in attack_configuration.skip:
-                    cost = est.mitm(n=self.n, alpha=alpha, q=self.q, m=self.m, 
-                                    secret_distribution=secret_distribution, 
-                                    success_probability=success_probability)
-                    if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = cost_model["name"]
-                        dropped = False; attack_name = "mitm"
-                        if sec and round(log(cost["rop"], 2)) < sec:
-                            is_secure = False; break
-
-                if "usvp" not in attack_configuration.skip:
-                    if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
-                        cost = est.primal_usvp(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                secret_distribution=secret_distribution,
-                                                success_probability=success_probability,
-                                                reduction_cost_model=reduction_cost_model)
-                        if cost["rop"] < best_cost["rop"]:
-                            best_cost = cost; cname = cost_model["name"]
-                            dropped = False; attack_name = "usvp"
-                            if sec and round(log(cost["rop"], 2)) < sec:
-                                is_secure = False; break
-
-                    if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
-                        # Try guessing secret entries via drop_and_solve
-                        primald = est.partial(est.drop_and_solve, est.primal_usvp, postprocess=False, decision=False)
-                        cost = primald(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                        secret_distribution=secret_distribution,
-                                        success_probability=success_probability,
-                                        reduction_cost_model=reduction_cost_model, rotations=False)
-                        if cost["rop"] < best_cost["rop"]:
-                            best_cost = cost; cname = cost_model["name"]; 
-                            dropped = True; attack_name = "usvp"
-                            if sec and round(log(cost["rop"], 2)) < sec:
-                                is_secure = False; break
+        for reduction_cost_model in cost_models:
+            cost_model = reduction_cost_model["reduction_cost_model"]
+            success_probability = reduction_cost_model["success_probability"]
+            logger.info("Cost model: " + reduction_cost_model["name"])
+            # TODO: refractor
+            # Estimate attacks. Similar to estimate_lwe function in estimator.py
+            algorithms = OrderedDict()
+            
+            if "mitm" not in attack_configuration.skip:
+                algorithms["mitm"] = est.mitm
                 
-                if "decode" not in attack_configuration.skip:
-                    cost = est.primal_decode(n=self.n, alpha=alpha, q=self.q, m=self.m,
-                                                success_probability=success_probability,
-                                                secret_distribution=secret_distribution,
-                                                reduction_cost_model=reduction_cost_model)
+            if "usvp" not in attack_configuration.skip:
+                if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
+                    # Try guessing secret entries via drop_and_solve
+                    algorithms["primal-usvp-drop"] = est.partial(est.drop_and_solve, est.primal_usvp, postprocess=False, 
+                                                            decision=False, rotations=False, 
+                                                            reduction_cost_model=cost_model)
+                else: # TODO: can drop and solve yield worse results than standard decode?
+                    algorithms["primal-usvp"] = est.partial(est.primal_usvp, 
+                                                            reduction_cost_model=cost_model)            
+            
+            if "decode" not in attack_configuration.skip:
+                if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
+                    algorithms["primal-decode-drop"] = est.partial(est.drop_and_solve, est.primal_decode, 
+                                                                    postprocess=False, decision=False, 
+                                                                    rotations=False, 
+                                                                    reduction_cost_model=cost_model)
+                else: # TODO: can drop and solve yield worse results than standard decode?
+                    algorithms["primal-decode"] = est.partial(est.primal_decode,   
+                                                                reduction_cost_model=cost_model)  
+            
+            if "dual" not in attack_configuration.skip:
+                if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
+                    # Try guessing secret entries via drop_and_solve
+                    algorithms["dual-scale-drop"] = est.partial(est.drop_and_solve, est.dual_scale, postprocess=True,
+                                                            rotations=False, use_lll=dual_use_lll, 
+                                                            reduction_cost_model=cost_model)
+
+                elif est.SDis.is_small(secret_distribution):
+                    algorithms["dual-scale"] = est.partial(est.dual_scale, use_lll=dual_use_lll,      
+                                                        reduction_cost_model=cost_model)
+                else:
+                    algorithms["dual"] = est.partial(est.dual, reduction_cost_model=cost_model)
+
+            if "coded-bkw" not in attack_configuration.skip:
+                algorithms["dual"] = est.bkw_coded
+
+            if "arora-gb" not in attack_configuration.skip:
+                if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
+                    algorithms["arora-gb-drop"] = partial(est.drop_and_solve, est.arora_gb,         
+                                                            reduction_cost_model=cost_model, 
+                                                            rotations=False)
+                elif est.SDis.is_small(secret_distribution):
+                    algorithms["arora-gb-switch-modulus"] = partial(est.switch_modulus, est.arora_gb,
+                                                                    reduction_cost_model=cost_model)
+                else:
+                        algorithms["arora-gb"] = partial(est.arora_gb, reduction_cost_model=cost_model)
+
+            for alg in algorithms:
+                algf = algorithms[alg]
+                try:
+                    start = time.time()
+                    cost = algf(n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                secret_distribution=secret_distribution, 
+                                success_probability=success_probability)
+                    duration = time.time() - start
+                    logger.info(f'Algorithm "{alg}" (took {duration:.3f} s): result={cost}')
                     if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = cost_model["name"]
-                        dropped = False; attack_name = "decode"
+                        best_cost = cost; cname = reduction_cost_model["name"]; attack_name = alg
                         if sec and round(log(cost["rop"], 2)) < sec:
                             is_secure = False; break
+                except Exception:
+                    logger.debug(traceback.format_exc())
 
-                    if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
-                        # Try guessing secret entries via drop_and_solve
-                        primaldecd = est.partial(est.drop_and_solve, est.primal_decode, postprocess=False, decision=False)
-                        cost = primaldecd(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                            secret_distribution=secret_distribution, 
-                                            success_probability=success_probability,
-                                            reduction_cost_model=reduction_cost_model, rotations=False)
-                        if cost["rop"] < best_cost["rop"]:
-                            best_cost = cost; cname = cost_model["name"]
-                            dropped = True; attack_name = "decode"
-                            if sec and round(log(cost["rop"], 2)) < sec:
-                                is_secure = False; break
-                
-                if "dual" not in attack_configuration.skip:
-                    if est.SDis.is_small(secret_distribution):
-                        cost = est.dual_scale(n=self.n, alpha=alpha, q=self.q, m=self.m, 
-                                                success_probability=success_probability,
-                                                secret_distribution=secret_distribution,
-                                                reduction_cost_model=reduction_cost_model, use_lll=dual_use_lll)
-                    else:
-                        cost = est.dual(n=self.n, alpha=alpha, q=self.q, m=self.m,
-                                        success_probability=success_probability,
-                                        secret_distribution=secret_distribution,
-                                        reduction_cost_model=reduction_cost_model)
-                    if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = cost_model["name"]
-                        dropped = False; attack_name = "dual"
-                        if sec and round(log(cost["rop"], 2)) < sec:
-                            is_secure = False; break
+        if best_cost["rop"] == oo:
+            # no estimate successful
+            result = OrderedDict([("error", "All estimates failed")])
+            is_secure = False
 
-                    if est.SDis.is_ternary(secret_distribution):
-                        # Try guessing secret entries via drop_and_solve
-                        duald = est.partial(est.drop_and_solve, est.dual_scale, postprocess=True)
-                        cost = duald(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                        secret_distribution=secret_distribution,
-                                        success_probability=success_probability,
-                                        reduction_cost_model=reduction_cost_model, 
-                                        rotations=False, use_lll=dual_use_lll)
-                        if cost["rop"] < best_cost["rop"]:
-                            best_cost = cost; cname = cost_model["name"]
-                            dropped = True; attack_name = "dual"
-                            if sec and round(log(cost["rop"], 2)) < sec:
-                                is_secure = False; break
-
-                if "coded-bkw" not in attack_configuration.skip:
-                    cost = est.bkw_coded(n=self.n, alpha=alpha, q=self.q, m=self.m, 
-                                            secret_distribution=secret_distribution, 
-                                            success_probability=success_probability)
-                    if cost < best_cost:
-                        best_cost = cost; cname = cost_model["name"]
-                        dropped = False; attack_name = "coded-bkw"
-                        if sec and round(log(cost["rop"], 2)) < sec:
-                            is_secure = False; break
-
-                if "arora_gb" not in attack_configuration.skip:
-                    if est.SDis.is_small(secret_distribution):
-                        aroras = partial(est.switch_modulus, est.arora_gb)
-                        cost = aroras(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                        secret_distribution=secret_distribution,
-                                        success_probability=success_probability,
-                                        reduction_cost_model=reduction_cost_model)
-                    else:
-                        cost = est.arora_gb(n=self.n, alpha=alpha, q=self.q, m=self.m, 
-                                            secret_distribution=secret_distribution,
-                                            success_probability=success_probability,
-                                            reduction_cost_model=reduction_cost_model)
-                    if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = cost_model["name"]
-                        dropped = False; attack_name = "arora-gb"
-                        if sec and round(log(cost["rop"], 2)) < sec:
-                            is_secure = False; break
-
-                    if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
-                        arorad = partial(est.drop_and_solve, est.arora_gb)
-                        cost = arorad(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                        secret_distribution=secret_distribution,
-                                        success_probability=success_probability,
-                                        reduction_cost_model=reduction_cost_model, rotations=False)
-                        if cost["rop"] < best_cost["rop"]:
-                            best_cost = cost; cname = cost_model["name"]
-                            dropped = True; attack_name = "arora-gb"
-                            if sec and round(log(cost["rop"], 2)) < sec:
-                                is_secure = False; break
-            result = {
-                "attack": attack_name,
-                "cost_model": cname,
-                "dim":  int(cost["d"]),
-                "beta": int(cost["beta"]),
-                "rop":  int(round(log(cost["rop"], 2))),
-                "drop": dropped,
-                "inst": self,
-            }
-
-        except Exception as e:
-            result = {}
-            result["error"] = str(e) # TODO more info?
-            is_secure = False # TODO
-            if debug:
-                raise
-        
+        else:
+            result = OrderedDict([
+                ("attack", attack_name), 
+                ("cost_model", cname), 
+                ("dim", int(best_cost["d"])), 
+                ("beta", int(best_cost["beta"])), 
+                ("rop", int(round(log(best_cost["rop"], 2)))), 
+                ("inst", self)
+            ])
+            
+                    
         return Estimate_Res(is_secure, result)
         
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration() # use default config
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         # TODO
@@ -311,7 +259,7 @@ class MLWE(Base_Problem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False, debug=False) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False) -> Estimate_Res:
         r""" 
         Estimates cost of MLWE instance.
 
@@ -326,7 +274,6 @@ class MLWE(Base_Problem):
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
         :param use_reduction: specify if reduction to RLWE is used
-        :param debug: if `True`, an exception is passed, else result field of return value contains entry `"error"` with exception message
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """
@@ -343,16 +290,16 @@ class MLWE(Base_Problem):
                                 error_distribution=error_distribution_RLWE)
 
             return rlwe.estimate_cost(sec=sec, attack_configuration=attack_configuration,       
-                                        use_reduction=use_reduction, debug=debug)
+                                        use_reduction=use_reduction)
             
         else:
             lwe = LWE(n=self.n*self.d, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
-                        error_distribution=self.error_distribution, debug=debug)
-            return lwe.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=debug)
+                        error_distribution=self.error_distribution)
+            return lwe.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration() # default config
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         # TODO
@@ -371,7 +318,6 @@ class RLWE(Base_Problem):
         :param secret_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param error_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
-        :param debug: foward exceptions if set to `True`
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
@@ -387,29 +333,27 @@ class RLWE(Base_Problem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False, debug=False) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False) -> Estimate_Res:
         """ 
         Estimates cost of MLWE instance by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
         :param use_reduction: specify if reduction to RLWE is used
-        :param debug: if `True`, an exception is passed, else result field of return value contains entry `"error"` with exception message
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """
         lwe = LWE(n=self.n, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
-                    error_distribution=self.error_distribution, attack_configuration=attack_configuration, 
-                    debug=debug)
-        return lwe.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=debug)
+                    error_distribution=self.error_distribution)
+        return lwe.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration() # default config
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         # TODO
-        return "RLWE instance with parameters (n=" + str(self.n) + ", d=" + str(self.d) + ", q=" + str(self.q) \
+        return "RLWE instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) \
             + ", m=" + str(self.m) + ", secret_distribution=" + str(self.secret_distribution)  \
             + ", error_distribution=" + str(self.error_distribution) + ")"
 
@@ -535,7 +479,7 @@ class Statistical_Uniform_MLWE():
         :param m: number of samples (height of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
         :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
         """
-        if not d_2:
+        if d_2 is None:
             d_2 = self.find_d(q, n)
 
         # TODO: check prerequisites?
@@ -611,85 +555,93 @@ class SIS(Base_Problem):
         self.m = m
         self.bound = bound
     
-    def estimate_cost(self, attack_configuration, sec=None, debug=DEBUG) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None) -> Estimate_Res:
         """
         Estimates the cost of an attack on the SIS instance, lazy evaluation if `sec` is set.
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
-        :param debug: if `True`, an exception is passed, else result field of return value contains entry `"error"` with exception message
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """
         if not isinstance(attack_configuration, attacks.Attack_Configuration):
             raise ValueError("attack_configuration must be instance of Attack_Configuration")
 
-        cost_models = attacks.reduction_cost_models(attack_configuration) # TODO
+        cost_models = attack_configuration.reduction_cost_models() # TODO
 
         attack_name = ""
         is_secure = True  
         best_cost = {"rop": oo}
 
+        # TODO: refractor (see LWE) once more attacks have been added
         # TODO: run parallel?
-        try:
+        for reduction_cost_model in cost_models:
+            cost_model = reduction_cost_model["reduction_cost_model"]
+            logger.info("Cost model: " + reduction_cost_model["name"])
+
             if "lattice-reduction" not in attack_configuration.skip:
-                for cost_model in cost_models:
+                try:    
+                    start = time.time()
                     cost = attacks.SIS.lattice_reduction(n=self.n, q=self.q, m=self.m, bound=self.bound, 
-                                                            reduction_cost_model=cost_model["reduction_cost_model"])
+                                                            reduction_cost_model=cost_model)
+                    duration = time.time() - start
+                    logger.info(f'Algorithm "lattice-reduction" (took {duration:.3f} s): result={cost}')
                     if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = cost_model["name"]; attack_name = "lattice-reduction"
+                        best_cost = cost; cname = reduction_cost_model["name"]; attack_name = "lattice-reduction"
                         if sec and round(log(cost["rop"], 2)) < sec:
                             is_secure = False; break
+                except Exception:
+                    logger.debug(traceback.format_exc())
 
-            if "combinatorial" not in attack_configuration.skip:
+        if "combinatorial" not in attack_configuration.skip:
+            try:
+                start = time.time()
                 cost = attacks.SIS.combinatorial(n=self.n, q=self.q, m=self.m, bound=self.bound)
+                duration = time.time() - start
+                logger.info(f'Algorithm "combinatorial" (took {duration:.3f} s): result={cost}')
                 if cost["rop"] < best_cost["rop"]:
-                    best_cost = cost; cname = cost_model["name"]; attack_name = "lattice-reduction"
+                    best_cost = cost; attack_name = "combinatorial"
                     if sec and round(log(cost["rop"], 2)) < sec:
                         is_secure = False
-            
-            # TODO: result as OrderedDict?
-            if "error" in cost.keys():
-                # TODO: error handling, intractable "delta_0 < 1" or "trivial"
-                result = {
-                    "attack": attack_name,
-                    "cost_model": cname,
-                    "rop":  int(round(log(cost["rop"], 2))),
-                    "error": cost["error"],
-                    "inst": self, # TODO return instance instead of string?
-                }
-            
+            except Exception:
+                logger.debug(traceback.format_exc())
+        
+        # TODO: result as OrderedDict?
+        if "error" in best_cost: 
+            # TODO: does combinatorial
+            # TODO: error handling, intractable "delta_0 < 1" or "trivial"
+            result = OrderedDict([
+                ("attack", attack_name), 
+                ("error", best_cost["error"]),
+                ("inst", self)
+            ])
+
+        elif best_cost["rop"] == oo: # all estimates failed
+            result = OrderedDict(["error", "All estimates failed"])
+        
+        else:
+            if attack_name == "lattice-reduction":
+                result = OrderedDict([
+                    ("attack", attack_name), 
+                    ("cost_model", cname), 
+                    ("dim", int(best_cost["dim"])), 
+                    ("beta", int(best_cost["beta"])), 
+                    ("rop", int(round(log(best_cost["rop"], 2)))), 
+                    ("inst", self)
+                ])
             else:
-                if attack_name == "lattice-reduction":
-                    result = {
-                        "attack": attack_name,
-                        "cost_model": cname,
-                        "dim":  int(cost["d"]),
-                        "beta": int(cost["beta"]),
-                        "rop":  int(round(log(cost["rop"], 2))),
-                        "inst": self,
-                    }
-                else:
-                    result = {
-                        "attack": attack_name,
-                        "column_groups":  "2^" + cost["k"],
-                        "rop":  int(round(log(cost["rop"], 2))),
-                        "inst": self,
-                    }
-        
-        except Exception as e:
-            result = {}
-            result["error"] = str(e) # TODO more info?
-            is_secure = False # TODO
-            if debug:
-                raise
-        
+                result = OrderedDict([
+                    ("attack", attack_name), 
+                    ("column_groups", "2^" + str(best_cost["k"])),
+                    ("rop", int(round(log(best_cost["rop"], 2)))), 
+                    ("inst", self)
+                ])
+
         return Estimate_Res(is_secure, result)
-        # TODO: test!
 
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration()
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         return "SIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound)  + ")"
@@ -715,7 +667,7 @@ class MSIS(Base_Problem):
         self.m = m
         self.bound = bound
     
-    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False, debug=False) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None, use_reduction=False) -> Estimate_Res:
         r""" 
         Estimates cost of MSIS instance.
 
@@ -732,7 +684,6 @@ class MSIS(Base_Problem):
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
         :param use_reduction: specify if reduction to RSIS is used
-        :param debug: foward exceptions if set to `True`
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """
@@ -753,16 +704,15 @@ class MSIS(Base_Problem):
 
             rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS)
             return rsis.estimate_cost(sec=sec, attack_configuration=attack_configuration,     
-                                        use_reduction=use_reduction, debug=debug) # TODO: use_reduction makes sense?
+                                        use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
         else:
-            sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound, 
-                        attack_configuration=attack_configuration, debug=debug)
-            return sis.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=debug)
+            sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound)
+            return sis.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __lt__(self, sec):
         attack_configuration = Attack_Configuration()
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         return "MSIS instance with parameters (n=" + str(self.n) + ", d=" + str(self.d) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound)  + ")"
@@ -787,27 +737,25 @@ class RSIS(Base_Problem):
         self.m = m
         self.bound = bound
 
-    def estimate_cost(self, attack_configuration, sec=None, debug=False) -> Estimate_Res:
+    def estimate_cost(self, attack_configuration, sec=None) -> Estimate_Res:
         r""" 
         Estimates cost of RSIS instance by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
         :param sec: optional required bit-security for lazy cost evaluation. If set, early termination once security requirement is violated.
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
-        :param debug: foward exceptions if set to `True`
 
         :returns: instance :class:`Estimate_Res`. If `sec=None`, :attr:`Estimate_Res.is_secure` is `True` by default and can be ignored.
         """
-        sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound, attack_configuration=attack_configuration, 
-                    debug=debug)
-        return sis.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=debug)
+        sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound)
+        return sis.estimate_cost(sec=sec, attack_configuration=attack_configuration)
     
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration()
-        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration, debug=DEBUG)
+        return self.estimate_cost(sec=sec, attack_configuration=attack_configuration)
 
     def __str__(self):
         # TODO
-        return "RSIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound)  + ")"
+        return "RSIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m.n()) + ", bound=" + str(self.bound.value)  + ")"
 
 
 class Statistical_MSIS():
@@ -848,17 +796,16 @@ class Statistical_MSIS():
     def __init__(self, sec, n, d, q, m):
         """
         :param sec: required bit security of MSIS instance
-        :param q: modulus
         :param n: degree of polynomial
-        :param m: number of samples (or width of matrix)
-        :param beta: upper bound on norm of solution
         :param d: rank of module (or height of matrix)
+        :param q: modulus
+        :param m: number of samples (or width of matrix)
         """
-        # self check paramters
+        # TODO: check paramters
         max_beta = RR(2**(-sec / ((m + d) * n)  - 1) * q**(m / (m + d)) * sqrt((m + d) * n / (2 * pi * e)))
+        # convert beta bound to Gaussian width parameter
         self.max_s = max_beta * sqrt(pi / ((sec + 1) * log(2.0)))
         
-        # greatest bound such that estimate of gauss is max beta...
         self.max_sigma =  est.stddevf(self.max_s)
         self.max_beta = norm.Lp(max_beta, 2, n * d) # TODO: is the dimension correct?
         self.sec = sec
@@ -869,3 +816,40 @@ class Statistical_MSIS():
     
     def get_secret_distribution_max_width(self):
         return Gaussian_sigma(sigma=self.max_sigma, q=self.q, componentwise=False, sec=self.sec) # TODO check, specify dimensions? or not needed?
+
+
+class Statistical_RSIS(Statistical_MSIS):
+    r"""
+    Statistically secure RSIS according to :cite:`DOTT21`, section 4.1.
+    
+    For details, see :class:`Statistical_MSIS` with module dimension :math:`d=1`.
+
+    :ivar max_sigma: standard deviation :math:`\sigma`
+    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    """
+    def __init__(self, sec, n, q, m):
+        """
+        :param sec: required bit security of MSIS instance
+        :param n: degree of polynomial
+        :param q: modulus
+        :param m: number of samples (or width of matrix)
+        """
+        super().__init__(sec=sec, n=n, d=1, q=q, m=m) # TODO: check Gaussian
+
+class Statistical_SIS(Statistical_MSIS):
+    r"""
+    Statistically secure RSIS according to :cite:`DOTT21`, section 4.1.
+    
+    For details, see :class:`Statistical_MSIS` with degree of polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e. :math:`d=n`).
+
+    :ivar max_sigma: standard deviation :math:`\sigma`
+    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    """
+    def __init__(self, sec, n, q, m):
+        """
+        :param sec: required bit security of MSIS instance
+        :param n: secret dimension
+        :param q: modulus
+        :param m: number of samples (or width of matrix)
+        """
+        super().__init__(sec=sec, n=1, d=n, q=q, m=m)

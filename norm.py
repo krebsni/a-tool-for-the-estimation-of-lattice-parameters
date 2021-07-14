@@ -74,17 +74,17 @@ class Lp(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
 
         if self.p == 1:
-            return Lp(self.value, 1, dimension)
+            return Lp(value=self.value, p=1, dimension=dimension)
         elif self.p == 2:
-            return Lp(self.value * sqrt(dimension), 1, dimension)
+            return Lp(value=self.value * sqrt(dimension), p=1, dimension=dimension)
         elif self.p == oo:
-            return Lp(self.value * dimension, 1, dimension)
+            return Lp(value=self.value * dimension, p=1, dimension=dimension)
         else:
             raise ValueError(f"L{self.p}-norm not supported")
 
@@ -97,17 +97,17 @@ class Lp(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
 
         if self.p == 1:
-            return Lp(self.value * sqrt(dimension), 2, dimension)
+            return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
         elif self.p == 2:
-            return Lp(self.value, 2, dimension)
+            return Lp(value=self.value, p=2, dimension=dimension)
         elif self.p == oo:
-            return Lp(self.value * sqrt(dimension), 2, dimension)
+            return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
         else:
             raise ValueError(f"L{self.p}-norm not supported")
 
@@ -120,19 +120,19 @@ class Lp(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
                 
         if self.p == 1:
-            return Lp(self.value, oo, dimension)
+            return Lp(value=self.value, p=oo, dimension=dimension)
         elif self.p == 2:
-            return Lp(self.value * sqrt(dimension), oo, dimension)
+            return Lp(value=self.value * sqrt(dimension), p=oo, dimension=dimension)
         elif self.p == oo:
-            return Lp(self.value, oo, dimension)
+            return Lp(value=self.value, p=oo, dimension=dimension)
         else:
-            raise ValueError(f"L{self.p}-norm not supported")
+            raise ValueError(f"L_{self.p}-norm not supported")
 
     def to_Coo(self, dimension=None):
         r"""
@@ -144,17 +144,17 @@ class Lp(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
                 
         if self.p == 1:
-            return Coo(self.value, dimension)
+            return Coo(value=self.value, dimension=dimension)
         elif self.p == 2:
-            return Coo(self.value * sqrt(dimension), dimension)
+            return Coo(value=self.value * sqrt(dimension), dimension=dimension)
         elif self.p == oo:
-            return Coo(self.value * dimension, dimension)
+            return Coo(value=self.value * dimension, dimension=dimension)
         else:
             raise ValueError(f"L{self.p}-norm not supported")
 
@@ -180,12 +180,12 @@ class Coo(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
                 
-        return Lp(self.value * self.dimension, 1, dimension)
+        return Lp(value=self.value * self.dimension, p=1, dimension=dimension)
 
     def to_L2(self, dimension):
         r"""
@@ -195,12 +195,12 @@ class Coo(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
                 
-        return Lp(self.value * sqrt(self.dimension), 2, dimension)
+        return Lp(value=self.value * sqrt(self.dimension), p=2, dimension=dimension)
 
     def to_Loo(self, dimension):
         r"""
@@ -210,12 +210,12 @@ class Coo(Base_Norm):
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
-        if not dimension:
+        if dimension is None:
             dimension = self.dimension
-            if not self.dimension:
+            if self.dimension is None:
                 raise ValueError("dimension must be specified as the object has not be initialized with dimension")
                 
-        return Lp(self.value, oo, dimension)
+        return Lp(value=self.value, p=oo, dimension=dimension)
     
     def to_Coo(self, dimension):
         """

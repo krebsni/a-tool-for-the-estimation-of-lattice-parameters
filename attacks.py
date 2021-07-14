@@ -5,17 +5,22 @@ TODO: documentation
 try:
     import sys
     import os
+    import logging 
     import sage.all
     from sage.functions.log import log
     from sage.functions.other import ceil, sqrt
     from sage.rings.all import QQ, RR
     from sage.symbolic.all import pi
-    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from estimator import estimator as est
+    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
     from cost_asymptotics import BKZ_COST_ASYMPTOTICS
     oo = est.PlusInfinity()
 except:
     pass
+
+## Logging ##
+logger = logging.getLogger(__name__)
+
 
 class Attack_Configuration():
     """
@@ -42,6 +47,7 @@ class Attack_Configuration():
         self.enumeration = enumeration
         self.skip = skip # TODO: check docstring once all attacks have been implemented
         self.dual_use_lll = dual_use_lll
+        logger.info("Attack configuration:" + str(self))
 
 
     def reduction_cost_models(self):
@@ -51,7 +57,9 @@ class Attack_Configuration():
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         """
 
+        
         bkz_cost_models = BKZ_COST_ASYMPTOTICS
+        return [c for c in bkz_cost_models if c["name"] == "Core‑Sieve"] # TODO: remove, just for test purposes
         if self.quantum and not self.classical:
             bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
         elif self.classical and not self.quantum:
@@ -62,6 +70,9 @@ class Attack_Configuration():
             bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
         return bkz_cost_models
         # TODO: other cost models?
+
+    def __str__(self) -> str:
+        return "Cost schemes: [" + ["", "classical "][self.classical] + ["", "quantum "][self.quantum] + ["", " sieving"][self.sieving] + ["", "enumeration"][self.enumeration] + "]" + " Skip list: " + str(self.skip)
 
 
 class SIS:
@@ -93,7 +104,8 @@ class SIS:
         :param q: modulus
         :param bound: bound of solution, must be instance of :class:`Norm.Base_norm` 
         """
-        beta = bound.to_L2(n) # we need L2 norm TODO: check
+        beta = bound.to_L2(n).value # we need L2 norm TODO: check
+        logger.debug("b: " + str(beta) + ", q: " + str(q))
         if 1 < beta < q: # Condition is not a requirement for [RS10] but we would divide by log(beta) which is <= 0
             # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
 
@@ -114,7 +126,7 @@ class SIS:
             log_delta_0 = log(delta_0, 2)
 
             if delta_0 < 1: # intractable
-                ret = est.Cost([("rop", oo), ("error", "delta_0 < 1")]) # TODO: what to return?
+                return {"rop": oo, "error": "delta_0 < 1"} # TODO: what to return?
 
             else: # standard case
                 k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
@@ -122,12 +134,11 @@ class SIS:
 
                 # TODO: is that all we need?
                 cost = reduction_cost_model(k, d, B) 
-                ret = est.Cost([("rop", cost), ("dim", d), ("beta", k)]) # dim is lattice dimension, beta is block size
+                return {"rop": cost, "dim": d, "beta": k} # dim is lattice dimension, beta is block size
 
         else: # not a hard problem, trivial solution exists
-            ret = est.Cost([("rop", 1), ("error", "trivial")]) # TODO
+            return {"rop": 1,"error": "trivial"} # TODO
             
-        return ret
 
     def combinatorial(q, n, m, bound, reduction_cost_model=None):
         r""" 
@@ -148,7 +159,7 @@ class SIS:
         :param q: modulus
         :param bound: bound of solution, must be instance of :class:`Norm.Base_norm`
         """
-        beta = bound.to_Loo(n) # we need Loo norm
+        beta = bound.to_Loo(n).value # we need Loo norm
         if beta < q:
             # find optimal k
             k = 1
@@ -168,12 +179,12 @@ class SIS:
             k = closest_k
 
             # cost of creating initial lists
-            L = (2 * beta + 1)**(m / 2**k)
+            L = RR((2 * beta + 1)**(m / 2**k))
             list_element_cost = log(q, 2) * n
             lists = (2 ** k) * L
             cost = lists * list_element_cost
 
-            return est.Cost([("rop", cost), ("k", k)]) # TODO other information?
+            return {"rop": cost.n(), "k": k} # TODO other information?
 
         else: # not a hard problem, trivial solution exists
-            ret = est.Cost([("rop", 1), ("error", "trivial")]) # TODO
+            return {"rop": 1, "error": "trivial"} # TODO

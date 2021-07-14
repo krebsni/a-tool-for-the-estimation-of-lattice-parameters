@@ -2,37 +2,50 @@
 
 import sys
 import os
+import logging
 from attacks import Attack_Configuration
 import param_search, distributions, norm, problem
-sys.path.append(os.path.dirname(__file__) + "/estimate_all")
 from estimator import estimator as est
 import sage.all 
 from sage.rings.all import QQ
+from sage.functions.log import exp, log
+from sage.functions.other import ceil, sqrt, floor, binomial
 
+logger = logging.getLogger(__name__)
 sec = param_search.SECURITY # can be any value, also used in Gaussian to bound trafo and statistically secure variants
-DEBUG = True
 
 def estimation_example():
+    sec = 350
+    # Example: KCL‑RLWE
     problem.statistical_sec = sec
-    n = 128
-    q = param_search.make_prime(n=2^64, lbound=2^63)
-    m = 256
-    alpha = est.alphaf(2.0*q, q, sigma_is_stddev=True) # TODO
-    sec_dis = distributions.Gaussian_alpha(alpha=alpha, q=q, sec=sec)
-    err_dis = sec_dis
-    config = Attack_Configuration()
-    lwe = problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
+    n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
+    err_dis = distributions.Gaussian_sigma(sigma=stddev, q=q, componentwise=True, sec=sec)
+    sec_dis = err_dis # "normal"
+    config = Attack_Configuration(quantum=False, enumeration=False, skip=["decode", "dual"]) # decode and dual take too long for testing purposes...
+    lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
+    
+    # estimates
+    print("-----------------------------")
+    print("LWE Estimates")
+    result = param_search.estimate(parameter_problem=[lwe], attack_configuration=config)
+    print(result)
+    result = param_search.is_secure(parameter_problem=[lwe], sec=350, attack_configuration=config)
+    print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
 
-    if param_search.is_secure(parameter_problem=[lwe], sec=sec, attack_configuration=config, debug=DEBUG):
-        pass # do things
-    
-    # or maybe
-    if param_search.estimate(lwe) < sec:
-        pass # not secure
-    else:
-        pass # secure
-    
-    # same for sis, ring-lwe, ring-sis, module-lwe, module-sis
+
+    # Example: SIS
+    print("-----------------------------")
+    print("SIS Estimates")
+    q = param_search.make_prime(2**(2*10+1), lbound=2**(2*10))
+    m = n * log(q, 2)
+    beta = err_dis.to_Loo(dimension=n) # componentwise beta bound (convert from Gaussian)
+    sis = problem.RSIS(n=n, q=q, m=m, bound=beta)
+    # estimates
+    result = param_search.estimate(parameter_problem=[sis], attack_configuration=config)
+    print(result)
+    result = param_search.is_secure(parameter_problem=[sis], sec=350, attack_configuration=config)
+    print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
+
 
 def BGV_example():
     attack_configuration = Attack_Configuration()
