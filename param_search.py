@@ -107,7 +107,7 @@ def is_secure(parameter_problem : Iterator[Base_Problem], sec, attack_configurat
         i += 1
         logger.info("Estimating cost of: " + str(problem_instance) + "...")
         res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration)
-        if "error" in res.results.keys():
+        if "error" in res.results:
             print(res.results["error"]) # TODO error handling
         elif best_res.results["rop"] > res.results["rop"]:
             best_res = res
@@ -127,7 +127,7 @@ def estimate(parameter_problem : Iterator[Base_Problem], attack_configuration : 
     for problem_instance in parameter_problem: 
         logger.info("Estimating cost of: " + str(problem_instance))
         res = problem_instance.estimate_cost(attack_configuration=attack_configuration)
-        if "error" in res.results.keys():
+        if "error" in res.results:
             print(res.results["error"]) # TODO error handling
         elif best_result["rop"] > res.results["rop"]:
             best_result = res.results    

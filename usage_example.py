@@ -21,7 +21,7 @@ def estimation_example():
     n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
     err_dis = distributions.Gaussian_sigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
-    config = Attack_Configuration(quantum=False, enumeration=False, skip=["decode", "dual"]) # decode and dual take too long for testing purposes...
+    config = Attack_Configuration(quantum=False, enumeration=False, skip=["decode", "dual"], multiprocessing=False) # decode and dual take too long for testing purposes...
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates

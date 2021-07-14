@@ -27,7 +27,7 @@ class Attack_Configuration():
     Configuration of the attack vector (including cost models and algorithms used).
     """
 
-    def __init__(self, classical=True, quantum=True, sieving=True, enumeration=True, skip=["mitm", "arora-gb", "coded-bkw"], dual_use_lll=True):
+    def __init__(self, classical=True, quantum=True, sieving=True, enumeration=True, skip=["mitm", "arora-gb", "coded-bkw"], dual_use_lll=True, multiprocessing=False):
         """ 
         :param classical: use classical cost_models, `True` by default (at least one of classical/quantum must be `True`)
         :param quantum: use quantum quantum, `True` by default 
@@ -47,6 +47,7 @@ class Attack_Configuration():
         self.enumeration = enumeration
         self.skip = skip # TODO: check docstring once all attacks have been implemented
         self.dual_use_lll = dual_use_lll
+        self.multiprocessing = multiprocessing
         logger.info("Attack configuration:" + str(self))
 
 

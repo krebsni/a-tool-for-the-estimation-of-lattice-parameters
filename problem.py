@@ -14,7 +14,9 @@ try: # sage-related imports do not work with sphinx for documentation
     import os
     import logging
     import traceback
-    from multiprocessing import Value
+    import multiprocessing as mp
+    from concurrent.futures import ThreadPoolExecutor
+    from queue import Empty
     from attacks import Attack_Configuration
     from distributions import Distribution, Gaussian_s, Gaussian_sigma
     from functools import partial
@@ -53,6 +55,62 @@ class Estimate_Res():
 
     def __bool__(self):
         return self.is_secure
+
+def algorithms_executor(cname, algorithms, sec, problem_instance, res_queue=None):
+    """TODO
+
+    Args:
+        cname: Cost model name
+        algorithms: Dict like {"name_alg": algf, ...}
+        sec ([type]): [description]
+        problem_instance ([type]): [description]
+        res_queue ([type]): [description]
+    """
+    best_cost = OrderedDict([("rop", oo), ("error", "All estimates failed"), ("inst", problem_instance)])
+    is_secure = True
+    for alg in algorithms:
+        algf = algorithms[alg]
+        try:
+            start = time.time()
+            cost = algf()
+            duration = time.time() - start
+            logger.info(f'Algorithm "{alg}" (took {duration:.3f} s): cost_model="{cname}", result={cost}')
+            if cost["rop"] < best_cost["rop"]:
+                best_cost = cost; best_cname = cname; attack_name = alg
+                if sec and round(log(cost["rop"], 2)) < sec:
+                    is_secure = False; break
+        except Exception:
+            logger.debug(traceback.format_exc())
+
+    if not (best_cost["rop"] == oo and "error" in best_cost):
+        is_secure = False
+        result = best_cost
+    else:
+        # TODO: check res dict or maybe just use Cost dict in estimator
+        result = OrderedDict([
+            ("attack", attack_name), 
+            ("cost_model", best_cname), 
+            ("inst", problem_instance),
+            ("rop", int(round(log(best_cost["rop"], 2))))
+        ])
+        if "error" in best_cost:
+            result["error"] = int(best_cost["error"])
+        if "d" in best_cost:
+            result["dim"] = int(best_cost["d"])
+        if "dim" in best_cost:
+            result["dim"] = int(best_cost["dim"])
+        if "beta" in best_cost:
+            result["beta"] = int(best_cost["beta"])
+        if "column_groups" in best_cost:
+            result["column_groups"] = "2^" + str(best_cost["k"]) 
+        
+    res = Estimate_Res(is_secure=is_secure, results=result)
+    if res_queue is None:
+        # no multiprocessing
+        return res
+    else:
+        res_queue.put(res)
+
 
 class Base_Problem(ABC):
     @abstractmethod
@@ -120,109 +178,169 @@ class LWE(Base_Problem):
         cost_models = attack_configuration.reduction_cost_models()
         dual_use_lll = attack_configuration.dual_use_lll 
         
-        cname = ""
-        attack_name = ""
-        is_secure = True  
-        dropped = False
-        best_cost = {"rop": oo}
-
         # TODO: parallel execution? perhaps split not by cost models but algorithms
         # TODO: run in parallel? same in Problem.SIS.estimate_cost()
         #   test first.. one might be quite slow => waiting takes too long. Find a way of stopping the one that runs longer?
         #   TODO: lazy parameter => if true extra object for running when compare operator is applied... only run when needed, otherwise no early termination... 
-        # TODO: sec parameter to gaussian bound trafo... 
-        # TODO: add logging and statistics for runtime?
+
+        # create dict of {"alg1": {"cost_model1": alg1}, ...}
+        # two variants possible: one is to split by cost model, the other to split by algorithm
+        # in case early termination is applicable, split by algorithm would probably be better
+        # else split by cost model has better load balancing
+        # TODO: how consistent are the runtimes of the various algorithms? If the order is always same, easy to just sort according to runtime...
+        
+        algorithms = {}
         for reduction_cost_model in cost_models:
             cost_model = reduction_cost_model["reduction_cost_model"]
             success_probability = reduction_cost_model["success_probability"]
-            logger.info("Cost model: " + reduction_cost_model["name"])
-            # TODO: refractor
+            cname = reduction_cost_model["name"]
+            algorithms[cname] = {}
+
             # Estimate attacks. Similar to estimate_lwe function in estimator.py
-            algorithms = OrderedDict()
-            
-            if "mitm" not in attack_configuration.skip:
-                algorithms["mitm"] = est.mitm
-                
             if "usvp" not in attack_configuration.skip:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
                     # Try guessing secret entries via drop_and_solve
-                    algorithms["primal-usvp-drop"] = est.partial(est.drop_and_solve, est.primal_usvp, postprocess=False, 
-                                                            decision=False, rotations=False, 
-                                                            reduction_cost_model=cost_model)
+                    algorithms[cname]["primal-usvp-drop"] = est.partial(est.drop_and_solve, est.primal_usvp, 
+                                                                        postprocess=False, 
+                                                                        decision=False, rotations=False, 
+                                                                        reduction_cost_model=cost_model, n=self.n, 
+                                                                        alpha=alpha, q=self.q, m=self.m,  
+                                                                        secret_distribution=secret_distribution, 
+                                                                        success_probability=success_probability)
                 else: # TODO: can drop and solve yield worse results than standard decode?
-                    algorithms["primal-usvp"] = est.partial(est.primal_usvp, 
-                                                            reduction_cost_model=cost_model)            
+                    algorithms[cname]["primal-usvp"] = est.partial(est.primal_usvp, 
+                                                            reduction_cost_model=cost_model, n=self.n, 
+                                                            alpha=alpha, q=self.q, m=self.m,
+                                                            secret_distribution=secret_distribution, 
+                                                            success_probability=success_probability)            
             
             if "decode" not in attack_configuration.skip:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
-                    algorithms["primal-decode-drop"] = est.partial(est.drop_and_solve, est.primal_decode, 
+                    algorithms[cname]["primal-decode-drop"] = est.partial(est.drop_and_solve, est.primal_decode, 
                                                                     postprocess=False, decision=False, 
                                                                     rotations=False, 
-                                                                    reduction_cost_model=cost_model)
+                                                                    reduction_cost_model=cost_model, n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                                    secret_distribution=secret_distribution, 
+                                                                    success_probability=success_probability)
                 else: # TODO: can drop and solve yield worse results than standard decode?
-                    algorithms["primal-decode"] = est.partial(est.primal_decode,   
+                    algorithms[cname]["primal-decode"] = est.partial(est.primal_decode,   
                                                                 reduction_cost_model=cost_model)  
             
             if "dual" not in attack_configuration.skip:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
                     # Try guessing secret entries via drop_and_solve
-                    algorithms["dual-scale-drop"] = est.partial(est.drop_and_solve, est.dual_scale, postprocess=True,
-                                                            rotations=False, use_lll=dual_use_lll, 
-                                                            reduction_cost_model=cost_model)
+                    algorithms[cname]["dual-scale-drop"] = est.partial(est.drop_and_solve, est.dual_scale, postprocess=True,
+                                                                        rotations=False, use_lll=dual_use_lll, 
+                                                                        reduction_cost_model=cost_model, n=self.n, 
+                                                                        alpha=alpha, q=self.q, m=self.m,  
+                                                                        secret_distribution=secret_distribution, 
+                                                                        success_probability=success_probability)
 
                 elif est.SDis.is_small(secret_distribution):
-                    algorithms["dual-scale"] = est.partial(est.dual_scale, use_lll=dual_use_lll,      
-                                                        reduction_cost_model=cost_model)
+                    algorithms[cname]["dual-scale"] = est.partial(est.dual_scale, use_lll=dual_use_lll,      
+                                                                    reduction_cost_model=cost_model, n=self.n, alpha=alpha, 
+                                                                    q=self.q, m=self.m,  
+                                                                    secret_distribution=secret_distribution, 
+                                                                    success_probability=success_probability)
                 else:
-                    algorithms["dual"] = est.partial(est.dual, reduction_cost_model=cost_model)
-
-            if "coded-bkw" not in attack_configuration.skip:
-                algorithms["dual"] = est.bkw_coded
+                    algorithms[cname]["dual"] = est.partial(est.dual, reduction_cost_model=cost_model)
 
             if "arora-gb" not in attack_configuration.skip:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
-                    algorithms["arora-gb-drop"] = partial(est.drop_and_solve, est.arora_gb,         
-                                                            reduction_cost_model=cost_model, 
-                                                            rotations=False)
+                    algorithms[cname]["arora-gb-drop"] = partial(est.drop_and_solve, est.arora_gb,         
+                                                                    reduction_cost_model=cost_model, rotations=False, 
+                                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                                    secret_distribution=secret_distribution, 
+                                                                    success_probability=success_probability)
                 elif est.SDis.is_small(secret_distribution):
-                    algorithms["arora-gb-switch-modulus"] = partial(est.switch_modulus, est.arora_gb,
-                                                                    reduction_cost_model=cost_model)
+                    algorithms[cname]["arora-gb-switch-modulus"] = partial(est.switch_modulus, est.arora_gb,
+                                                                            reduction_cost_model=cost_model, n=self.n, 
+                                                                            alpha=alpha, q=self.q, m=self.m,  
+                                                                            secret_distribution=secret_distribution, 
+                                                                            success_probability=success_probability)
                 else:
-                        algorithms["arora-gb"] = partial(est.arora_gb, reduction_cost_model=cost_model)
 
-            for alg in algorithms:
-                algf = algorithms[alg]
-                try:
-                    start = time.time()
-                    cost = algf(n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                secret_distribution=secret_distribution, 
-                                success_probability=success_probability)
-                    duration = time.time() - start
-                    logger.info(f'Algorithm "{alg}" (took {duration:.3f} s): result={cost}')
-                    if cost["rop"] < best_cost["rop"]:
-                        best_cost = cost; cname = reduction_cost_model["name"]; attack_name = alg
-                        if sec and round(log(cost["rop"], 2)) < sec:
-                            is_secure = False; break
-                except Exception:
-                    logger.debug(traceback.format_exc())
+                    algorithms[cname]["arora-gb"] = partial(est.arora_gb, reduction_cost_model=cost_model, n=self.n, 
+                                                            alpha=alpha, q=self.q, m=self.m,  
+                                                            secret_distribution=secret_distribution, 
+                                                            success_probability=success_probability)
 
-        if best_cost["rop"] == oo:
-            # no estimate successful
-            result = OrderedDict([("error", "All estimates failed")])
-            is_secure = False
+        # attacks without reduction cost model
+        if "mitm" not in attack_configuration.skip:
+            try:
+                algorithms["None"]
+            except KeyError:
+                algorithms["None"] = {}
+            algorithms["None"]["mitm"] = partial(est.mitm, n=self.n, 
+                                                    alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability)
+            
+        if "coded-bkw" not in attack_configuration.skip:
+            try:
+                algorithms["None"]
+            except KeyError:
+                algorithms["None"] = {}
+            algorithms["None"]["dual"] = partial(est.bkw_coded, n=self.n, 
+                                                    alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability)
+
+        if attack_configuration.multiprocessing:
+            # execute estimation per cost models on separate processors
+            NUM_CPUS = mp.cpu_count()
+            tp = ThreadPoolExecutor(NUM_CPUS)
+            termination_queue = mp.Queue()
+            data = [(cname, algorithms[cname], sec, self, termination_queue) for cname in algorithms]
+            best_cost = Estimate_Res(is_secure=False, results={"rop": oo})
+            for res in tp.map(algorithms_executor, data):
+                if res.results["rop"] < best_cost.results["rop"]:
+                    best_cost = res
+            return best_cost
 
         else:
-            result = OrderedDict([
-                ("attack", attack_name), 
-                ("cost_model", cname), 
-                ("dim", int(best_cost["d"])), 
-                ("beta", int(best_cost["beta"])), 
-                ("rop", int(round(log(best_cost["rop"], 2)))), 
-                ("inst", self)
-            ])
-            
+            # best_cname = ""
+            # attack_name = ""
+            # is_secure = True  
+            # best_cost = {"rop": oo}
+            # for cname in algorithms:
+            #     for alg in algorithms[cname]: # TODO if changed also change code in algf_executor, or just use algf here without wrapper?
+            #         algf = algorithms[cname][alg]
+            #         try:
+            #             start = time.time()
+            #             cost = algf()
+            #             duration = time.time() - start
+            #             logger.info(f'Algorithm "{alg}" (took {duration:.3f} s): cost_model="{cname}", result={cost}')
+            #             if cost["rop"] < best_cost["rop"]:
+            #                 best_cost = cost; best_cname = cname; attack_name = alg
+            #                 if sec and round(log(cost["rop"], 2)) < sec:
+            #                     is_secure = False; break
+            #         except Exception:
+            #             logger.debug(traceback.format_exc())
+
+            # if best_cost["rop"] == oo:
+            #     # no estimate successful
+            #     result = OrderedDict([("error", "All estimates failed"), ("inst", self)])
+            #     is_secure = False
+
+            # else:
+            #     result = OrderedDict([
+            #         ("attack", attack_name), 
+            #         ("cost_model", best_cname), 
+            #         ("dim", int(best_cost["d"])), 
+            #         ("beta", int(best_cost["beta"])), 
+            #         ("rop", int(round(log(best_cost["rop"], 2)))), 
+            #         ("inst", self)
+            #     ])
+
+            best_result = Estimate_Res(is_secure=True, results={"rop": oo, "error": "All estimates failed", "inst": self})
+            for cname in algorithms:
+                res = algorithms_executor(cname=cname, algorithms=algorithms[cname], sec=sec, problem_instance=self)
+                if "error" not in res.results:
+                    if res.results["rop"] < best_result.results["rop"]: # TODO: check what happens when comparing oo to oo
+                        best_result = res           
                     
-        return Estimate_Res(is_secure, result)
+        return best_result
         
     def __lt__(self, sec) -> Estimate_Res:
         attack_configuration = Attack_Configuration() # use default config
@@ -571,7 +689,7 @@ class SIS(Base_Problem):
 
         attack_name = ""
         is_secure = True  
-        best_cost = {"rop": oo}
+        best_cost = {"rop": oo, "error": "All estimates failed"}
 
         # TODO: refractor (see LWE) once more attacks have been added
         # TODO: run parallel?
@@ -606,18 +724,19 @@ class SIS(Base_Problem):
             except Exception:
                 logger.debug(traceback.format_exc())
         
-        # TODO: result as OrderedDict?
-        if "error" in best_cost: 
-            # TODO: does combinatorial
+        # TODO: result as OrderedDict? TODO change result
+        if "error" in best_cost and best_cost["error"] == "All estimates failed": 
+            if best_cost["rop"] == oo:
+                is_secure = False
+            # TODO: combinatorial
             # TODO: error handling, intractable "delta_0 < 1" or "trivial"
+        
+        elif "error" in best_cost:
             result = OrderedDict([
                 ("attack", attack_name), 
                 ("error", best_cost["error"]),
                 ("inst", self)
             ])
-
-        elif best_cost["rop"] == oo: # all estimates failed
-            result = OrderedDict(["error", "All estimates failed"])
         
         else:
             if attack_name == "lattice-reduction":
