@@ -30,7 +30,7 @@ def alpha_to_stddevf(alpha, q):
 
     :returns: :math:`\sigma = \alpha \cdot q / \sqrt{2\pi}` 
     """
-    return est.stddevf(alpha * q)    
+    return est.stddevf(alpha * q)
 
 
 class Distribution():

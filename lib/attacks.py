@@ -50,19 +50,9 @@ class Attack_Configuration():
         self.skip = skip # TODO: check docstring once all attacks have been implemented
         self.dual_use_lll = dual_use_lll
         self.multiprocessing = multiprocessing
-        logger.info("Attack configuration:" + str(self))
 
-
-    def reduction_cost_models(self):
-        """
-        Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
-
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
-        """
-
-        
         bkz_cost_models = estimate_all.cost_asymptotics.BKZ_COST_ASYMPTOTICS
-        return [c for c in bkz_cost_models if c["name"] == "Core‑Sieve"] # TODO: remove, just for test purposes
+        self.cost_models =  [c for c in bkz_cost_models if c["name"] == "Core‑Sieve"] # TODO: remove, just for test purposes
         if self.quantum and not self.classical:
             bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
         elif self.classical and not self.quantum:
@@ -71,8 +61,36 @@ class Attack_Configuration():
             bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["group"]]
         elif self.enumeration and not self.sieving:
             bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
-        return bkz_cost_models
-        # TODO: other cost models?
+        # self.cost_models = bkz_cost_models
+        logger.info("Attack configuration:" + str(self))
+    
+    def add_reduction_cost_models(self, cost_models):
+        """
+        Add custom reduction_cost_model. 
+
+        Example (taken from estimate_all/cost_asymptotics.py)::
+
+            cost_models = [
+                {
+                    "name": "Q‑Core‑Sieve",
+                    "reduction_cost_model": lambda beta, d, B: ZZ(2)**RR(0.265*beta),
+                    "success_probability": 0.99,
+                    "human_friendly": "2<sup>0.265 β</sup>",
+                    "group": "Quantum sieving",
+                },
+            ]
+        
+        :param cost_model: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
+        """
+        self.cost_models = self.cost_models.extend(cost_models) # check
+
+    def reduction_cost_models(self):
+        """
+        Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
+
+        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        """
+        return self.cost_models
 
     def __str__(self) -> str:
         return "Cost schemes: [" + ["", "classical "][self.classical] + ["", "quantum "][self.quantum] + ["", " sieving"][self.sieving] + ["", "enumeration"][self.enumeration] + "]" + " Skip list: " + str(self.skip)
