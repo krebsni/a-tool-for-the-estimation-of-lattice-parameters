@@ -3,9 +3,8 @@ TODO: documentation
 """
 
 try: # sage-related imports do not work with sphinx for documentation
-    from abc import ABC, abstractmethod
     from . import norm
-    from . import problem
+    from abc import ABC, abstractmethod
     import sys
     import os
     import sage.all
@@ -170,7 +169,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
             if self.sec:
                 sec = self.sec
             else:
-                sec = problem.statistical_sec # TODO: or exception?
+                raise ValueError("sec parameter must be specified")
 
         if dimension is None:
             if self.dimension is None:
