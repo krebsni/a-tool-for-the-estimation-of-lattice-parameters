@@ -19,45 +19,39 @@ AUTHOR:
 
 
 
-try: # sage-related imports do not work with sphinx for documentation
-    import logging
-    from typing import Generator, Iterator
-    from . import problem
-    from . import attacks
-    from . import norm 
-    from . import problem
-    from . import distributions
-    import os
-    import sys
-    import traceback
-    from attr.validators import instance_of
-    import fire
-    import sympy
-    import random
-    import time
-    from datetime import timedelta
-    import bisect
-    from collections import deque
-    import multiprocessing
-    from collections import OrderedDict
-    from functools import partial
-    from scipy.optimize import newton
-    from abc import ABC, abstractmethod
-    import sage.all 
-    from sage.functions.log import exp, log
-    from sage.functions.other import ceil, sqrt, floor, binomial
-    from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
-    from sage.symbolic.all import pi, e
-    from sage.arith.all import random_prime as make_prime
-    sys.path.append(os.path.dirname(__file__) + "/../estimate_all")
-    sys.path.append(os.path.dirname(__file__) + "/../estimator")
-    import cost_asymptotics
-    from estimator import estimator as est
-    
+import logging
+from typing import Generator, Iterator
+from . import problem
+from . import attacks
+from . import norm 
+from . import problem
+from . import distributions
+import os
+import sys
+import traceback
+from attr.validators import instance_of
+import fire
+import sympy
+import random
+import time
+from datetime import timedelta
+import bisect
+from collections import deque
+import multiprocessing
+from collections import OrderedDict
+from functools import partial
+from scipy.optimize import newton
+from abc import ABC, abstractmethod
+import sage.all 
+from sage.functions.log import exp, log
+from sage.functions.other import ceil, sqrt, floor, binomial
+from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
+from sage.symbolic.all import pi, e
+from sage.arith.all import random_prime as make_prime
+from estimate_all_schemes import cost_asymptotics
+from estimate_all_schemes import estimator as est
 
-    oo = est.PlusInfinity()
-except:
-    pass
+oo = est.PlusInfinity()
 
 ## Logging ##
 logger = logging.getLogger(__name__)

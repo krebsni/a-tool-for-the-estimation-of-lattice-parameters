@@ -1,18 +1,15 @@
 #!/usr/bin/env sage
-try:
-    import fire
-    import sys
-    import os
-    import logging
-    from lib.attacks import Attack_Configuration
-    import lib.param_search, lib.distributions, lib.norm, lib.problem
-    from estimator import estimator as est
-    import sage.all 
-    from sage.rings.all import QQ
-    from sage.functions.log import exp, log
-    from sage.functions.other import ceil, sqrt, floor, binomial
-except:
-    pass
+import fire
+import sys
+import os
+import logging
+from lib.attacks import Attack_Configuration
+import lib.param_search, lib.distributions, lib.norm, lib.problem
+import lib.estimate_all_schemes.estimator as est
+import sage.all 
+from sage.rings.all import QQ
+from sage.functions.log import exp, log
+from sage.functions.other import ceil, sqrt, floor, binomial
 
 logger = logging.getLogger(__name__)
 sec = lib.param_search.SECURITY # can be any value, also used in Gaussian to bound trafo and statistically secure variants

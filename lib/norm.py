@@ -17,18 +17,14 @@ And from Theorem 7 in :cite:`DPSZ12`:
 # TODO: norm transformations documentation
 """
 
-try: # sage-related imports do not work with sphinx for documentation
-    import sys
-    import os
-    from abc import ABC
-    from abc import abstractmethod
-    import sage.all
-    from sage.functions.other import sqrt
-    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
-    from estimator import estimator as est
-    oo = est.PlusInfinity()
-except:
-    pass
+import sys
+import os
+from abc import ABC
+from abc import abstractmethod
+import sage.all
+from sage.functions.other import sqrt
+import estimate_all_schemes.estimator as est
+oo = est.PlusInfinity()
 
 
 class Base_Norm(ABC):
@@ -165,7 +161,7 @@ class Coo(Base_Norm):
     """
 
     def __init__(self, value, dimension=None):
-        """
+        r"""
         :param value: value of :math:`C_\infty`-norm of a vector
         :param dimension: dimension of the vector
         """
@@ -218,7 +214,7 @@ class Coo(Base_Norm):
         return Lp(value=self.value, p=oo, dimension=dimension)
     
     def to_Coo(self, dimension):
-        """
+        r"""
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """

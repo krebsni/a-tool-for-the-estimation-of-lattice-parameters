@@ -2,22 +2,23 @@ r"""
 TODO: documentation
 """
 
-try: # sage-related imports do not work with sphinx for documentation
-    from abc import ABC, abstractmethod
-    from . import norm
-    from . import problem
-    import sys
-    import os
-    import sage.all
-    from sage.functions.log import log
-    from sage.functions.other import ceil, sqrt
-    from sage.rings.all import QQ, RR
-    from sage.symbolic.all import pi
-    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
-    from estimator import estimator as est
-    oo = est.PlusInfinity()
-except:
+#TODO: remove comment
+#  Moved here to prevent problems with circular imports with problem
+class Distribution():
     pass
+
+from abc import ABC, abstractmethod
+from . import norm
+from . import problem
+import sys
+import os
+import sage.all
+from sage.functions.log import log
+from sage.functions.other import ceil, sqrt
+from sage.rings.all import QQ, RR
+from sage.symbolic.all import pi
+from estimate_all_schemes.estimator import estimator as est
+oo = est.PlusInfinity()
 
 
 # Error Parameter Conversion (extension to functions in estimator.py)
@@ -33,9 +34,6 @@ def alpha_to_stddevf(alpha, q):
     return est.stddevf(alpha * q)
 
 
-class Distribution():
-    pass
-
 # TODO: if we change q (e.g. in reduction), what values change?
 # TODO: perhaps don't include 
 class Uniform(norm.Base_Norm, Distribution):
@@ -44,10 +42,10 @@ class Uniform(norm.Base_Norm, Distribution):
     """
 
     def __init__(self, a=None, b=None, h=None, uniform_mod_q=False, q=None):
-        """
+        r"""
         :param a: lower bound if b is specified, else take range [-a, a]
         :param b: upper bound, optional
-        :param h: exactly :math:`h` components are :math:`\in [a,…,b]∖\{0\}`, all other components are zero
+        :param h: exactly :math:`h` components are :math:`\in [a,…,b]\setminus\{0\}`, all other components are zero
         :param uniform_mod_q: uniform mod q, if True no other value must be specified, if True, q must be set
         :param q: only needed for uniform_mod_q
         """

@@ -3,35 +3,30 @@ TODO: documentation
 """
 
 
-try: # sage-related imports do not work with sphinx for documentation
-    from abc import ABC, abstractmethod
-    from collections import OrderedDict
-    import time
-    import sys
-    import os
-    import logging
-    import traceback
-    import multiprocessing as mp
-    from concurrent.futures import ThreadPoolExecutor
-    from queue import Empty
-    from . import distributions
-    from . import attacks
-    from . import norm
-    from . import attacks
-    from . import distributions
-    from . import param_search
-    from functools import partial
-    import sage.all 
-    from sage.functions.log import exp, log
-    from sage.functions.other import ceil, sqrt, floor, binomial
-    from sage.rings.all import QQ, RR
-    from sage.symbolic.all import pi, e
-    from sage.misc.functional import round
-    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
-    from estimator import estimator as est
-    oo = est.PlusInfinity()
-except:
-    pass
+from abc import ABC, abstractmethod
+from collections import OrderedDict
+import time
+import sys
+import os
+import logging
+import traceback
+import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor
+from queue import Empty
+from . import distributions
+from . import attacks
+from . import norm
+from . import attacks
+from . import distributions
+from functools import partial
+import sage.all 
+from sage.functions.log import exp, log
+from sage.functions.other import ceil, sqrt, floor, binomial
+from sage.rings.all import QQ, RR
+from sage.symbolic.all import pi, e
+from sage.misc.functional import round
+import estimate_all_schemes.estimator as est
+oo = est.PlusInfinity()
 
 
 ## Logging ##

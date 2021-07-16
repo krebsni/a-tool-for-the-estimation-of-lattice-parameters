@@ -2,21 +2,17 @@ r"""
 TODO: documentation
 """
 
-try:
-    import sys
-    import os
-    import logging 
-    import sage.all
-    from sage.functions.log import log
-    from sage.functions.other import ceil, sqrt
-    from sage.rings.all import QQ, RR
-    from sage.symbolic.all import pi
-    from estimator import estimator as est
-    sys.path.append(os.path.dirname(__file__) + "/estimate_all")
-    import estimate_all.cost_asymptotics
-    oo = est.PlusInfinity()
-except:
-    pass
+import sys
+import os
+import logging 
+import sage.all
+from sage.functions.log import log
+from sage.functions.other import ceil, sqrt
+from sage.rings.all import QQ, RR
+from sage.symbolic.all import pi
+from  estimate_all_schemes import cost_asymptotics
+import estimate_all_schemes.estimator as est
+oo = est.PlusInfinity()
 
 ## Logging ##
 logger = logging.getLogger(__name__)
@@ -51,7 +47,7 @@ class Attack_Configuration():
         self.dual_use_lll = dual_use_lll
         self.multiprocessing = multiprocessing
 
-        bkz_cost_models = estimate_all.cost_asymptotics.BKZ_COST_ASYMPTOTICS
+        bkz_cost_models = cost_asymptotics.BKZ_COST_ASYMPTOTICS
         self.cost_models =  [c for c in bkz_cost_models if c["name"] == "Core‑Sieve"] # TODO: remove, just for test purposes
         if self.quantum and not self.classical:
             bkz_cost_models = [c for c in bkz_cost_models if "Quantum" in c["group"]]
