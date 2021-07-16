@@ -7,11 +7,11 @@ try:
     import sys
     import os
     import logging
-    from lattice_parameter_estimation import attacks
-    from lattice_parameter_estimation import param_search
-    from lattice_parameter_estimation import distributions
-    from lattice_parameter_estimation import norm
-    from lattice_parameter_estimation import problem
+    from lib import attacks
+    from lib import param_search
+    from lib import distributions
+    from lib import norm
+    from lib import problem
     from estimator import estimator as est
     import sage.all 
     from sage.rings.all import QQ
