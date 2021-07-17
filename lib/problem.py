@@ -7,6 +7,7 @@ from . import attacks
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from typing import Iterator
 import time
 import sys
 import os

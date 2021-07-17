@@ -94,7 +94,7 @@ class Parameter_Set():
 def is_secure(parameter_problem : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
     i = 0; secure = True
     # TODO: possibly  run parallel
-    best_res = Estimate_Res(is_secure=False, results={"rop": oo}) # result with lowest sec
+    best_res = problem.Estimate_Res(is_secure=False, results={"rop": oo}) # result with lowest sec
     for problem_instance in parameter_problem: 
         i += 1
         logger.info("Estimating cost of: " + str(problem_instance) + "...")
