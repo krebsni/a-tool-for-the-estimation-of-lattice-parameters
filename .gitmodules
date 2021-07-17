@@ -1,6 +1,3 @@
-<<<<<<< HEAD
 [submodule "lib/estimate_all_schemes"]
 	path = lib/estimate_all_schemes
 	url = https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io.git
-=======
->>>>>>> ad38a3509346a46ae956f410ac270a3bf7281a29
