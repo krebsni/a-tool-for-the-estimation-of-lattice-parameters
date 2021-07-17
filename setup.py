@@ -20,7 +20,10 @@ estimator_init = "lib/estimate_all_schemes/estimator/__init__.py"
 # Existice of backup file used as indicator that fix happened
 if not os.path.exists(f"{estimator}.bak"):
     # prevent syntax errors from old python version
-    check_call(f"python -m lib2to3 -w {estimator}".split())
+    try:
+        check_call(f"python -m lib2to3 -w {estimator}".split())
+    except:
+        check_call(f"python3 -m lib2to3 -w {estimator}".split())
 
     # fix error with not found __round__ on sage's RR
     with open(estimator, "r") as f:
