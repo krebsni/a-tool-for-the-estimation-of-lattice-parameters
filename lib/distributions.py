@@ -2,14 +2,10 @@ r"""
 TODO: documentation
 """
 
-# #TODO: remove comment
-# #  Moved here to prevent problems with circular imports with problem
-# class Distribution():
-#     pass
+
 
 from abc import ABC, abstractmethod
 from . import norm
-from . import distributions
 import sys
 import os
 import sage.all
@@ -33,10 +29,12 @@ def alpha_to_stddevf(alpha, q):
     """
     return est.stddevf(alpha * q)
 
+class Distribution():
+    pass
 
 # TODO: if we change q (e.g. in reduction), what values change?
 # TODO: perhaps don't include 
-class Uniform(norm.Base_Norm, distributions.Distribution):
+class Uniform(norm.Base_Norm, Distribution):
     """ 
     TODO
     """
@@ -114,7 +112,7 @@ class Uniform(norm.Base_Norm, distributions.Distribution):
         return "Uniform [" + str(self._convert_for_lwe_estimator()) + "]" # TODO: perhaps change
 
 
-class Gaussian(norm.Base_Norm, ABC, distributions.Distribution):
+class Gaussian(norm.Base_Norm, ABC, Distribution):
     """ 
     TODO
     """
