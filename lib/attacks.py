@@ -25,14 +25,13 @@ class Attack_Configuration():
     # TODO: custom reduction_cost_function
     # TODO: used algorithms instead of skip list
 
-    def __init__(self, classical=True, quantum=True, sieving=True, enumeration=True, skip=["mitm", "arora-gb", "coded-bkw"], multiprocessing=False, dual_use_lll=True):
+    def __init__(self, classical=True, quantum=True, sieving=True, enumeration=True, skip=["mitm", "arora-gb", "coded-bkw"], multiprocessing=False):
         """ 
         :param classical: use classical cost_models, `True` by default (at least one of classical/quantum must be `True`)
         :param quantum: use quantum quantum, `True` by default 
         :param sieving: use sieving cost_models, `True` by default (at least one of sieving/enumeration must be `True`)
         :param enumeration: use enumeration cost_models, `True` by default
         :param skip: list containing algorithms to be skipped during cost estimate. For LWE and its variants, the list can contain "mitm", "usvp", "decode", "dual", "coded-bkw", "arora-gb". For SIS and its variants, the list can contain "combinatorial", "lattice-reduction". Note that if all algorithms are in list, no estimate is computed and the return cost will be :math:`\infty`. 
-        :param dual_use_lll: optional, if True LLL is used for the dual attack. 
         """
         if not classical and not quantum:
             raise ValueError("At least one of classical or quantum must be True")
@@ -44,7 +43,6 @@ class Attack_Configuration():
         self.sieving = sieving
         self.enumeration = enumeration
         self.skip = skip # TODO: check docstring once all attacks have been implemented
-        self.dual_use_lll = dual_use_lll
         self.multiprocessing = multiprocessing
 
         bkz_cost_models = cost_asymptotics.BKZ_COST_ASYMPTOTICS
@@ -151,7 +149,7 @@ class SIS:
 
                 # TODO: is that all we need?
                 cost = reduction_cost_model(k, d, B) 
-                return {"rop": cost, "dim": d, "beta": k} # dim is lattice dimension, beta is block size
+                return {"rop": cost, "d": d, "beta": k} # d is lattice dimension, beta is block size
 
         else: # not a hard problem, trivial solution exists
             return {"rop": 1,"error": "trivial"} # TODO
@@ -201,7 +199,7 @@ class SIS:
             lists = (2 ** k) * L
             cost = lists * list_element_cost
 
-            return {"rop": cost.n(), "k": k} # TODO other information?
+            return {"rop": cost.n(), "k": "2^" + str(k)} # TODO other information?, return k just as k?
 
         else: # not a hard problem, trivial solution exists
             return {"rop": 1, "error": "trivial"} # TODO
