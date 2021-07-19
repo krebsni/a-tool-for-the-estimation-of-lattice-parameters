@@ -1,5 +1,5 @@
 from setuptools import setup
-
+from lib2to3.main import main as two_to_three
 from subprocess import check_call
 
 import os
@@ -9,21 +9,20 @@ here = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(here)
 
 
-import lib
+import lattice_parameter_estimation
 
 check_call("git submodule update --init --recursive".split())
 
-estimator = "lib/estimate_all_schemes/estimator/estimator.py"
-estimator_init = "lib/estimate_all_schemes/estimator/__init__.py"
+estimator = "lattice_parameter_estimation/estimate_all_schemes/estimator/estimator.py"
+estimator_init = "lattice_parameter_estimation/estimate_all_schemes/estimator/__init__.py"
 
 # Fix old python version in estimator
 # Existice of backup file used as indicator that fix happened
 if not os.path.exists(f"{estimator}.bak"):
     # prevent syntax errors from old python version
-    try:
-        check_call(f"python -m lib2to3 -w {estimator}".split())
-    except:
-        check_call(f"python3 -m lib2to3 -w {estimator}".split())
+    error = two_to_three("lib2to3.fixes", args=f"-w {estimator}".split())
+    if error != 0:
+        sys.exit(error)
 
     # fix error with not found __round__ on sage's RR
     with open(estimator, "r") as f:
@@ -37,9 +36,9 @@ if not os.path.exists(f"{estimator}.bak"):
 
 setup(
     name="lattice-parameter-estimation",
-    version=lib.__version__,
-    packages=["lib"],
-    author=lib.__author__,
+    version=lattice_parameter_estimation.__version__,
+    packages=["lattice_parameter_estimation"],
+    author=lattice_parameter_estimation.__author__,
     package_data={
         "": ["*/*.py", "*/*/*.py"]
     }

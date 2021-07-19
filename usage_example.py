@@ -3,12 +3,12 @@ import fire
 import sys
 import os
 import logging
-from lib import attacks
-from lib import param_search
-from lib import distributions
-from lib import norm
-from lib import problem
-import lib.estimate_all_schemes.estimator as est
+from lattice_parameter_estimation import attacks
+from lattice_parameter_estimation import param_search
+from lattice_parameter_estimation import distributions
+from lattice_parameter_estimation import norm
+from lattice_parameter_estimation import problem
+import lattice_parameter_estimation.estimate_all_schemes.estimator as est
 import sage.all 
 from sage.rings.all import QQ
 from sage.functions.log import exp, log
