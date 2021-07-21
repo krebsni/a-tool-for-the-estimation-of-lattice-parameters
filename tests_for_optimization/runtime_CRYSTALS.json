@@ -1,0 +1,401 @@
+[
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 1.1290814876556397,
+		"log_rop": 90.89500000000001,
+		"beta": 343,
+		"d": 1641,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 1.1205921173095704,
+		"log_rop": 103.56369785520787,
+		"beta": 343,
+		"d": 1641,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 24.191176176071168,
+		"log_rop": 107.0634682687792,
+		"beta": 404,
+		"d": 1761,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 24.392711639404298,
+		"log_rop": 123.50044800995535,
+		"beta": 412,
+		"d": 1772,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 32.806644916534427,
+		"log_rop": 126.96100856564452,
+		"beta": 391,
+		"d": 1741,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 2.1253814697265627,
+		"log_rop": 128.79000000000003,
+		"beta": 486,
+		"d": 2144,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 23.78551173210144,
+		"log_rop": 146.9282864780589,
+		"beta": 552,
+		"d": 2271,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 32.84833550453186,
+		"log_rop": 149.04783990940894,
+		"beta": 398,
+		"d": 1752,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 1.743079662322998,
+		"log_rop": 158.47,
+		"beta": 598,
+		"d": 2578,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 27.185543060302736,
+		"log_rop": 171.73683605752235,
+		"beta": 577,
+		"d": 2304,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 2.221921443939209,
+		"log_rop": 176.27529641253086,
+		"beta": 486,
+		"d": 2144,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 31.04404044151306,
+		"log_rop": 180.9950000523102,
+		"beta": 683,
+		"d": 2742,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 30.831063985824586,
+		"log_rop": 203.06795798986958,
+		"beta": 535,
+		"d": 2244,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Q‑Core‑Sieve",
+		"runtime": 32.84079647064209,
+		"log_rop": 209.07680447257827,
+		"beta": 718,
+		"d": 2794,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "primal-usvp",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 1.4522793292999268,
+		"log_rop": 238.69410216595208,
+		"beta": 598,
+		"d": 2578,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 32.616053104400638,
+		"log_rop": 240.1631045657026,
+		"beta": 546,
+		"d": 2262,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "dual-scale",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 31.585726022720338,
+		"log_rop": 266.0584205486327,
+		"beta": 645,
+		"d": 2685,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "dual-scale-without-lll",
+		"successful": true,
+		"cname": "Lotus",
+		"runtime": 32.93342399597168,
+		"log_rop": 318.00239603751029,
+		"beta": 677,
+		"d": 2734,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	},
+	{
+		"algname": "mitm",
+		"successful": true,
+		"cname": "-",
+		"runtime": 0.024736642837524415,
+		"log_rop": 1438.0132458855379,
+		"beta": null,
+		"d": null,
+		"parameters": {
+			"secret_distribution": [
+				-6,
+				6
+			],
+			"n": 768,
+			"q": 8380417,
+			"m": 1024,
+			"alpha": 0.0000011191500613477234
+		}
+	},
+	{
+		"algname": "mitm",
+		"successful": true,
+		"cname": "-",
+		"runtime": 0.05828046798706055,
+		"log_rop": 1788.9838762444597,
+		"beta": null,
+		"d": null,
+		"parameters": {
+			"secret_distribution": [
+				-5,
+				5
+			],
+			"n": 1024,
+			"q": 8380417,
+			"m": 1280,
+			"alpha": 9.458544360277088e-7
+		}
+	},
+	{
+		"algname": "mitm",
+		"successful": true,
+		"cname": "-",
+		"runtime": 0.05008220672607422,
+		"log_rop": 1814.7433237294202,
+		"beta": null,
+		"d": null,
+		"parameters": {
+			"secret_distribution": [
+				-3,
+				3
+			],
+			"n": 1280,
+			"q": 8380417,
+			"m": 1536,
+			"alpha": 5.98210870564317e-7
+		}
+	}
+]

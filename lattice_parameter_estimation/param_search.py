@@ -19,6 +19,7 @@ AUTHOR:
 
 
 
+from queue import Empty
 from . import problem
 from . import attacks
 from . import problem
@@ -92,26 +93,8 @@ class Parameter_Set():
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
 def is_secure(parameter_problem : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
-    i = 0; secure = True
-    # TODO: possibly  run parallel
-    best_res = problem.Estimate_Res(is_secure=False, results={"rop": oo}) # result with lowest sec
-    for problem_instance in parameter_problem: 
-        i += 1
-        logger.info("Estimating cost of: " + str(problem_instance) + "...")
-        res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration)
-        if "error" in res.results:
-            print(res.results["error"]) # TODO error handling
-        elif best_res.results["rop"] > res.results["rop"]:
-            best_res = res
-        if not res.is_secure:
-            break
-    
-    if i == 0:
-        raise ValueError("Empty Problem")
-    return best_res
-    
-    # beliebig viele problem instances als parameter + sec ... => kein extra loop in generic_search notwendig
-
+    secure = True
+    return problem.estimate(parameter_problem=parameter_problem, attack_configuration=attack_configuration, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
         attack_configuration : attacks.Attack_Configuration):
@@ -137,20 +120,14 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     while current_parameter_sets:
 
         current_parameter_set = current_parameter_sets.pop().parameters # remove last
-        i = 0; secure = True
-        # TODO: possible to run parallel
-        for problem_instance in parameter_problem(*current_parameter_set): 
 
-            # TODO: logging?
-            res = problem_instance.estimate_cost(sec=sec, attack_configuration=attack_configuration)
-            if not res.is_secure:
-                secure = False; break
+        try:
+            res = is_secure(parameter_problem=parameter_problem(*current_parameter_set), attack_configuration=attack_configuration, sec=sec)
+            if res.is_secure:
+                return {"Parameter Set": current_parameter_set, "Best estimate": res.results} # TODO: return 
+        except problem.EmptyProblem:
+            pass
 
-        if secure and i > 0:
-            # Only if all problem instances of a parameter set pass
-            # TODO: logging?
-            return (current_parameter_set, res) 
-            
-        # TODO: check if correct
+        # check if correct
         for parameter_set in next_parameters(*current_parameter_set):
             bisect.insort_left(current_parameter_sets, Parameter_Set(parameter_set))

@@ -90,7 +90,7 @@ class Uniform(norm.Base_Norm, Distribution):
         elif self.h:
             return (self.range, self.h)
         else:
-            return self.range()
+            return self.range
     
     def to_L1(self, dimension):
         bound = max(abs(self.range[0]), abs(self.range[1]))
@@ -259,7 +259,7 @@ class Gaussian_sigma(Gaussian):
         """
         self.sigma = sigma
         self.s = est.sigmaf(self.sigma)
-        self.alpha = est.alphaf(self.sigma, q)
+        self.alpha = est.alphaf(self.sigma, q, sigma_is_stddev=True)
         self.componentwise = componentwise
         self.sec = sec
 
