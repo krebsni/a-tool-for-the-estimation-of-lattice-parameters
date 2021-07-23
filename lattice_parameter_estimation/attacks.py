@@ -27,7 +27,7 @@ class Attack_Configuration():
 
     def __init__(self, conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, algorithms=["usvp", "lattice-reduction"], parallel=True, num_cpus=None):
         r""" 
-        List of cost models in estimate_all_schemes.cost_asymptotics.py:
+        List of cost models in cost_asymptotics.py:
 
         =============================== =========================================================================== ===============
         Cost model                      Ranking                                                                     Part of default
@@ -57,7 +57,6 @@ class Attack_Configuration():
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
         """
-        # TODO: another parameter for number of cores? or number of cores that should not be used... or as global
         if not classical and not quantum:
             raise ValueError("At least one of classical or quantum must be True")
         if not sieving and not enumeration:
@@ -95,15 +94,18 @@ class Attack_Configuration():
         """
         Add custom reduction_cost_model. 
 
-        Example (taken from estimate_all/cost_asymptotics.py)::
+        Set "prio" to 0 in order to prioritize custom cost models.
+
+        Example::
 
             cost_models = [
                 {
-                    "name": "Q‑Core‑Sieve",
-                    "reduction_cost_model": lambda beta, d, B: ZZ(2)**RR(0.265*beta),
+                    "name": "Q-Enum",
+                    "reduction_cost_model": lambda beta, d, B: ZZ(2)**RR(0.5*beta),
                     "success_probability": 0.99,
-                    "human_friendly": "2<sup>0.265 β</sup>",
-                    "group": "Quantum sieving",
+                    "human_friendly": "2<sup>0.5 β</sup>",
+                    "group": "Quantum enumeration",
+                    "prio": 0,
                 },
             ]
         
@@ -118,8 +120,6 @@ class Attack_Configuration():
     def reduction_cost_models(self):
         """
         Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
-
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         """
         return self.cost_models
 

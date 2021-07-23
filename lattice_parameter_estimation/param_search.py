@@ -57,15 +57,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
 # TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
-# Security parameter
-SECURITY = 128
-
 # Utility # perhaps export if more is added in the future
 def number_of_bits(v):
     if v == oo or v == -oo:
         return oo
     else:
-        return ceil(log(abs(v), 2).n())
+        return ceil(log(abs(v), 2))
 
 
 def unit_cost():
@@ -86,14 +83,13 @@ class Parameter_Set():
         self.parameters = parameters
     
     def __lt__(self, other):
-        # reversed sorting to pop from sorted list
-        return Parameter_Set.parameter_cost(*self.parameters) > Parameter_Set.parameter_cost(*other.parameters) # TODO check
+        return Parameter_Set.parameter_cost(*self.parameters) < Parameter_Set.parameter_cost(*other.parameters) # TODO check
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
-def is_secure(parameter_problem : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
-    return problem.estimate(parameter_problem=parameter_problem, attack_configuration=attack_configuration, sec=sec)
+def is_secure(parameter_problems : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
+    return problem.estimate(parameter_problems=parameter_problems, attack_configuration=attack_configuration, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
         attack_configuration : attacks.Attack_Configuration):
@@ -113,21 +109,19 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
     # set parameter cost function for list sorting
     Parameter_Set.parameter_cost = parameter_cost
-
-    statistical_sec = sec # TODO add to other places, too, does that work?
     current_parameter_sets = [Parameter_Set(initial_parameters)]
     while current_parameter_sets:
-
-        current_parameter_set = current_parameter_sets.pop().parameters # remove last
+        current_parameter_set = current_parameter_sets.pop(0).parameters
         logger.info("----------------------------------------------------------------------------")
         logger.info(f"Checking next parameter set: {current_parameter_set}")
         try:
-            res = problem.estimate(parameter_problem=list(parameter_problem(*current_parameter_set)), attack_configuration=attack_configuration, sec=sec)
+            res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), attack_configuration=attack_configuration, sec=sec)
             if res.is_secure:
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass
-
+        time.sleep(0.5) # TODO
+        
         # check if correct
         for parameter_set in next_parameters(*current_parameter_set):
             bisect.insort_left(current_parameter_sets, Parameter_Set(parameter_set))

@@ -1,4 +1,6 @@
 #!/usr/bin/env sage
+from bisect import bisect
+from multiprocessing import Value
 import fire
 import sys
 import os
@@ -19,7 +21,6 @@ from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator impor
 from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEMES
 
 logger = logging.getLogger(__name__)
-sec = param_search.SECURITY # can be any value, also used in Gaussian to bound trafo and statistically secure variants
 
 def runtime_analysis():
     # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
@@ -144,6 +145,7 @@ def Regev_example():
     # result = problem.estimate(parameter_problem=problem_instances, attack_configuration=config)
 
 def BGV_example():
+    sec = 128
     attack_configuration = attacks.Attack_Configuration()
     def next_parameters(N, p, q):
         N = 2 * N
@@ -176,7 +178,7 @@ def two_problem_search_example():
             while d <= N:
                 ds.append(d)
                 d *= 2
-            ds.reverse()
+            # ds.reverse()
 
         while True:
             p = sympy.ntheory.generate.randprime(minP, 2 * minP)
@@ -190,45 +192,55 @@ def two_problem_search_example():
                         if a == b:
                             return (p, d)
     
-    N = 2**8
-    q, d = findPrime(N, N, True)
-    n, l = 1, 1 # TODO: for th
-    m = 2 * N - n - l
+    sec = 128
+    statistical_sec = 64
+    N = 2**10
+    q, d = findPrime(2**(32), N, True)
+    n, l = 2**50, 1 # TODO: for th
+    m = 1
     initial_parameters = N, q, n, m, l
     attack_configuration = attacks.Attack_Configuration(algorithms=["combinatorial", "lattice_reduction"])
     
                         
     def next_parameters(N, q, n, m, l):
-        if m == 1:
-            yield N, q * 2, n, m, l
-        N *= 2
-        q, d = findPrime(N, N, True)
-        yield N, q, n, m + 1, l
+        if l == 1:
+            logq = param_search.number_of_bits(q)
+            q_new, d = findPrime(2**(logq + 2), N, True)
+            logger.debug(f">>>>>>>>>>>><q: {q_new}, d: {d}")
+            yield N, q_new, n, m, l
+        
+        elif l == 2:
+            yield N, q, n * 8, m, l
 
-
+        yield N * 2, q, n, int(N * 2 * log(q, 2)), l + 1
+        
     def parameter_cost(N, q, n, m, l):
         message = param_search.number_of_bits(q) * N * l
         rndness = param_search.number_of_bits(q) * N * (n + m + l)
         cmmtmnt = param_search.number_of_bits(q) * N * n + message
         cost = cmmtmnt + rndness
-        return cost
+        return q**(1/8) + 4*N + m + 0.5* n
 
     def parameter_problem(N, q, n, m, l):
-        lwe : problem.Statistical_Uniform_MLWE = problem.Statistical_Uniform_MLWE(sec=sec, n=N, q=q, d=n + l, m=n + m + l)
+        try:
+            lwe : problem.Statistical_Uniform_MLWE = problem.Statistical_Uniform_MLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
 
-        # TODO: Question: what was the though with the sigmas here?
-        # sigma = lwe.sigma
-        # min_sigma, max_sigma = lwe.get_sigma_bounds()
+            # TODO: Question: what was the though with the sigmas here?
+            # sigma = lwe.sigma
+            # min_sigma, max_sigma = lwe.get_sigma_bounds()
+            
+            # if min_sigma <= sigma <= max_sigma:
+            #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=sigma)
+            #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=max_sigma)
+                # TODO: is the above correct (i.e. value for d)? Why sigma? SIS requires beta (norm bound of solution)
+                # TODO: how to transform norm bound in BDLOP16 into stddev?
+
+            min_beta, max_beta = lwe.get_beta_bounds()
+            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=min_beta)
+            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=max_beta)
         
-        # if min_sigma <= sigma <= max_sigma:
-        #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=sigma)
-        #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=max_sigma)
-            # TODO: is the above correct (i.e. value for d)? Why sigma? SIS requires beta (norm bound of solution)
-            # TODO: how to transform norm bound in BDLOP16 into stddev?
-
-        min_beta, max_beta = lwe.get_beta_bounds()
-        yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=min_beta)
-        yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=max_beta)
+        except ValueError as e:
+            logger.error(e)
         
 
     res = param_search.generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, attack_configuration)

@@ -9,7 +9,7 @@ from . import attacks
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Iterator
+from typing import Generator, Iterator
 import time
 import sys
 import os
@@ -160,27 +160,23 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         res_queue.put(best_res)
         
 
-def estimate(parameter_problem : Iterator[Base_Problem], 
+def estimate(parameter_problems : Iterator[Base_Problem], 
                 attack_configuration : attacks.Attack_Configuration, 
                 sec=None):
-    if not any(parameter_problem):
-        raise EmptyProblem
-    start = time.time()
     algorithms = []
-    for problem_instance in parameter_problem: 
-        logger.debug(problem_instance) # TODO
+    for problem_instance in parameter_problems: 
         algorithms.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
             problem_instance.get_estimate_algorithms(attack_configuration=attack_configuration))
     if not algorithms: # no instance
-        logger.info("Parameter problem has no instances.")
-        return Estimate_Res(is_secure=False, cost={"rop": oo}, info={}) # TODO: error handling
+        raise EmptyProblem("Could not find any algorithms for given input parameters.")
+    start = time.time()
 
     # TODO: two variants possible: one is to split by cost model, the other to split by algorithm
     # in case early termination is applicable, split by algorithm would probably be better
     # else split by cost model has better load balancing
     # how consistent are the runtimes of the various algorithms? If the order is always same, easy to just sort according to runtime...
-    algorithms = sorted(algorithms, key=lambda a: a["prio"]) # various sortings possible, here sorted by runtime prio
-    # TODO: prioritize cost models
+    algorithms = sorted(algorithms, key=lambda a: (a["prio"], a["cprio"])) # various sortings possible, here sorted by runtime prio
+    # TODO: test cost_model priority
     
     if RUNTIME_ANALYSIS:
         runtime = []
@@ -314,7 +310,7 @@ class LWE(Base_Problem):
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "cprio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """ 
         if not isinstance(attack_configuration, attacks.Attack_Configuration):
             raise ValueError("attack_configuration must be instance of Attack_Configuration")
@@ -338,6 +334,7 @@ class LWE(Base_Problem):
             cost_model = reduction_cost_model["reduction_cost_model"]
             success_probability = reduction_cost_model["success_probability"]
             cname = reduction_cost_model["name"]
+            cprio = reduction_cost_model["prio"]
 
             if "usvp" in attack_configuration.algorithms:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
@@ -351,6 +348,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 10,
+                                        "cprio": cprio,
                                         "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
                      algorithms.append({"algname": "primal-usvp", 
@@ -361,6 +359,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 10,
+                                        "cprio": cprio,
                                         "inst": self.variant})
             
             if "dual" in attack_configuration.algorithms:
@@ -375,6 +374,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
                     algorithms.append({"algname": "dual-scale", 
@@ -385,6 +385,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})                                                               
                 else:
                     algorithms.append({"algname": "dual", 
@@ -394,6 +395,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})
 
             if "dual-without-lll" in attack_configuration.algorithms:
@@ -408,6 +410,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
                     algorithms.append({"algname": "dual-scale-without-lll", 
@@ -418,6 +421,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})                                                                
                 elif "dual" in attack_configuration.algorithms: # else this algorithm will be run twice
                     algorithms.append({"algname": "dual-without-lll", 
@@ -427,6 +431,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
+                                        "cprio": cprio,
                                         "inst": self.variant})
 
             if "decode" in attack_configuration.algorithms:
@@ -442,6 +447,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 100,
+                                        "cprio": cprio,
                                         "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
                     algorithms.append({"algname": "primal-decode", 
@@ -451,6 +457,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 100,
+                                        "cprio": cprio,
                                         "inst": self.variant})
 
         # attacks without reduction cost model
@@ -461,6 +468,7 @@ class LWE(Base_Problem):
                                                 secret_distribution=secret_distribution, 
                                                 success_probability=success_probability),
                                 "prio": 0,
+                                "cprio": 0,
                                 "inst": self.variant})
             
         if "coded-bkw" in attack_configuration.algorithms:
@@ -470,35 +478,39 @@ class LWE(Base_Problem):
                                                 secret_distribution=secret_distribution, 
                                                 success_probability=success_probability),
                                 "prio": 0, # TODO
+                                "cprio": 0,
                                 "inst": self.variant})
 
         if "arora-gb" in attack_configuration.algorithms:
             if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
                 algorithms.append({"algname": "arora-gb-drop", 
-                                    "cname": cname, 
+                                    "cname": "-", 
                                     "algf": partial(est.drop_and_solve, est.arora_gb, rotations=False, 
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, # TODO: no results obtained yet
+                                    "cprio": 0, 
                                     "inst": self.variant})
             elif secret_distribution != "normal" and est.SDis.is_small(secret_distribution): # switch_modulus does not work for normal sec_dis
                 algorithms.append({"algname": "arora-gb-switch-modulus", 
-                                    "cname": cname, 
+                                    "cname": "-", 
                                     "algf": partial(est.switch_modulus, est.arora_gb,
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, 
+                                    "cprio": 0,
                                     "inst": self.variant})
             else:
                 algorithms.append({"algname": "arora-gb", 
-                                    "cname": cname, 
+                                    "cname": "-", 
                                     "algf": partial(est.arora_gb,
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, 
+                                    "cprio": 0,
                                     "inst": self.variant})
         # TODO: if empty raise exception, also for SIS
         return algorithms
@@ -753,9 +765,15 @@ class Statistical_Uniform_MLWE():
         self.m = m
         self.d = d
         self.d_2 = d_2
-
+        logger.debug("d: " + str(d_2))
         min_beta = RR(q**(m / (m + d)) * 2**(2 * sec / ((m + d) * n)) / 2)
+        logger.debug("min_beta: " + str(min_beta))
         max_beta = RR(1 / (2 * sqrt(d_2)) * q**(1 / d_2)) - 1
+        logger.debug("max_beta: " + str(max_beta))
+
+        if min_beta > max_beta:
+            raise ValueError("Could not find (min_beta, max_beta). Lemma 4 in BDLOP18 does not apply for the given input parameters.")
+
         self.min_beta = norm.Lp(min_beta, oo, n * d)
         self.max_beta = norm.Lp(max_beta, oo, n * d)
 
@@ -850,15 +868,16 @@ class SIS(Base_Problem):
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound, 
                                                         reduction_cost_model=cost_model),
                                         "prio": 1,
+                                        "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
 
         if "combinatorial" in attack_configuration.algorithms:
-            
             algorithms.append({"algname": "combinatorial", 
                                         "cname": "-",
                                         "algf": partial(attacks.SIS.combinatorial, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound),
                                         "prio": 0,
+                                        "cprio": 0,
                                         "inst": self.variant})
         # TODO: add more algorithms?
         return algorithms
@@ -921,12 +940,12 @@ class MSIS(Base_Problem):
                 beta_RSIS = RR((self.beta / (self.m**((self.d - 1) / 2)))**(1 / (k * (2 * self.d - 1))))
                 bound = norm.Lp(beta_RSIS, self.n, 2) # new dimension of input vector (instead of n * d in M-SIS)
 
-            rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS, variant="MSIS")
+            rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS)
             return rsis.get_estimate_algorithms(attack_configuration=attack_configuration,     
                                         use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
         else:
-            sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound)
+            sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound, variant="MSIS")
             return sis.get_estimate_algorithms(attack_configuration=attack_configuration)
 
     def __str__(self):
