@@ -87,13 +87,12 @@ class Parameter_Set():
     
     def __lt__(self, other):
         # reversed sorting to pop from sorted list
-        return self.parameter_cost(*self.parameters) > other.parameter_cost(*self.parameters) # TODO check
+        return Parameter_Set.parameter_cost(*self.parameters) > Parameter_Set.parameter_cost(*other.parameters) # TODO check
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
 def is_secure(parameter_problem : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
-    secure = True
     return problem.estimate(parameter_problem=parameter_problem, attack_configuration=attack_configuration, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
@@ -120,11 +119,12 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     while current_parameter_sets:
 
         current_parameter_set = current_parameter_sets.pop().parameters # remove last
-
+        logger.info("----------------------------------------------------------------------------")
+        logger.info(f"Checking next parameter set: {current_parameter_set}")
         try:
-            res = is_secure(parameter_problem=parameter_problem(*current_parameter_set), attack_configuration=attack_configuration, sec=sec)
+            res = problem.estimate(parameter_problem=list(parameter_problem(*current_parameter_set)), attack_configuration=attack_configuration, sec=sec)
             if res.is_secure:
-                return {"Parameter Set": current_parameter_set, "Best estimate": res.results} # TODO: return 
+                return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass
 

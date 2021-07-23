@@ -28,7 +28,7 @@ if not os.path.exists(f"{estimator}.bak"):
     with open(estimator, "r") as f:
         content = f.read()
     with open(estimator, "w") as f:
-        content = content.replace(" step_size/2", " int(step_size/2)")
+        content = content.replace(" step_size/2", "step_size//2")
         f.write(f"from sage.misc.functional import round # added to fix errors\n\n{content}")
 
     # make the estimator nicer to import

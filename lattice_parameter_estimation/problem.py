@@ -2,6 +2,7 @@ r"""
 TODO: documentation
 """
 
+from numpy.core.fromnumeric import var
 from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Cost
 from . import distributions
 from . import attacks
@@ -31,9 +32,11 @@ oo = est.PlusInfinity()
 ## Logging ##
 logger = logging.getLogger(__name__)
 
-statistical_sec = 128 #: for statistical security # TODO
-
+## Configuration ##
+STATISTICAL_SEC = 128 #: for statistical security # TODO
 RUNTIME_ANALYSIS = True
+TIMEOUT = 600
+ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
 ## Helper class
 class Estimate_Res():
@@ -41,15 +44,22 @@ class Estimate_Res():
     Type of return value needed for overloaded lt-operator :class:`Problem` instances.
 
     :param is_secure: true if Problem instance satisfies security requirment
-    :param results: result object
+    :param info: attack, cost_model, inst
+    :param error: string with error description
+    :param runtime: list of runtime of algorithms run during estimation
     """
-    def __init__(self, is_secure=True, info={"error": "all_failed"}, cost=Cost([("rop", oo)])):
+    def __init__(self, is_secure=True, info={}, cost=Cost([("rop", oo)]), error=None, runtime=None):
         self.is_secure = is_secure
         self.info = info
         self.cost = cost
+        self.error = error
+        self.runtime = runtime
 
     def __bool__(self):
         return self.is_secure
+
+    def __str__(self) -> str:
+        return 'Cost: ' + str(self.cost) + '\nInfo: ' + str(self.info) + ["", f"\nError: {self.error}"][self.error != None]
 
 class EmptyProblem(Exception):
     pass
@@ -98,16 +108,17 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         runtime = []
     
     best_res = Estimate_Res()
+    all_failed = True
     for alg in algorithms:
-        success = True
         algf = alg["algf"]
-        logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha", "bound"] if k in set(algf.keywords)]))}')
+        logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)]))}')
         start = time.time()
         try:
             cost = algf() # TODO: handle intractable/trivial error from attacks.py? 
             duration = time.time() - start           
             logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if cost["rop"] <= best_res.cost["rop"]:
+                all_failed = False
                 best_res.cost = cost
                 best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
                 if sec and log(cost["rop"], 2) < sec:
@@ -123,147 +134,150 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     d = None
                 runtime.append({
                     "algname": alg["algname"], 
-                    "successful": success,
                     "cname": alg["cname"], 
                     "runtime": duration, 
                     "log_rop": float(log(cost["rop"], 2)),
                     "beta": beta,
                     "d": d,
-                    "parameters": dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha", "bound"] if k in set(algf.keywords)])
+                    "parameters": dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)])
                 })
         except Exception:
+            # TODO: what to do with the exception??? => extra exception logger for estimator computions?
+            # TODO: add error parameter to best_res
             duration = time.time() - start
-            logger.debug(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha", "bound"] if k in set(algf.keywords)]))}')
+            logger.debug(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)]))}')
             logger.debug(traceback.format_exc())
-            success = False
     
     if RUNTIME_ANALYSIS:
-        best_res.info["runtime"] = runtime # runtime of all algorithms (not just the one for best result)
+        best_res.runtime = runtime # runtime of all algorithms (not just the one for best result)
+    if all_failed:
+        best_res.error = "all_failed"
 
     if res_queue is None:
         # no multiprocessing
         return best_res
     else:
         res_queue.put(best_res)
+        
 
 def estimate(parameter_problem : Iterator[Base_Problem], 
                 attack_configuration : attacks.Attack_Configuration, 
                 sec=None):
     if not any(parameter_problem):
         raise EmptyProblem
-    
+    start = time.time()
     algorithms = []
-    for problem_instance in parameter_problem:
-        algorithms.extend(
+    for problem_instance in parameter_problem: 
+        logger.debug(problem_instance) # TODO
+        algorithms.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
             problem_instance.get_estimate_algorithms(attack_configuration=attack_configuration))
     if not algorithms: # no instance
         logger.info("Parameter problem has no instances.")
-        return Estimate_Res(is_secure=False, results={"rop": oo, "error": "Empty problem"})
+        return Estimate_Res(is_secure=False, cost={"rop": oo}, info={}) # TODO: error handling
 
     # TODO: two variants possible: one is to split by cost model, the other to split by algorithm
     # in case early termination is applicable, split by algorithm would probably be better
     # else split by cost model has better load balancing
     # how consistent are the runtimes of the various algorithms? If the order is always same, easy to just sort according to runtime...
     algorithms = sorted(algorithms, key=lambda a: a["prio"]) # various sortings possible, here sorted by runtime prio
+    # TODO: prioritize cost models
     
     if RUNTIME_ANALYSIS:
         runtime = []
 
-    # # Final version
-    if attack_configuration.multiprocessing:
-        NPROCS = min(mp.cpu_count(), len(algorithms))
-        tp = ThreadPoolExecutor(NPROCS)
+    if attack_configuration.parallel:
+        if attack_configuration.num_cpus is None:
+            num_procs = min(mp.cpu_count(), len(algorithms))
+        else:
+            num_procs = attack_configuration.num_cpus
+
+        tp = ThreadPoolExecutor(num_procs)
 
         # evenly distribute algorithms according to sorting among #NUM_CPUS lists
-        split_list = NPROCS * [None]
-        for j in range(NPROCS):
+        split_list = num_procs * [None]
+        for j in range(num_procs):
             split_list[j] = []
         for i in range(len(algorithms)):
-            split_list[i % NPROCS].append(algorithms[i])
+            split_list[i % num_procs].append(algorithms[i])
 
-        logger.debug(f"Starting {NPROCS} processes for {len(algorithms)} algorithms...")
-        if sec is None:
-            logger.debug(">>>>>>>>>>>>>>>> Running estimates without early termination") # TODO
-            # Without early termination
-            start = time.time()
-            p = [None]*len(split_list)
-            best_res = Estimate_Res()
-            result_queue = [None]*len(split_list)
-            for i in range(len(split_list)):
-                result_queue[i] = mp.Queue()
-                p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, result_queue[i]))
-                p[i].start()
-                logger.debug(str(p[i].pid) + " started (no early termination)...") # TODO: perhaps add debug logging in algorithm_executor
-            
-            for i in range(len(split_list)): # TODO: some may terminate earlier? 
-                res = result_queue[i].get()
+        logger.debug(f"Starting {num_procs} processes for {len(algorithms)} algorithms...")
+        logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
+        p = [None]*len(split_list)
+        best_res = Estimate_Res()
+        result_queue = mp.Queue()
+        for i in range(len(split_list)):
+            p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, result_queue))
+            p[i].start()
+            logger.debug(str(p[i].pid) + " started...") # TODO: perhaps add debug logging in algorithm_executor
+        
+        terminated = False
+        all_failed = True
+        while not terminated:
+            try:
+                # Check if all processes finished their calculation
+                all_done = True
+                for i in range(len(split_list)):
+                    if p[i].is_alive():
+                        all_done = False
+                        break
+                if all_done:
+                    terminated = True
+                    for i in range(len(split_list)):
+                        p[i].join()
+                        result_queue.close()
+                        terminated = True
+                    break
+
+                # Try to get result
+                res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
+                # TODO perhaps fine tune, check that wait here is not busy waiting... check if all cores are 100% or not...
                 
                 if RUNTIME_ANALYSIS:
-                    runtime.extend(res.info["runtime"])
-
+                    runtime.extend(res.runtime)
+                
                 if res.cost["rop"] <= best_res.cost["rop"]:
+                    if res.error is not None and res.error == "all_failed":
+                        # all algorithms failed
+                        pass
+                    else:
+                        all_failed = False
                         best_res = res
-                p[i].join()
-                result_queue[i].close()
-            duration = time.time() - start
-            logger.debug(f">>>>>>>>>>>>>>>> Successful (took {duration:.3f} s)") # TODO
-        
-        else:
-            logger.debug(">>>>>>>>>>>>>>>> Running estimates with early termination") # TODO
-            start = time.time()
-            p = [None]*len(split_list)
-            best_res = Estimate_Res()
-            result_queue = mp.Queue()
-            for i in range(len(split_list)):
-                p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, result_queue))
-                p[i].start()
-                logger.debug(str(p[i].pid) + " started (with early termination)...") # TODO: perhaps add debug logging in algorithm_executor
-            
-            terminated = False
-            while not terminated:
-                try:
-                    # Check if all processes finished their calculation
-                    all_done = True
-                    for i in range(len(split_list)):
-                        if p[i].is_alive():
-                            all_done = False
-                    if all_done:
-                        terminated = True
-                        for i in range(len(split_list)):
-                            p[i].join()
-                            result_queue.close()
-                            terminated = True
-                        break
-
-                    # Try to get result
-                    res = result_queue.get(block=False, timeout=0.2) # TODO perhaps fine tune
-                    
-                    if RUNTIME_ANALYSIS:
-                        runtime.extend(res.info["runtime"])
-                    
-                    if res.cost["rop"] <= best_res.cost["rop"]:
-                        best_res = res # TODO add sec check
-                        if not res.is_secure:
-                            logger.debug("Received insecure result. Terminate all other processes.") # TODO
-                            # early termination: insecure result obtained => terminate all other processes
+                        if sec and not res.is_secure: # early termination only if sec parameter is specified
+                            logger.debug("Received insecure result. Terminate all other processes.")
+                            # insecure result obtained => terminate all other processes
                             for i in range(len(split_list)):
-                                p[i].terminate()
+                                p[i].terminate() # TODO: could it happen that exception is cast when a process is already terminated
                                 p[i].join()
+                                # data put into queue during terminate may become corrupted => just close it
                                 result_queue.close()
                                 terminated = True
-                except Empty: # result not yet available
-                    pass
-
-            duration = time.time() - start
-            logger.debug(f">>>>>>>>>>>>>>>> Successful (took {duration:.3f} s)") # TODO
-        
+            except Empty: # result not yet available
+                if time.time() - start > TIMEOUT:
+                    # Computation too long, result not expected anymore
+                    for i in range(len(split_list)):
+                        p[i].terminate() 
+                        p[i].join()
+                        result_queue.close()
+                        terminated = True
+                    message = f"Cost estimation not terminating after {TIMEOUT}s. Forcefully end all computations."
+                    if ERROR_HANDLING_ON:
+                        logger.error(message)
+                    else:
+                        raise RuntimeError(message)
         if RUNTIME_ANALYSIS:
-            best_res.info["runtime"] = runtime
-    else:
+            best_res.runtime = runtime
+
+    else: # not parallel
         best_res = algorithms_executor(algorithms, sec) 
     
-    # TODO: make sure that not all failed
-    logger.debug("Lowest computed security: " + str(float(log(best_res.cost["rop"], 2))))
+    if all_failed:
+        raise RuntimeError("All estimate algorithms failed")
+    
+    duration = time.time() - start
+    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(float(log(best_res.cost['rop'], 2)))}. "
+    if sec is not None:
+        message += f"Result is {['insecure', 'secure'][log(best_res.cost['rop'], 2) > sec]} (sec={sec})."
+    logger.info(message) 
     return best_res
 
 
@@ -271,7 +285,7 @@ def estimate(parameter_problem : Iterator[Base_Problem],
 class LWE(Base_Problem):
     # TODO: docstring (also other variants)
 
-    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution): 
+    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant = "LWE"): 
         """
         :param q: modulus
         :param n: secret dimension
@@ -292,6 +306,7 @@ class LWE(Base_Problem):
         self.m = m
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
+        self.variant = variant
 
     def get_estimate_algorithms(self, attack_configuration):
         """
@@ -299,7 +314,7 @@ class LWE(Base_Problem):
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         if not isinstance(attack_configuration, attacks.Attack_Configuration):
             raise ValueError("attack_configuration must be instance of Attack_Configuration")
@@ -336,7 +351,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 10,
-                                        "inst": self})
+                                        "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
                      algorithms.append({"algname": "primal-usvp", 
                                         "cname": cname, 
@@ -346,7 +361,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 10,
-                                        "inst": self})
+                                        "inst": self.variant})
             
             if "dual" in attack_configuration.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
@@ -360,7 +375,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})
+                                        "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
                     algorithms.append({"algname": "dual-scale", 
                                         "cname": cname, 
@@ -370,7 +385,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})                                                               
+                                        "inst": self.variant})                                                               
                 else:
                     algorithms.append({"algname": "dual", 
                                         "cname": cname, 
@@ -379,7 +394,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})
+                                        "inst": self.variant})
 
             if "dual-without-lll" in attack_configuration.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
@@ -393,7 +408,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})
+                                        "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
                     algorithms.append({"algname": "dual-scale-without-lll", 
                                         "cname": cname, 
@@ -403,7 +418,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})                                                                
+                                        "inst": self.variant})                                                                
                 elif "dual" in attack_configuration.algorithms: # else this algorithm will be run twice
                     algorithms.append({"algname": "dual-without-lll", 
                                         "cname": cname, 
@@ -412,7 +427,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 20,
-                                        "inst": self})
+                                        "inst": self.variant})
 
             if "decode" in attack_configuration.algorithms:
                 # TODO: Runtime much worse than primal-usvp, may yield better values for small n (Regev scheme n < 256?)
@@ -427,7 +442,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 100,
-                                        "inst": self})
+                                        "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
                     algorithms.append({"algname": "primal-decode", 
                                         "cname": cname, 
@@ -436,7 +451,7 @@ class LWE(Base_Problem):
                                                         secret_distribution=secret_distribution, 
                                                         success_probability=success_probability),
                                         "prio": 100,
-                                        "inst": self})
+                                        "inst": self.variant})
 
         # attacks without reduction cost model
         if "mitm" in attack_configuration.algorithms: # estimates are very bad but very fast, so no need to exclude 
@@ -446,7 +461,7 @@ class LWE(Base_Problem):
                                                 secret_distribution=secret_distribution, 
                                                 success_probability=success_probability),
                                 "prio": 0,
-                                "inst": self})
+                                "inst": self.variant})
             
         if "coded-bkw" in attack_configuration.algorithms:
             algorithms.append({"algname": "coded-bkw", 
@@ -455,7 +470,8 @@ class LWE(Base_Problem):
                                                 secret_distribution=secret_distribution, 
                                                 success_probability=success_probability),
                                 "prio": 0, # TODO
-                                "inst": self})
+                                "inst": self.variant})
+
         if "arora-gb" in attack_configuration.algorithms:
             if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
                 algorithms.append({"algname": "arora-gb-drop", 
@@ -465,7 +481,7 @@ class LWE(Base_Problem):
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, # TODO: no results obtained yet
-                                    "inst": self})
+                                    "inst": self.variant})
             elif secret_distribution != "normal" and est.SDis.is_small(secret_distribution): # switch_modulus does not work for normal sec_dis
                 algorithms.append({"algname": "arora-gb-switch-modulus", 
                                     "cname": cname, 
@@ -474,7 +490,7 @@ class LWE(Base_Problem):
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, 
-                                    "inst": self})
+                                    "inst": self.variant})
             else:
                 algorithms.append({"algname": "arora-gb", 
                                     "cname": cname, 
@@ -483,7 +499,8 @@ class LWE(Base_Problem):
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
                                     "prio": 200, 
-                                    "inst": self})
+                                    "inst": self.variant})
+        # TODO: if empty raise exception, also for SIS
         return algorithms
 
     def __str__(self):
@@ -551,7 +568,7 @@ class MLWE(Base_Problem):
             
         else:
             lwe = LWE(n=self.n*self.d, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
-                        error_distribution=self.error_distribution)
+                        error_distribution=self.error_distributionm, variant="MLWE")
             return lwe.get_estimate_algorithms(attack_configuration=attack_configuration)
 
     def __str__(self):
@@ -596,7 +613,7 @@ class RLWE(Base_Problem):
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         lwe = LWE(n=self.n, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
-                    error_distribution=self.error_distribution)
+                    error_distribution=self.error_distribution, variant="RLWE")
         return lwe.get_estimate_algorithms(attack_configuration=attack_configuration)
 
     def __str__(self):
@@ -728,7 +745,7 @@ class Statistical_Uniform_MLWE():
         :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
         """
         if d_2 is None:
-            d_2 = self.find_d(q, n)
+            d_2 = Statistical_Uniform_MLWE.find_d(q, n)
 
         # TODO: check prerequisites?
         self.n = n
@@ -757,7 +774,7 @@ class Statistical_Uniform_MLWE():
         """
         d = 2
         while d < n:
-            if q % (4 * d) == 2 * d + 1:
+            if (q % (4 * d)) == (2 * d + 1):
                 return d
             else:
                 d *= 2
@@ -787,7 +804,7 @@ class Statistical_Uniform_RLWE(Statistical_Uniform_MLWE):
 ## SIS and its variants ##
 class SIS(Base_Problem):
         
-    def __init__(self, n, q, m, bound):
+    def __init__(self, n, q, m, bound, variant="SIS"):
         """
         :param q: modulus
         :param n: secret dimension
@@ -802,6 +819,7 @@ class SIS(Base_Problem):
         self.n = n
         self.m = m
         self.bound = bound
+        self.variant = variant
     
     def get_estimate_algorithms(self, attack_configuration):
         """
@@ -809,7 +827,7 @@ class SIS(Base_Problem):
 
         :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         if not isinstance(attack_configuration, attacks.Attack_Configuration):
             raise ValueError("attack_configuration must be instance of Attack_Configuration")
@@ -832,7 +850,7 @@ class SIS(Base_Problem):
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound, 
                                                         reduction_cost_model=cost_model),
                                         "prio": 1,
-                                        "inst": self})
+                                        "inst": self.variant})
 
         if "combinatorial" in attack_configuration.algorithms:
             
@@ -841,7 +859,7 @@ class SIS(Base_Problem):
                                         "algf": partial(attacks.SIS.combinatorial, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound),
                                         "prio": 0,
-                                        "inst": self})
+                                        "inst": self.variant})
         # TODO: add more algorithms?
         return algorithms
         
@@ -903,7 +921,7 @@ class MSIS(Base_Problem):
                 beta_RSIS = RR((self.beta / (self.m**((self.d - 1) / 2)))**(1 / (k * (2 * self.d - 1))))
                 bound = norm.Lp(beta_RSIS, self.n, 2) # new dimension of input vector (instead of n * d in M-SIS)
 
-            rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS)
+            rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS, variant="MSIS")
             return rsis.get_estimate_algorithms(attack_configuration=attack_configuration,     
                                         use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
@@ -942,7 +960,7 @@ class RSIS(Base_Problem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound)
+        sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound, variant="RSIS")
         return sis.get_estimate_algorithms(attack_configuration=attack_configuration)
 
     def __str__(self):
