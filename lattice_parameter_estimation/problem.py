@@ -3,7 +3,6 @@ TODO: documentation
 """
 
 from numpy.core.fromnumeric import var
-from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Cost
 from . import distributions
 from . import attacks
 from . import norm
@@ -48,7 +47,7 @@ class Estimate_Res():
     :param error: string with error description
     :param runtime: list of runtime of algorithms run during estimation
     """
-    def __init__(self, is_secure=True, info={}, cost=Cost([("rop", oo)]), error=None, runtime=None):
+    def __init__(self, is_secure=True, info={}, cost=est.Cost([("rop", oo)]), error=None, runtime=None):
         self.is_secure = is_secure
         self.info = info
         self.cost = cost
@@ -689,6 +688,27 @@ class Statistical_Gaussian_MLWE():
         return distributions.Gaussian_sigma(self.min_sigma, q=self.q, componentwise=True, sec=self.sec) 
 
 
+class Statistical_Gaussian_MatrixMLWE(Statistical_Gaussian_MLWE):
+    r"""
+    Statistically secure MLWE over Gaussian distribution according to :cite:`LPR13`.
+
+    For more details, see :class:`Statistical_Gaussian_MLWE`.
+
+    :ivar min_sigma: minimum :math:`\sigma` (standard deviation) required for statistically secure MLWE
+    :ivar sec: set to parameter sec if sec is specified in constructor, else set to n
+    """
+
+    def __init__(self, n, q, width, height, sec=None):
+        """
+        :param n: degree of polynomial
+        :param q: modulus
+        :param width: width of matrix :math:`\mathbf{A}`
+        :param height: height of matrix :math:`\mathbf{A}`
+        :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
+        """
+        super().__init__(n=n, q=q, d=width-height, m=height, sec=sec)
+
+
 class Statistical_Gaussian_RLWE(Statistical_Gaussian_MLWE):
     r"""
     Statistically secure RLWE over Gaussian distribution with invertible elements :cite:`LPR13`. 
@@ -710,7 +730,7 @@ class Statistical_Gaussian_RLWE(Statistical_Gaussian_MLWE):
 
 class Statistical_Uniform_MLWE():
     r"""
-    Statistically secure MLWE over Uniform distribution with invertible elements :cite:`BDLOP18`. Attributes 
+    Statistically secure MLWE over Uniform distribution with invertible elements :cite:`BDLOP18`.
 
     MLWE problem instance where samples :math:`(\mathbf{A}', h_{\mathbf{A}'}(y))` are within statistical distance :math:`2^{-sec}` of :math:`(\mathbf{A}', \mathbf{u})` for uniform :math:`\mathbf{u}`.
 
@@ -796,7 +816,28 @@ class Statistical_Uniform_MLWE():
                 return d
             else:
                 d *= 2
-        raise ValueError("Could not find d such that 1 < d < n power of 2 and q congruent to 2d + 1 (mod 4d). q=" + str(q) + ", n=" + str(n))    
+        raise ValueError("Could not find d such that 1 < d < n power of 2 and q congruent to 2d + 1 (mod 4d). q=" + str(q) + ", n=" + str(n))   
+
+
+class Statistical_Uniform_MatrixMLWE(Statistical_Uniform_MLWE):
+    r"""
+    Statistically secure MLWE over Uniform distribution with invertible elements :cite:`BDLOP18`.
+
+    For more details, see :class:`Statistical_Uniform_MLWE`.
+
+    :ivar min_beta: :math:`\beta_{min}`
+    :ivar max_beta: :math:`\beta_{max}`
+    """
+    def __init__(self, sec, n, q, width, height, d_2=None):
+        """
+        :param n: degree of polynomial
+        :param q: modulus
+        :param width: width of matrix :math:`\mathbf{A}`
+        :param height: height of matrix :math:`\mathbf{A}`
+        :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
+        :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
+        """
+        super().__init__(n=n, sec=sec, q=q, d=width-height, m=height, d_2=d_2) 
 
 
 class Statistical_Uniform_RLWE(Statistical_Uniform_MLWE):
@@ -1045,6 +1086,27 @@ class Statistical_MSIS():
     
     def get_secret_distribution_max_width(self):
         return distributions.Gaussian_sigma(sigma=self.max_sigma, q=self.q, componentwise=False, sec=self.sec) # TODO check, specify dimensions? or not needed?
+
+
+class Statistical_MatrixMSIS(Statistical_MSIS):
+    r"""
+    Statistically secure MSIS according to :cite:`DOTT21`, section 4.1.
+
+    For more details, see :class:`Statistical_MSIS`.
+
+    :ivar max_sigma: standard deviation :math:`\sigma`
+    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    """
+    def __init__(self, n, q, width, height, sec=None):
+        """
+        :param n: degree of polynomial
+        :param q: modulus
+        :param width: width of matrix :math:`\mathbf{A}`
+        :param height: height of matrix :math:`\mathbf{A}`
+        :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
+        """
+        super().__init__(n=n, q=q, d=width-height, m=height, sec=sec)
+        
 
 
 class Statistical_RSIS(Statistical_MSIS):

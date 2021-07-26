@@ -103,7 +103,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
     :returns: parameter set fulfulling security condition
     """
-    # TODO: check validity of parameters
+    # TODO: check validity of parameters, or that if not proper exceptions are thrown 
     # TODO: test
     # TODO: LWE: search vs decision?
 
@@ -113,14 +113,13 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     while current_parameter_sets:
         current_parameter_set = current_parameter_sets.pop(0).parameters
         logger.info("----------------------------------------------------------------------------")
-        logger.info(f"Checking next parameter set: {current_parameter_set}")
+        logger.info(f"Checking next parameter set: {current_parameter_set}") # TODO: print nicely
         try:
             res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), attack_configuration=attack_configuration, sec=sec)
             if res.is_secure:
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass
-        time.sleep(0.5) # TODO
         
         # check if correct
         for parameter_set in next_parameters(*current_parameter_set):

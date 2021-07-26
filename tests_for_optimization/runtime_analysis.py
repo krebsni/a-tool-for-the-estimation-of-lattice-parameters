@@ -23,20 +23,23 @@ def cost_model_plotter():
     import sage.all 
     from sage.all import RR, ZZ, log, gamma, pi
 
-    beta = np.array([i for i in range(10, 800, 10)])
-    zero = np.array([1]*len(beta))
+    beta = np.array([i for i in range(10, 1000, 10)])
+    ones = np.array([1]*len(beta))
     rop = {}
 
     # cost models without d
-    for cost_model in [cm for cm in BKZ_COST_ASYMPTOTICS if cm["name"] not in ["8d‑Enum (quadratic fit) + O(1)"]]:
-        rop[cost_model["name"]] = np.vectorize(cost_model["reduction_cost_model"])(beta, zero, zero)
+    for cost_model in BKZ_COST_ASYMPTOTICS:
+        rop[cost_model["name"]] = np.vectorize(cost_model["reduction_cost_model"])(beta, ones, ones)
 
     fig1, ax1 = plt.subplots(1,1)
     ax1.set_prop_cycle(color=['magenta', 'indigo', 'navy', 'deepskyblue', 'cyan',  'darkgreen',  'lightgreen', 'yellow', 'orange', 'darksalmon','red', 'brown', 'lightgrey', 'dimgrey', 'black'])
     for cname in rop:
-        ax1.plot(beta, rop[cname], label=cname)
+        label = cname
+        if "8d" in cname:
+            label += ", d=1"
+        ax1.plot(beta, rop[cname], label=label)
     ax1.set_xlabel(r'Block size $\beta$')
-    ax1.set_ylabel('log10 of BKZ reduction cost [rop]')
+    ax1.set_ylabel('log2 of BKZ reduction cost [rop]')
     ax1.legend()
     plt.grid()
     plt.savefig('cost_models.png')
@@ -52,8 +55,8 @@ def cost_model_d_plotter():
     import matplotlib.ticker as mticker
 
     # cost models with d
-    beta = np.array([i for i in range(10, 5000, 10)])
-    d = np.array([i for i in range(10, 5000, 10)])
+    beta = np.array([i for i in range(10, 1000, 10)])
+    d = np.array([i for i in range(10, 1000, 10)])
     zero = np.zeros(len(beta))
     BETA, D = np.meshgrid(beta, d)
     ZERO = np.meshgrid(zero,zero)[0]
@@ -73,16 +76,12 @@ def cost_model_d_plotter():
         surf._facecolors2d = surf._facecolor3d
         surf._edgecolors2d = surf._edgecolor3d
 
-    def log_tick_formatter(val, pos=None):
-        return "{:.0e}".format(10**val)
-
-    ax.zaxis.set_major_formatter(mticker.FuncFormatter(log_tick_formatter))
     ax.set_xlabel(r'Block size $\beta$')
     ax.set_ylabel("lattice dimension d")
-    ax.set_zlabel('BKZ reduction cost [rop]')
+    ax.set_zlabel('log2 of BKZ reduction cost [rop]')
     ax.legend()
     plt.savefig('cost_models_d.png')
     plt.show()
 
 if __name__ == "__main__":
-    runtime_results()
+    cost_model_d_plotter()

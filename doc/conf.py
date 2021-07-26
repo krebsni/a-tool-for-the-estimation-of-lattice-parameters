@@ -5,8 +5,9 @@ sys.path.insert(0, os.path.abspath('..'))
 project = "A Tool for the Estimation of Lattice Parameters"
 author = "Nicolai Krebs"
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinxcontrib.bibtex']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinxcontrib.bibtex', 'sphinx.ext.autosectionlabel',]
 autoclass_content = 'both'
 bibtex_bibfiles = ['../thesis/bibliography.bib']
 bibtex_default_style = 'alpha'
+autosectionlabel_prefix_document = True
 

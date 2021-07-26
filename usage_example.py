@@ -118,6 +118,7 @@ def estimation_example():
     # result = param_search.is_secure(parameter_problem=[sis], sec=350, attack_configuration=config)
     # print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
 
+
 def Regev_example():
     config = attacks.Attack_Configuration()
     sec = 128
@@ -130,6 +131,25 @@ def Regev_example():
         distribution = distributions.Gaussian_alpha(alpha=alpha, q=q)
         yield problem.LWE(n=n, q=q, m=m, secret_distribution=distribution, error_distribution=distribution)
     
+    res = param_search.generic_search(sec, next(next_parameters(2**5)), next_parameters, param_search.unit_cost, parameter_problem, config)
+
+    print("---------------------------------")
+    print("Search successful")
+    print(f"Parameters: {res['parameters']}")
+    print(f"Estimate results: {str(res['result'])}")
+
+
+def SIS_example():
+    config = attacks.Attack_Configuration(algorithms=["combinatorial", "lattice-reduction"])
+    sec = 128
+    def next_parameters(n, q=None, m=None, beta=None):
+        n, alpha, q = Param.Regev(n*2)
+        beta = distributions.Gaussian_alpha(alpha=alpha, q=q).to_Lp(sec=sec, dimension=n)
+        m = n**2
+        yield n, q, m, beta
+    
+    def parameter_problem(n, q, m, beta):
+        yield problem.SIS(n=n, q=q, m=m, bound=beta)
     
     res = param_search.generic_search(sec, next(next_parameters(2**5)), next_parameters, param_search.unit_cost, parameter_problem, config)
 
@@ -138,11 +158,6 @@ def Regev_example():
     print(f"Parameters: {res['parameters']}")
     print(f"Estimate results: {str(res['result'])}")
 
-    
-    #     sec_dis = err_dis
-    #     problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
-    # problem.RUNTIME_ANALYSIS = True
-    # result = problem.estimate(parameter_problem=problem_instances, attack_configuration=config)
 
 def BGV_example():
     sec = 128
@@ -193,13 +208,13 @@ def two_problem_search_example():
                             return (p, d)
     
     sec = 128
-    statistical_sec = 64
+    statistical_sec = 128
     N = 2**10
     q, d = findPrime(2**(32), N, True)
     n, l = 2**50, 1 # TODO: for th
     m = 1
     initial_parameters = N, q, n, m, l
-    attack_configuration = attacks.Attack_Configuration(algorithms=["combinatorial", "lattice_reduction"])
+    attack_configuration = attacks.Attack_Configuration(algorithms=["combinatorial", "lattice-reduction"])
     
                         
     def next_parameters(N, q, n, m, l):
@@ -223,7 +238,7 @@ def two_problem_search_example():
 
     def parameter_problem(N, q, n, m, l):
         try:
-            lwe : problem.Statistical_Uniform_MLWE = problem.Statistical_Uniform_MLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
+            lwe = problem.Statistical_Gaussian_MLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
 
             # TODO: Question: what was the though with the sigmas here?
             # sigma = lwe.sigma
@@ -235,9 +250,8 @@ def two_problem_search_example():
                 # TODO: is the above correct (i.e. value for d)? Why sigma? SIS requires beta (norm bound of solution)
                 # TODO: how to transform norm bound in BDLOP16 into stddev?
 
-            min_beta, max_beta = lwe.get_beta_bounds()
-            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=min_beta)
-            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=max_beta)
+            sec_dis = lwe.get_secret_distribution_min_width()
+            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=sec_dis.to_Lp(statistical_sec, N*n)) # TODO: is this correct?
         
         except ValueError as e:
             logger.error(e)
@@ -251,4 +265,4 @@ def two_problem_search_example():
     print(f"Estimate results: {str(res['result'])}")
 
 if __name__ == "__main__":
-    two_problem_search_example()
+    SIS_example()

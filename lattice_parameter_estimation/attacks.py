@@ -10,9 +10,8 @@ from sage.functions.log import log
 from sage.functions.other import ceil, sqrt
 from sage.rings.all import QQ, RR, ZZ
 from sage.symbolic.all import pi
-from  estimate_all_schemes import cost_asymptotics
+import cost_asymptotics
 import estimate_all_schemes.estimator as est
-from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Cost
 oo = est.PlusInfinity()
 
 ## Logging ##
@@ -27,26 +26,21 @@ class Attack_Configuration():
 
     def __init__(self, conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, algorithms=["usvp", "lattice-reduction"], parallel=True, num_cpus=None):
         r""" 
-        List of cost models in cost_asymptotics.py:
-
-        =============================== =========================================================================== ===============
-        Cost model                      Ranking                                                                     Part of default
-        =============================== =========================================================================== ===============
-        Q‑Core‑Sieve                    Best sieving, best for :math:`\beta > 280`                                  X
-        Q‑Core‑Sieve + O(1)
-        Q‑Core‑Sieve (min space)
-        Q‑β‑Sieve                       A little worse than Q-Core-Sive
-        Q‑8d‑Sieve + O(1)
-        Core‑Sieve                      Best classical sieving (better than Q-β-Sieve for :math:`\beta < 300`)      X
-        Core‑Sieve + O(1)
-        Core‑Sieve (min space)
-        β‑Sieve
-        8d‑Sieve + O(1)
-        Q‑Core‑Enum + O(1)              Better than Lotus for :math:`\beta > 350`                                   X
-        Lotus (classical enum)          Best for :math:`\beta < 280`, most sieve's better for :math:`\beta > 350`   X
-        Core‑Enum + O(1)                Second worst for :math:`\beta > 140`
-        8d‑Enum (quadratic fit) + O(1)  Worst overall performance
-        =============================== =========================================================================== ===============
+        Configure cost estimation. 
+        
+        .. list-table:: List of cost models included for `conservative=True`
+            :header-rows: 1
+            
+            * - Selection
+              - Cost models
+            * - default
+              - "Q‑Core‑Sieve", "Lotus"
+            * - `classical=False`
+              - "Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"
+            * - `quantum=False`
+              - "Core‑Sieve", "Lotus"
+        
+        If `sieving=False` or `enumeration=False`, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_asymptotics <cost-models>`.
         
         :param conservative: use conservative estimates
         :param classical: use classical cost_models, `True` by default (at least one of classical/quantum must be `True`)
@@ -119,7 +113,7 @@ class Attack_Configuration():
 
     def reduction_cost_models(self):
         """
-        Returns filtered list of reduction cost models from `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`__ 
+        Returns list of reduction cost models.
         """
         return self.cost_models
 
@@ -155,37 +149,81 @@ class SIS:
 
         :math:`\delta_0` must be larger than 1 for the reduction to be tractable. From :math:`\delta_0 = \sqrt[d]{\beta / q^{n/d}} \geq 1` it follows that :math:`d \geq n \log_2(q) / \log_2(\beta)`. If :math:`m \leq n \log_2(q) / \log_2(\beta)` a :class:`ValueError` is raised. 
 
+        
+        Another approach is found in section 3.3 of :cite:`APS15`:
+        
+        .. math::
+
+            \beta = \|x\|_2 = \delta_0 ^ m  \text{vol}(L) ^ {\frac{1}{m}} 
+
+        If :math:`\text{vol}(L)=q^n`, then :math:`\beta = \delta_0 ^ m  q ^ {\frac{n}{m}}` and hence,
+
+        .. math::
+            \log \delta_0 = \frac{\log \beta}{m}  - \frac{n \log q}{m^2} \;\;\;\;\text{(I.)}
+
+        The optimal dimension for the lattice reduction is :math:`m = \sqrt{\frac{n \log q}{\log \delta_0}}  \;\;\;\;\text{(II.)}`
+        
+        Combining II. with I. yields:
+
+        .. math::
+
+            \log \delta_0 &= \frac{\log \beta}{ \sqrt{n \log q / \log \delta_0}} - \frac{n \log q }{n \log q / \log \delta_0} \\
+            \log \delta_0 &= \frac{\log \beta}{ \sqrt{n \log q / \log \delta_0}} - \log \delta_0 \\
+            2\log \delta_0 &= \frac{\log \beta}{\sqrt{n \log q / \log \delta_0}} \\ 
+            \sqrt{\log \delta_0} &= \frac{\log \beta}{ 2 \sqrt{n \log q}} \\ 
+            \log \delta_0 &= \frac{\log^2 \beta}{ 4n \log q}
+
+        In case both approaches succeed, the results of the approach that yields a lower :math:`\log \delta_0` are chosen to compute the block size :math:`k` to apply the reduction cost model.
+
         :param n: height of matrix
         :param m: width of matrix
         :param q: modulus
         :param bound: bound of solution, must be instance of :class:`Norm.Base_norm` 
         """
-        # TODO: use code in estimator?
+        # TODO check if use of n and m are correct
+        # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
+
         beta = RR(bound.to_L2(n).value) # we need L2 norm TODO: check
-        logger.debug("b: " + str(beta) + ", q: " + str(q))
         if beta <= 1:
             raise ValueError("beta < 1")
-        if beta < q: # Condition is not a requirement for [RS10] but we would divide by log(beta) which is <= 0
-            # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
-            # Requirements
-            if n < 128 or q < n*n: 
-                raise ValueError("Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2")
-            if m < n * log(q, 2) / log(beta, 2):
-                raise ValueError("m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1.")
-            
-            n = ZZ(n)
-            q = ZZ(q)
-            # Calculate optimal dimension for delta-HSVP solver
-            d = ceil(2 * n * log(q, 2) / log(beta, 2)) 
-            if d > m:
-                d = m            
+        if beta < q:
+            rs10_failed = False
+            try:
+                # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
+                # Requirements
+                if n < 128 or q < n*n: 
+                    raise ValueError("Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2")
+                if m < n * log(q, 2) / log(beta, 2):
+                    raise ValueError("m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1.")
+                
+                n = ZZ(n)
+                q = ZZ(q)
+                # Calculate optimal dimension for delta-HSVP solver
+                d = ceil(2 * n * log(q, 2) / log(beta, 2)) 
+                if d > m:
+                    d = m            
 
-            # Calculate approximation factor for delta-HSVP solver
-            delta_0 = RR((beta / (q ** (n / d))) ** (1 / d))
-            log_delta_0 = log(delta_0, 2)
-            logger.debug(f"d: {d}, delta_0: {delta_0}")
-            if delta_0 < 1: # intractable
-                raise ValueError("Intractable: delta_0 < 1")
+                # Calculate approximation factor for delta-HSVP solver
+                delta_0 = RR((beta / (q ** (n / d))) ** (1 / d))
+                log_delta_0 = log(delta_0, 2)
+            
+            except ValueError:
+                rs10_failed = True
+                
+            # [APS15]
+            log_delta_0_APS15 = log(beta, 2) ** 2  / (4  * n * log(q, 2))
+            d_APS15 = sqrt(n * log(q, 2) / log_delta_0_APS15)
+            if d_APS15 > m:
+                d_APS15 = m
+                log_delta_0_APS15 = log(beta, 2) / m - n * log(q, 2) / (m ** 2)
+
+            # take best value
+            if rs10_failed or log_delta_0_APS15 < log_delta_0: 
+                log_delta_0 = log_delta_0_APS15
+                d = d_APS15
+
+            if log_delta_0 < 0: # intractable
+                    raise ValueError("Intractable: delta_0 < 1")
 
             else: # standard case
                 k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
@@ -193,7 +231,7 @@ class SIS:
 
                 # TODO: is that all we need?
                 cost = reduction_cost_model(k, d, B) 
-                return Cost([("rop", cost), ("d", d), ("beta", k)]) # d is lattice dimension, beta is block size
+                return est.Cost([("rop", cost), ("d", d), ("beta", k)]) # d is lattice dimension, beta is block size
 
         else: # not a hard problem, trivial solution exists
             raise  ValueError("Trivial. beta > q")
@@ -245,7 +283,7 @@ class SIS:
             lists = (2 ** k) * L
             cost = lists * list_element_cost
 
-            return Cost([("rop", cost.n()), ("k", 2**k)]) # TODO other information?, return k just as k?
+            return est.Cost([("rop", cost), ("k", RR(2**k))]) # TODO other information?, return k just as k?
 
         else: # not a hard problem, trivial solution exists
             raise  ValueError("Trivial. beta > q")

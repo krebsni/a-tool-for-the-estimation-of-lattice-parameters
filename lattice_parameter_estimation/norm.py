@@ -153,6 +153,9 @@ class Lp(Base_Norm):
             return Coo(value=self.value * dimension, dimension=dimension)
         else:
             raise ValueError(f"L{self.p}-norm not supported")
+        
+    def __str__(self) -> str:
+        return f"{self.value} (L{self.p}-norm)"
 
 
 class Coo(Base_Norm):
@@ -219,3 +222,6 @@ class Coo(Base_Norm):
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """
         return self
+    
+    def __str__(self) -> str:
+        return f"{self.value} (Coo-norm)"
