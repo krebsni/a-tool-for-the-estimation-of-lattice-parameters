@@ -18,9 +18,9 @@ oo = est.PlusInfinity()
 logger = logging.getLogger(__name__)
 
 
-class Attack_Configuration():
+class Estimation_Configuration():
     """
-    Configuration of the attack vector (including cost models and algorithms used).
+    Configuration of the cost estimation parameters (including cost models and algorithms used).
     """
     # TODO: custom reduction_cost_function
 

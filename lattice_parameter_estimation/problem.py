@@ -4,7 +4,7 @@ TODO: documentation
 
 from numpy.core.fromnumeric import var
 from . import distributions
-from . import attacks
+from . import algorithms_and_config
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -69,17 +69,17 @@ class Base_Problem(ABC):
         pass
 
     @abstractmethod
-    def get_estimate_algorithms(self, attack_configuration=None):
+    def get_estimate_algorithms(self, config=None):
         pass
 
     # TODO: check, perhaps add other operators
     def __ge__(self, sec) -> Estimate_Res:
-        attack_configuration = attacks.Attack_Configuration() # use default config
-        return estimate(parameter_problem=[self], attack_configuration=attack_configuration, sec=sec)
+        config = algorithms_and_config.Estimation_Configuration() # use default config
+        return estimate(parameter_problem=[self], config=config, sec=sec)
 
     def __gt__(self, sec) -> Estimate_Res:
-        attack_configuration = attacks.Attack_Configuration() # use default config
-        return estimate(parameter_problem=[self], attack_configuration=attack_configuration, sec=sec + 1)
+        config = algorithms_and_config.Estimation_Configuration() # use default config
+        return estimate(parameter_problem=[self], config=config, sec=sec + 1)
 
     def __lt__(self, sec) -> Estimate_Res:
         return not self.__ge__(sec)
@@ -113,7 +113,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)]))}')
         start = time.time()
         try:
-            cost = algf() # TODO: handle intractable/trivial error from attacks.py? 
+            cost = algf() # TODO: handle intractable/trivial error from algorithms_and_config.py? 
             duration = time.time() - start           
             logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if cost["rop"] <= best_res.cost["rop"]:
@@ -160,12 +160,12 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         
 
 def estimate(parameter_problems : Iterator[Base_Problem], 
-                attack_configuration : attacks.Attack_Configuration, 
+                config : algorithms_and_config.Estimation_Configuration, 
                 sec=None):
     algorithms = []
     for problem_instance in parameter_problems: 
         algorithms.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
-            problem_instance.get_estimate_algorithms(attack_configuration=attack_configuration))
+            problem_instance.get_estimate_algorithms(config=config))
     if not algorithms: # no instance
         raise EmptyProblem("Could not find any algorithms for given input parameters.")
     start = time.time()
@@ -180,11 +180,11 @@ def estimate(parameter_problems : Iterator[Base_Problem],
     if RUNTIME_ANALYSIS:
         runtime = []
 
-    if attack_configuration.parallel:
-        if attack_configuration.num_cpus is None:
+    if config.parallel:
+        if config.num_cpus is None:
             num_procs = min(mp.cpu_count(), len(algorithms))
         else:
-            num_procs = attack_configuration.num_cpus
+            num_procs = config.num_cpus
 
         tp = ThreadPoolExecutor(num_procs)
 
@@ -287,7 +287,6 @@ class LWE(Base_Problem):
         :param m: number of samples
         :param secret_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param error_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
         """
         # check soundness of parameters
         if not n or not q or not m or n<0 or q<0 or m<0:
@@ -303,16 +302,16 @@ class LWE(Base_Problem):
         self.error_distribution = error_distribution
         self.variant = variant
 
-    def get_estimate_algorithms(self, attack_configuration):
+    def get_estimate_algorithms(self, config):
         """
         Compute list of estimate functions on the LWE instance according to the attack configuration.
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "cprio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """ 
-        if not isinstance(attack_configuration, attacks.Attack_Configuration):
-            raise ValueError("attack_configuration must be instance of Attack_Configuration")
+        if not isinstance(config, algorithms_and_config.Estimation_Configuration):
+            raise ValueError("config must be instance of Estimation_Configuration")
         
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
         alpha = RR(self.error_distribution.get_alpha())
@@ -320,7 +319,7 @@ class LWE(Base_Problem):
         if secret_distribution == "normal" and self.secret_distribution.get_alpha() != alpha:
             ValueError("If secret distribution is Gaussian it must follow the error distribution. Different Gaussians not supported by lwe-estimator.") # TODO: perhaps change
 
-        cost_models = attack_configuration.reduction_cost_models()
+        cost_models = config.reduction_cost_models()
         
         # TODO: coded-bkw: find a case that is working?
         # TODO: arora-gb seems to be not working for sec_dis = "normal" => perhaps change test before adding arora-gb to alg list?
@@ -328,14 +327,14 @@ class LWE(Base_Problem):
         # TODO: find meaningful prio values
         # algname is algorithm name, cname name of cost model, algf function, 
         algorithms = []
-        # Choose attacks. Similar to estimate_lwe function in estimator.py
+        # Choose algorithms. Similar to estimate_lwe function in estimator.py
         for reduction_cost_model in cost_models:
             cost_model = reduction_cost_model["reduction_cost_model"]
             success_probability = reduction_cost_model["success_probability"]
             cname = reduction_cost_model["name"]
             cprio = reduction_cost_model["prio"]
 
-            if "usvp" in attack_configuration.algorithms:
+            if "usvp" in config.algorithms:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
                     # Try guessing secret entries via drop_and_solve
                     algorithms.append({"algname": "primal-usvp-drop", 
@@ -361,7 +360,7 @@ class LWE(Base_Problem):
                                         "cprio": cprio,
                                         "inst": self.variant})
             
-            if "dual" in attack_configuration.algorithms:
+            if "dual" in config.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
                     # Try guessing secret entries via drop_and_solve
                     algorithms.append({"algname": "dual-scale-drop", 
@@ -397,7 +396,7 @@ class LWE(Base_Problem):
                                         "cprio": cprio,
                                         "inst": self.variant})
 
-            if "dual-without-lll" in attack_configuration.algorithms:
+            if "dual-without-lll" in config.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
                     # Try guessing secret entries via drop_and_solve
                     algorithms.append({"algname": "dual-scale-drop-without-lll", 
@@ -422,7 +421,7 @@ class LWE(Base_Problem):
                                         "prio": 20,
                                         "cprio": cprio,
                                         "inst": self.variant})                                                                
-                elif "dual" in attack_configuration.algorithms: # else this algorithm will be run twice
+                elif "dual" in config.algorithms: # else this algorithm will be run twice
                     algorithms.append({"algname": "dual-without-lll", 
                                         "cname": cname, 
                                         "algf": partial(est.dual, reduction_cost_model=cost_model, 
@@ -433,7 +432,7 @@ class LWE(Base_Problem):
                                         "cprio": cprio,
                                         "inst": self.variant})
 
-            if "decode" in attack_configuration.algorithms:
+            if "decode" in config.algorithms:
                 # TODO: Runtime much worse than primal-usvp, may yield better values for small n (Regev scheme n < 256?)
                 # TODO: Could be used when early termination is on perhaps, then it would only be called when all other tests succeed?
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
@@ -460,7 +459,7 @@ class LWE(Base_Problem):
                                         "inst": self.variant})
 
         # attacks without reduction cost model
-        if "mitm" in attack_configuration.algorithms: # estimates are very bad but very fast, so no need to exclude 
+        if "mitm" in config.algorithms: # estimates are very bad but very fast, so no need to exclude 
             algorithms.append({"algname": "mitm", 
                                 "cname": "-", 
                                 "algf": partial(est.mitm, n=self.n, alpha=alpha, q=self.q, m=self.m,  
@@ -470,7 +469,7 @@ class LWE(Base_Problem):
                                 "cprio": 0,
                                 "inst": self.variant})
             
-        if "coded-bkw" in attack_configuration.algorithms:
+        if "coded-bkw" in config.algorithms:
             algorithms.append({"algname": "coded-bkw", 
                                 "cname": "-", 
                                 "algf": partial(est.bkw_coded, n=self.n, alpha=alpha, q=self.q, m=self.m,  
@@ -480,7 +479,7 @@ class LWE(Base_Problem):
                                 "cprio": 0,
                                 "inst": self.variant})
 
-        if "arora-gb" in attack_configuration.algorithms:
+        if "arora-gb" in config.algorithms:
             if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
                 algorithms.append({"algname": "arora-gb-drop", 
                                     "cname": "-", 
@@ -545,7 +544,7 @@ class MLWE(Base_Problem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, attack_configuration, use_reduction=False):
+    def get_estimate_algorithms(self, config, use_reduction=False):
         r"""
         Compute list of estimate functions on the MLWE instance according to the attack configuration.
 
@@ -557,7 +556,7 @@ class MLWE(Base_Problem):
 
         Note that the reduction only works for Search-MLWE TODO: find reduction for decision-MLWE?
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
@@ -574,13 +573,13 @@ class MLWE(Base_Problem):
             rlwe = RLWE(n=self.n, q=q_RLWE, m=self.m, secret_distribution=secret_distribution_RLWE, 
                                 error_distribution=error_distribution_RLWE)
 
-            return rlwe.get_estimate_algorithms(attack_configuration=attack_configuration,       
+            return rlwe.get_estimate_algorithms(config=config,       
                                         use_reduction=use_reduction)
             
         else:
             lwe = LWE(n=self.n*self.d, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
                         error_distribution=self.error_distributionm, variant="MLWE")
-            return lwe.get_estimate_algorithms(attack_configuration=attack_configuration)
+            return lwe.get_estimate_algorithms(config=config)
 
     def __str__(self):
         # TODO
@@ -598,7 +597,7 @@ class RLWE(Base_Problem):
         :param m: number of samples
         :param secret_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param error_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
@@ -614,18 +613,18 @@ class RLWE(Base_Problem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, attack_configuration, use_reduction=False):
+    def get_estimate_algorithms(self, config, use_reduction=False):
         r"""
         Compute list of estimate functions on the RLWE instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         lwe = LWE(n=self.n, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="RLWE")
-        return lwe.get_estimate_algorithms(attack_configuration=attack_configuration)
+        return lwe.get_estimate_algorithms(config=config)
 
     def __str__(self):
         # TODO
@@ -880,18 +879,18 @@ class SIS(Base_Problem):
         self.bound = bound
         self.variant = variant
     
-    def get_estimate_algorithms(self, attack_configuration):
+    def get_estimate_algorithms(self, config):
         """
         Compute list of estimate functions on the SIS instance according to the attack configuration.
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        if not isinstance(attack_configuration, attacks.Attack_Configuration):
-            raise ValueError("attack_configuration must be instance of Attack_Configuration")
+        if not isinstance(config, algorithms_and_config.Estimation_Configuration):
+            raise ValueError("config must be instance of Estimation_Configuration")
 
-        cost_models = attack_configuration.reduction_cost_models() # TODO
+        cost_models = config.reduction_cost_models() # TODO
 
         # attack_name = ""
         # is_secure = True  
@@ -902,20 +901,20 @@ class SIS(Base_Problem):
             cost_model = reduction_cost_model["reduction_cost_model"]
             cname = reduction_cost_model["name"]
 
-            if "lattice-reduction" in attack_configuration.algorithms:
+            if "lattice-reduction" in config.algorithms:
                 algorithms.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
-                                        "algf": partial(attacks.SIS.lattice_reduction, 
+                                        "algf": partial(algorithms_and_config.SIS.lattice_reduction, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound, 
                                                         reduction_cost_model=cost_model),
                                         "prio": 1,
                                         "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
 
-        if "combinatorial" in attack_configuration.algorithms:
+        if "combinatorial" in config.algorithms:
             algorithms.append({"algname": "combinatorial", 
                                         "cname": "-",
-                                        "algf": partial(attacks.SIS.combinatorial, 
+                                        "algf": partial(algorithms_and_config.SIS.combinatorial, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound),
                                         "prio": 0,
                                         "cprio": 0,
@@ -947,7 +946,7 @@ class MSIS(Base_Problem):
         self.m = m
         self.bound = bound
     
-    def get_estimate_algorithms(self, attack_configuration, use_reduction=False):
+    def get_estimate_algorithms(self, config, use_reduction=False):
         r"""
         Compute list of estimate functions on the MSIS instance according to the attack configuration.
 
@@ -961,7 +960,7 @@ class MSIS(Base_Problem):
         
         Then there exists a reduction from :math:`\text{M-SIS}_{q^k,m^k,\beta'}` to :math:`\text{R-SIS}_{q,m,\beta}` with :math:`\beta' = m^{k(d-1)/2} \cdot \beta^{k(2d-1)}`.
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
         :param use_reduction: specify if reduction to RSIS is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
@@ -982,12 +981,12 @@ class MSIS(Base_Problem):
                 bound = norm.Lp(beta_RSIS, self.n, 2) # new dimension of input vector (instead of n * d in M-SIS)
 
             rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS)
-            return rsis.get_estimate_algorithms(attack_configuration=attack_configuration,     
+            return rsis.get_estimate_algorithms(config=config,     
                                         use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
         else:
             sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound, variant="MSIS")
-            return sis.get_estimate_algorithms(attack_configuration=attack_configuration)
+            return sis.get_estimate_algorithms(config=config)
 
     def __str__(self):
         return "MSIS instance with parameters (n=" + str(self.n) + ", d=" + str(self.d) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound.value)  + ")"
@@ -1012,16 +1011,16 @@ class RSIS(Base_Problem):
         self.m = m
         self.bound = bound
 
-    def get_estimate_algorithms(self, attack_configuration):
+    def get_estimate_algorithms(self, config):
         """
         Compute list of estimate functions on a corresponding SIS instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6.
 
-        :param attack_configuration: instance of :class:`Attacks.Attack_Configuration`
+        :param config: instance of :class:`algorithms_and_config.Estimation_Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound, variant="RSIS")
-        return sis.get_estimate_algorithms(attack_configuration=attack_configuration)
+        return sis.get_estimate_algorithms(config=config)
 
     def __str__(self):
         # TODO

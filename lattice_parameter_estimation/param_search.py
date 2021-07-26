@@ -21,7 +21,7 @@ AUTHOR:
 
 from queue import Empty
 from . import problem
-from . import attacks
+from . import algorithms_and_config
 from . import problem
 import logging
 from typing import Generator, Iterator
@@ -88,11 +88,11 @@ class Parameter_Set():
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
-def is_secure(parameter_problems : Iterator[problem.Base_Problem], sec, attack_configuration : attacks.Attack_Configuration):
-    return problem.estimate(parameter_problems=parameter_problems, attack_configuration=attack_configuration, sec=sec)
+def is_secure(parameter_problems : Iterator[problem.Base_Problem], sec, config : algorithms_and_config.Estimation_Configuration):
+    return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
-        attack_configuration : attacks.Attack_Configuration):
+        config : algorithms_and_config.Estimation_Configuration):
     """TODO: summary
 
     :param sec: required security level in bits
@@ -115,7 +115,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         logger.info("----------------------------------------------------------------------------")
         logger.info(f"Checking next parameter set: {current_parameter_set}") # TODO: print nicely
         try:
-            res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), attack_configuration=attack_configuration, sec=sec)
+            res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
             if res.is_secure:
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
