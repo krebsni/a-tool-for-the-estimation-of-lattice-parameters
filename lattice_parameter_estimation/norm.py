@@ -27,7 +27,7 @@ import estimate_all_schemes.estimator as est
 oo = est.PlusInfinity()
 
 
-class Base_Norm(ABC):
+class BaseNorm(ABC):
     """
     Provides norm transformations and property access to value in norm and dimension .
     """
@@ -48,7 +48,7 @@ class Base_Norm(ABC):
         pass
 
 
-class Lp(Base_Norm):
+class Lp(BaseNorm):
     # TODO: inform user about how to use norm on vector in ring/module? I.e. multiply dimension with degree
     
     def __init__(self, value, p, dimension=None):
@@ -158,7 +158,7 @@ class Lp(Base_Norm):
         return f"{self.value} (L{self.p}-norm)"
 
 
-class Coo(Base_Norm):
+class Coo(BaseNorm):
     """
     Infinity norm of canonical embedding.
     """

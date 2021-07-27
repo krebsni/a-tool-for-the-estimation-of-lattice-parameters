@@ -34,7 +34,7 @@ class Distribution():
 
 # TODO: if we change q (e.g. in reduction), what values change?
 # TODO: perhaps don't include 
-class Uniform(norm.Base_Norm, Distribution):
+class Uniform(norm.BaseNorm, Distribution):
     """ 
     TODO
     """
@@ -112,7 +112,7 @@ class Uniform(norm.Base_Norm, Distribution):
         return "Uniform [" + str(self._convert_for_lwe_estimator()) + "]" # TODO: perhaps change
 
 
-class Gaussian(norm.Base_Norm, ABC, Distribution):
+class Gaussian(norm.BaseNorm, ABC, Distribution):
     """ 
     TODO
     """
@@ -227,7 +227,7 @@ class Gaussian(norm.Base_Norm, ABC, Distribution):
         return f"Gaussian [sigma={self.sigma}, s={self.s}, alpha={self.alpha}, componentwise={self.componentwise}, sec={self.sec}"
 
 
-class Gaussian_alpha(Gaussian):
+class GaussianAlpha(Gaussian):
     r"""
     Helper class for Gaussian distribution with input parameter :math:`\alpha`. 
     """
@@ -246,7 +246,7 @@ class Gaussian_alpha(Gaussian):
         self.sec = sec
 
 
-class Gaussian_sigma(Gaussian):
+class GaussianSigma(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
     """
@@ -264,7 +264,7 @@ class Gaussian_sigma(Gaussian):
         self.sec = sec
 
 
-class Gaussian_s(Gaussian):
+class GaussianS(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
     """

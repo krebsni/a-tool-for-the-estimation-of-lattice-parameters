@@ -5,12 +5,13 @@ TODO: documentation
 import sys
 import os
 import logging 
+import norm
 import sage.all
 from sage.functions.log import log
 from sage.functions.other import ceil, sqrt
 from sage.rings.all import QQ, RR, ZZ
 from sage.symbolic.all import pi
-import cost_asymptotics
+import reduction_cost_models
 import estimate_all_schemes.estimator as est
 oo = est.PlusInfinity()
 
@@ -18,7 +19,7 @@ oo = est.PlusInfinity()
 logger = logging.getLogger(__name__)
 
 
-class Estimation_Configuration():
+class EstimationConfiguration():
     """
     Configuration of the cost estimation parameters (including cost models and algorithms used).
     """
@@ -67,20 +68,19 @@ class Estimation_Configuration():
         # TODO: change way of specifying cost models?
         if conservative:
             if self.quantum and self.classical and self.sieving and self.enumeration:
-                bkz_cost_models = [c for c in cost_asymptotics.BKZ_COST_ASYMPTOTICS if c["name"] in ["Q‑Core‑Sieve", "Lotus"]]
+                bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Lotus"]]
             else:
                 if self.quantum and not self.classical:
-                    bkz_cost_models = [c for c in cost_asymptotics.BKZ_COST_ASYMPTOTICS if c["name"] in ["Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"]]
+                    bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"]]
                 elif self.classical and not self.quantum:
-                    bkz_cost_models = [c for c in cost_asymptotics.BKZ_COST_ASYMPTOTICS if c["name"] in ["Core‑Sieve", "Lotus"]]
+                    bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Core‑Sieve", "Lotus"]]
                 if self.sieving and not self.enumeration:
-                    bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["group"]]
+                    bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["method"]]
                 elif self.enumeration and not self.sieving:
-                    bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["group"]]
+                    bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["method"]]
             self.cost_models = bkz_cost_models
         else:
-            # TODO take all from each category, add priority for cost
-            self.cost_models = cost_asymptotics.BKZ_COST_ASYMPTOTICS # TODO manually annotate priority
+            self.cost_models = reduction_cost_models.BKZ_COST_MODELS
         
         logger.debug("Attack configuration:" + str(self))
     
@@ -123,7 +123,7 @@ class Estimation_Configuration():
 
 class SIS:
     """
-    Namespace for SIS attacks
+    Namespace for SIS algorithms
     """
 
     def lattice_reduction(n, q, m, bound, reduction_cost_model):
@@ -178,10 +178,12 @@ class SIS:
         :param n: height of matrix
         :param m: width of matrix
         :param q: modulus
-        :param bound: bound of solution, must be instance of :class:`Norm.Base_norm` 
+        :param bound: bound of solution, must be instance of :class:`Norm.BaseNorm` 
         """
         # TODO check if use of n and m are correct
         # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
+        if not isinstance(bound, norm.BaseNorm):
+            raise ValueError("bound must be instance of (subclass of) norm.BaseNorm.")
 
         beta = RR(bound.to_L2(n).value) # we need L2 norm TODO: check
         if beta <= 1:
@@ -254,8 +256,11 @@ class SIS:
         :param n: height of matrix
         :param m: width of matrix
         :param q: modulus
-        :param bound: bound of solution, must be instance of :class:`Norm.Base_norm`
+        :param bound: bound of solution, must be instance of :class:`Norm.BaseNorm`
         """
+        if not isinstance(bound, norm.BaseNorm):
+            raise ValueError("bound must be instance of (subclass of) norm.BaseNorm.")
+        
         beta = bound.to_Loo(n).value # we need Loo norm
         if beta <= 1:
             raise ValueError("beta < 1")

@@ -73,7 +73,7 @@ def unit_cost():
     # TODO: perhaps another generic search without unit cost
 
 
-class Parameter_Set():
+class ParameterSet():
     """
     Helper class to order parameter sets in list 
     """
@@ -83,16 +83,16 @@ class Parameter_Set():
         self.parameters = parameters
     
     def __lt__(self, other):
-        return Parameter_Set.parameter_cost(*self.parameters) < Parameter_Set.parameter_cost(*other.parameters) # TODO check
+        return ParameterSet.parameter_cost(*self.parameters) < ParameterSet.parameter_cost(*other.parameters) # TODO check
 
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
-def is_secure(parameter_problems : Iterator[problem.Base_Problem], sec, config : algorithms_and_config.Estimation_Configuration):
+def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : algorithms_and_config.EstimationConfiguration):
     return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
-        config : algorithms_and_config.Estimation_Configuration):
+        config : algorithms_and_config.EstimationConfiguration):
     """TODO: summary
 
     :param sec: required security level in bits
@@ -108,8 +108,8 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     # TODO: LWE: search vs decision?
 
     # set parameter cost function for list sorting
-    Parameter_Set.parameter_cost = parameter_cost
-    current_parameter_sets = [Parameter_Set(initial_parameters)]
+    ParameterSet.parameter_cost = parameter_cost
+    current_parameter_sets = [ParameterSet(initial_parameters)]
     while current_parameter_sets:
         current_parameter_set = current_parameter_sets.pop(0).parameters
         logger.info("----------------------------------------------------------------------------")
@@ -123,4 +123,4 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         
         # check if correct
         for parameter_set in next_parameters(*current_parameter_set):
-            bisect.insort_left(current_parameter_sets, Parameter_Set(parameter_set))
+            bisect.insort_left(current_parameter_sets, ParameterSet(parameter_set))
