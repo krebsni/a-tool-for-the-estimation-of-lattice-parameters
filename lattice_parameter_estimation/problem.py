@@ -160,7 +160,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         
 
 def estimate(parameter_problems : Iterator[BaseProblem], 
-                config : algorithms_and_config.Estimation_Configuration, 
+                config : algorithms_and_config.EstimationConfiguration, 
                 sec=None):
     algorithms = []
     for problem_instance in parameter_problems: 

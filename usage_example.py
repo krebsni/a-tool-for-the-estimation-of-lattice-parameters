@@ -26,13 +26,13 @@ def runtime_analysis():
     # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
     # TODO: arora-gb did not yield any results yet (tested for normal sec_dis)
     #   arora-gb so far either returns infinity or segmentation fault after long runtime even for small n (at least for a few minutes)...
-    config = algorithms_and_config.Estimation_Configuration(algorithms=["coded-bkw"], parallel=True)
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["coded-bkw"], parallel=True)
 
     problem_instances = []
     for i in [6]:
         n, alpha, q = Param.Regev(2**i)
         m = n**2
-        err_dis = distributions.Gaussian_alpha(alpha=alpha, q=q)
+        err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
         sec_dis = err_dis
         problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
     problem.RUNTIME_ANALYSIS = True
@@ -59,7 +59,7 @@ def runtime_analysis():
         n = params["n"]
         q = params["q"]
         sigma = params["sd"] #standard deviation
-        err_dis = distributions.Gaussian_sigma(sigma=sigma, q=q)
+        err_dis = distributions.GaussianSigma(sigma=sigma, q=q)
         if not "m" in params:
             m = 2*n
         else:
@@ -87,9 +87,9 @@ def estimation_example():
     # Example: KCL‑RLWE
     problem.STATISTICAL_SEC = sec
     n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
-    err_dis = distributions.Gaussian_sigma(sigma=stddev, q=q, componentwise=True, sec=sec)
+    err_dis = distributions.GaussianSigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
-    config = algorithms_and_config.Estimation_Configuration(algorithms=["mitm"], parallel=True)
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["mitm"], parallel=True)
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates
@@ -120,7 +120,7 @@ def estimation_example():
 
 
 def Regev_example():
-    config = algorithms_and_config.Estimation_Configuration()
+    config = algorithms_and_config.EstimationConfiguration()
     sec = 128
     def next_parameters(n, q=None, m=None, alpha=None):
         n, alpha, q = Param.Regev(n*2)
@@ -128,7 +128,7 @@ def Regev_example():
         yield n, q, m, alpha
     
     def parameter_problem(n, q, m, alpha):
-        distribution = distributions.Gaussian_alpha(alpha=alpha, q=q)
+        distribution = distributions.GaussianAlpha(alpha=alpha, q=q)
         yield problem.LWE(n=n, q=q, m=m, secret_distribution=distribution, error_distribution=distribution)
     
     res = param_search.generic_search(sec, next(next_parameters(2**5)), next_parameters, param_search.unit_cost, parameter_problem, config)
@@ -140,11 +140,11 @@ def Regev_example():
 
 
 def SIS_example():
-    config = algorithms_and_config.Estimation_Configuration(algorithms=["combinatorial", "lattice-reduction"])
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
     sec = 128
     def next_parameters(n, q=None, m=None, beta=None):
         n, alpha, q = Param.Regev(n*2)
-        beta = distributions.Gaussian_alpha(alpha=alpha, q=q).to_Lp(sec=sec, dimension=n)
+        beta = distributions.GaussianAlpha(alpha=alpha, q=q).to_Lp(sec=sec, dimension=n)
         m = n**2
         yield n, q, m, beta
     
@@ -161,7 +161,7 @@ def SIS_example():
 
 def BGV_example():
     sec = 128
-    config = algorithms_and_config.Estimation_Configuration()
+    config = algorithms_and_config.EstimationConfiguration()
     def next_parameters(N, p, q):
         N = 2 * N
         p = 1 # find p depending on new N
@@ -214,7 +214,7 @@ def two_problem_search_example():
     n, l = 2**50, 1 # TODO: for th
     m = 1
     initial_parameters = N, q, n, m, l
-    config = algorithms_and_config.Estimation_Configuration(algorithms=["combinatorial", "lattice-reduction"])
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
     
                         
     def next_parameters(N, q, n, m, l):
@@ -238,7 +238,7 @@ def two_problem_search_example():
 
     def parameter_problem(N, q, n, m, l):
         try:
-            lwe = problem.Statistical_Gaussian_MLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
+            lwe = problem.StatisticalGaussianMLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
 
             # TODO: Question: what was the though with the sigmas here?
             # sigma = lwe.sigma

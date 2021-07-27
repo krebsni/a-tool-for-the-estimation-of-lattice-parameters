@@ -1,6 +1,5 @@
 from mpl_toolkits.mplot3d import Axes3D
-from cost_asymptotics_new import BKZ_COST_ASYMPTOTICS
-
+from cost_models_log import BKZ_COST_MODELS
 
 def runtime_results():
     import json
@@ -28,8 +27,8 @@ def cost_model_plotter():
     rop = {}
 
     # cost models without d
-    for cost_model in BKZ_COST_ASYMPTOTICS:
-        rop[cost_model["name"]] = np.vectorize(cost_model["reduction_cost_model"])(beta, ones, ones)
+    for cost_model in BKZ_COST_MODELS:
+        rop[cost_model["name"]] = np.vectorize(cost_model["cost_model"])(beta, ones, ones)
 
     fig1, ax1 = plt.subplots(1,1)
     ax1.set_prop_cycle(color=['magenta', 'indigo', 'navy', 'deepskyblue', 'cyan',  'darkgreen',  'lightgreen', 'yellow', 'orange', 'darksalmon','red', 'brown', 'lightgrey', 'dimgrey', 'black'])
@@ -43,6 +42,43 @@ def cost_model_plotter():
     ax1.legend()
     plt.grid()
     plt.savefig('cost_models.png')
+    plt.show()
+
+def cost_model_d_2d_plotter():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import sage.all 
+    from sage.all import RR, ZZ, log, gamma, pi
+
+    betas = [1, 50, 100]
+    d = np.array([i for i in range(10, 1000, 10)])
+    ones = np.array([1]*len(d))
+    rop = {}
+
+    for b in betas:
+        beta = np.array([b]*len(d))
+        rop[b] = {}
+        for cost_model in [cm for cm in BKZ_COST_MODELS  if cm["name"] in ["Q‑8d‑Sieve + O(1)", "8d‑Enum (quadratic fit) + O(1)", "8d‑Sieve + O(1)"]]:
+            rop[b][cost_model["name"]] = np.vectorize(cost_model["cost_model"])(beta, d, ones)
+
+    fig1, ax1 = plt.subplots(1,1)
+    colors = ['r', 'b', 'g']    
+    styles = ['-', '--', ':']
+    for i in range(len(betas)):
+        b = betas[i]
+
+        j = 0
+        for cname in rop[b]:
+            label = cname + r", $\beta = $" + str(b)
+            ax1.plot(d, rop[b][cname], colors[j] + styles[i], label=label)
+            j += 1
+
+    ax1.set_xlabel(r'Lattice dimension $d$')
+    ax1.set_ylabel('log2 of BKZ reduction cost [rop]')
+    ax1.legend()
+    plt.grid()
+    plt.savefig('cost_models_d_2d.png')
     plt.show()
 
 def cost_model_d_plotter():
@@ -61,8 +97,8 @@ def cost_model_d_plotter():
     BETA, D = np.meshgrid(beta, d)
     ZERO = np.meshgrid(zero,zero)[0]
     rop_d = {}
-    for cost_model in [cm for cm in BKZ_COST_ASYMPTOTICS  if cm["name"] in ["Q‑8d‑Sieve + O(1)", "8d‑Enum (quadratic fit) + O(1)", "8d‑Sieve + O(1)"]]:
-        rop = np.array(np.vectorize(cost_model["reduction_cost_model"])(np.ravel(BETA), np.ravel(D), np.ravel(ZERO))) # already log10 of actual cost
+    for cost_model in [cm for cm in BKZ_COST_MODELS  if cm["name"] in ["Q‑8d‑Sieve + O(1)", "8d‑Enum (quadratic fit) + O(1)", "8d‑Sieve + O(1)"]]:
+        rop = np.array(np.vectorize(cost_model["cost_model"])(np.ravel(BETA), np.ravel(D), np.ravel(ZERO))) # already log10 of actual cost
         rop_d[cost_model["name"]] = rop.reshape(BETA.shape)
     
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -84,4 +120,4 @@ def cost_model_d_plotter():
     plt.show()
 
 if __name__ == "__main__":
-    cost_model_d_plotter()
+    cost_model_d_2d_plotter()

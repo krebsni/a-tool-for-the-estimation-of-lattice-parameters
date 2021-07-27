@@ -11,38 +11,16 @@ NOTATION:
     d           lattice dimension
     B           bitsize of entries
 
-.. _cost-models:
 
-The value for key ``prio`` is derived from the folling plots of the various cost models. The scale is ordinal, not cardinal. To compare and assign suitable priority values for custom cost models the function ``cost_model_plotter()`` in ``tests_for_optimization/runtime_analysis.py`` can be used. If your own custom cost model should be evaluated first during the the cost estimation, set `prio`` to `0`.
-
-.. figure:: ../tests_for_optimization/cost_models.png
-   :width: 600
-   :align: center
-   :figclass: align-center
-
-   Cost models without parameter d or d=1
-
-
-
-.. figure:: ../tests_for_optimization/cost_models_d_2d.png
-   :width: 500
-   :align: center
-   :figclass: align-center
-
-   Cost models with parameter d
 """
 
-
-
-from sage.all import RR, ZZ, log, gamma, pi
-from estimate_all_schemes.estimator import BKZ
-
+from math import log
 BKZ_COST_MODELS = [
-    # TODO: add worst lower bounds for sieving algorithms ZZ(2)**RR(0.2075*beta), :cite:`ADPS16`, Frodo?
+    # TODO: add worst lower bounds for sieving algorithms (0.2075*beta), :cite:`ADPS16`, Frodo?
     {
         "name": "Q‑Core‑Sieve",
         "reference": ":cite:`Laa15`, :cite:`ADPS16`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.265 * beta),
+        "cost_model": lambda beta, d, B: (0.265 * beta),
         "success_probability": 0.99,
         "human_friendly": "2^(0.265 β)",
         "latex": r"2^{0.265 \beta}",
@@ -54,7 +32,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Q‑Core‑Sieve + O(1)",
         "reference": ":cite:`SAL+17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.265 * beta + 16),
+        "cost_model": lambda beta, d, B: (0.265 * beta + 16),
         "success_probability": 0.99,
         "human_friendly": "2^(0.265 β + O(1))",
         "latex": r"2^{0.265 \beta + \mathcal{O}(1)}",
@@ -66,7 +44,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Q‑Core‑Sieve (min space)",
         "reference": ":cite:`SHRS17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.2975 * beta),
+        "cost_model": lambda beta, d, B: (0.2975 * beta),
         "success_probability": 0.99,
         "human_friendly": "2^(0.2975 β)",
         "latex": r"2^{0.2975 \beta}",
@@ -78,7 +56,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Q‑β‑Sieve",
         "reference": ":cite:`NAB+17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.265 * beta + log(beta, 2)),
+        "cost_model": lambda beta, d, B: (0.265 * beta + log(beta, 2)),
         "success_probability": 0.99,
         "human_friendly": "β 2^(0.265 β)",
         "latex": r"\beta \cdot 2^{0.265 \beta}",
@@ -90,7 +68,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Q‑8d‑Sieve + O(1)",
         "reference": ":cite:`BAA+17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.265 * beta + 16.4 + log(8 * d, 2)),
+        "cost_model": lambda beta, d, B: (0.265 * beta + 16.4 + log(8 * d, 2)),
         "success_probability": 0.99,
         "human_friendly": "8d 2^(0.265 β + O(1))",
         "latex": r"8d \cdot 2^{0.265 \beta + \mathcal{O}(1)}",
@@ -102,7 +80,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Core‑Sieve",
         "reference": ":cite:`BDGL16`, :cite:`ADPS16`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.292 * beta),
+        "cost_model": lambda beta, d, B: (0.292 * beta),
         "success_probability": 0.99,
         "human_friendly": "2^(0.292 β)",
         "latex": r"2^{0.292 \beta}",
@@ -114,7 +92,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Core‑Sieve + O(1)",
         "reference": ":cite:`SAL+17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.292 * beta + 16),
+        "cost_model": lambda beta, d, B: (0.292 * beta + 16),
         "success_probability": 0.99,
         "human_friendly": "2^(0.292 β + O(1))",
         "latex": r"2^{0.292 \beta + \mathcal{O}(1)}",
@@ -126,7 +104,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Core‑Sieve (min space)",
         "reference": ":cite:`SHRS17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.368 * beta),
+        "cost_model": lambda beta, d, B: (0.368 * beta),
         "success_probability": 0.99,
         "human_friendly": "2^(0.368 β)",
         "latex": r"2^{0.368 \beta}",
@@ -138,7 +116,7 @@ BKZ_COST_MODELS = [
     {
         "name": "β‑Sieve",
         "reference": ":cite:`NAB+17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.292 * beta + log(beta,2)),
+        "cost_model": lambda beta, d, B: (0.292 * beta + log(beta,2)),
         "success_probability": 0.99,
         "human_friendly": "β 2^(0.292 β)",
         "latex": r"\beta \cdot 2^{0.292 \beta}",
@@ -150,7 +128,7 @@ BKZ_COST_MODELS = [
     {
         "name": "8d‑Sieve + O(1)",
         "reference": ":cite:`DTGW17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.292 * beta + 16.4 + log(8 * d,2)),
+        "cost_model": lambda beta, d, B: (0.292 * beta + 16.4 + log(8 * d,2)),
         "success_probability": 0.99,
         "human_friendly": "8d 2^(0.292 β + O(1))",
         "latex": r"8d \cdot 2^{0.292 \beta + \mathcal{O}(1)}",
@@ -162,7 +140,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Q‑Core‑Enum + O(1)",
         "reference": ":cite:`SHRS17`, :cite:`APS15`, :cite:`Chen13`, :cite:`ACDDPPVW18`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR((0.18728 * beta * log(beta, 2) - 1.0192 * beta + 16.1)/2),
+        "cost_model": lambda beta, d, B: ((0.18728 * beta * log(beta, 2) - 1.0192 * beta + 16.1)/2),
         "success_probability": 0.99,
         "human_friendly": "2^((0.18728 β log β - 1.0192 β + O(1))/2)",
         "latex": r"2^{(0.18728 \beta \log \beta - 1.0192 \beta + + \mathcal{O}(1)) / 2}",
@@ -174,7 +152,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Lotus",
         "reference": ":cite:`PHAM17`, :cite:`ACDDPPVW18`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(-0.7550818937366788 * beta + 0.12472525302110621 * beta * log(beta, 2) + 2.254440896969337),
+        "cost_model": lambda beta, d, B: (-0.7550818937366788 * beta + 0.12472525302110621 * beta * log(beta, 2) + 2.254440896969337),
         "success_probability": 0.99,
         "human_friendly": "2^(0.125 β log β -0.755 β + O(1))",
         "latex": r"2^{0.125 \beta \log \beta -0.755 \beta + \mathcal{O}(1)}",
@@ -186,7 +164,7 @@ BKZ_COST_MODELS = [
     {
         "name": "Core‑Enum + O(1)",
         "reference": ":cite:`SHRS17`, :cite:`APS15`, :cite:`Chen13`, :cite:`ACDDPPVW18`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.18728 * beta * log(beta, 2) - 1.0192 * beta + 16.1),
+        "cost_model": lambda beta, d, B: (0.18728 * beta * log(beta, 2) - 1.0192 * beta + 16.1),
         "success_probability": 0.99,
         "human_friendly": "2^(0.18728 β log β - 1.0192 β + O(1))",
         "latex": r"2^{0.18728 \beta \log \beta -1.0192 \beta + \mathcal{O}(1)}",
@@ -198,7 +176,7 @@ BKZ_COST_MODELS = [
     {
         "name": "8d‑Enum (quadratic fit) + O(1)",
         "reference": ":cite:`BC0V17`",
-        "cost_model": lambda beta, d, B: ZZ(2)**RR(0.000784314 * beta**2 + 0.366078 * beta - 6.125 + 7 + log(8 * d, 2)),
+        "cost_model": lambda beta, d, B: (0.000784314 * beta**2 + 0.366078 * beta - 6.125 + 7 + log(8 * d, 2)),
         "success_probability": 0.99,
         "human_friendly": "8d 2^(0.000784 β² + 0.366 β + O(1))",
         "latex": r"8d \cdot 2^{0.000784 \beta^2 + 0.366 \beta + \mathcal{O}(1)}",
@@ -208,25 +186,3 @@ BKZ_COST_MODELS = [
         "prio": 200,
     },
 ]
-
-table = ".. list-table:: Reduction Cost Models\n\
-   :header-rows: 1\n\
-\n\
-   * - Name\n\
-     - Reference\n\
-     - Cost model\n\
-     - P(success)\n\
-     - Quantum\n\
-     - Method\n\
-     - Priority\n"
-
-for model in BKZ_COST_MODELS:
-    table += "   * - " + model["name"] + "\n"
-    table += "     - " + model["reference"] + "\n"
-    table += "     - :math:`" + model["latex"] + "`\n"
-    table += "     - " + str(model["success_probability"]) + "\n"
-    table += "     - " + ["", "X"][model["quantum"]] + "\n"
-    table += "     - " + model["method"] + "\n"
-    table += "     - " + str(model["prio"]) + "\n"
-
-__doc__ += f"{table}"
