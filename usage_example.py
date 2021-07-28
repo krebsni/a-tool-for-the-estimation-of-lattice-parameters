@@ -22,25 +22,65 @@ from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEME
 
 logger = logging.getLogger(__name__)
 
+def plot_runtime(title, file_name, runtime):
+    import matplotlib.pyplot as plt
+    logging.getLogger("matplotlib").setLevel(logging.INFO)
+    algs = {algn for algn in (x["algname"] for x in runtime)}
+    algs_res = {}
+    for algn in algs:
+        cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
+        algs_res[algn] = {}
+        for cname in cmodels:
+            algs_res[algn][cname] = sorted([x for x in runtime if (x["algname"] == algn and x["cname"] == cname)], key=lambda k : k["parameters"]["n"])
+
+    fig1, ax1 = plt.subplots(1,1)
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
+    i = 0
+    # TODO: do mean from cost models?
+    for algn in algs_res:
+        j = 0
+        for cname in algs_res[algn]:
+            label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
+            ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + styles[j], label=label)
+            j += 1
+        i += 1
+    ax1.set_xlabel(r'Secret dimension $n$')
+    ax1.set_ylabel('Runtime [s]')
+    ax1.set_title(title)
+    ax1.legend()
+    plt.grid()
+    plt.savefig(file_name)
+    plt.show()
+
 def runtime_analysis():
+    print("---------------------------------")
+    print("Runtime Analysis")
+    print("---------------------------------")
+    problem.RUNTIME_ANALYSIS = True
     # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
     # TODO: arora-gb did not yield any results yet (tested for normal sec_dis)
     #   arora-gb so far either returns infinity or segmentation fault after long runtime even for small n (at least for a few minutes)...
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["coded-bkw"], parallel=True)
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "dual", "dual-without-lll", "mitm", "coded-bkw", "decode"])
 
     problem_instances = []
-    for i in [6]:
+    for i in range(7, 10):
         n, alpha, q = Param.Regev(2**i)
         m = n**2
         err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
         sec_dis = err_dis
         problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
     problem.RUNTIME_ANALYSIS = True
-    result = problem.estimate(parameter_problem=problem_instances, config=config)
+    result = problem.estimate(parameter_problems=problem_instances, config=config)
+
+    print("---------------------------------")
+    print("Estimates complete")
     runtime = result.runtime
-    import json
-    with open('runtime.json', 'w') as fout:
-        json.dump(runtime, fout)
+    # plot_runtime("Regev", "runtime_regev", runtime)
+    # import json
+    # with open('runtime_Regev.json', 'w') as fout:
+    #     json.dump(runtime, fout)
+
     return
 
     schemes = [s for s in LWE_SCHEMES if s["name"] == "Lizard"]
@@ -93,8 +133,9 @@ def estimation_example():
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates
-    print("-----------------------------")
+    print("---------------------------------")
     print("LWE Estimates")
+    print("---------------------------------")
     result = problem.estimate(parameter_problem=[lwe], config=config, sec=250)
     print("Result: is_secure=" + str(result.is_secure) + ", cost=" + str(result.cost) + ", info=" + str(result.info))
     # result = param_search.is_secure(parameter_problem=[lwe], sec=350, config=config)
@@ -106,8 +147,9 @@ def estimation_example():
     print()
 
     # # Example: SIS
-    print("-----------------------------")
+    print("---------------------------------")
     print("SIS Estimates")
+    print("---------------------------------")
     q = param_search.make_prime(2**(2*10+1), lbound=2**(2*10))
     m = (n * log(q, 2)).round()
     beta = err_dis.to_Loo(dimension=n) # componentwise beta bound (convert from Gaussian)
@@ -140,6 +182,9 @@ def Regev_example():
 
 
 def SIS_example():
+    print("---------------------------------")
+    print("SIS")
+    print("---------------------------------")
     config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
     sec = 128
     def next_parameters(n, q=None, m=None, beta=None):
@@ -160,6 +205,9 @@ def SIS_example():
 
 
 def BGV_example():
+    print("---------------------------------")
+    print("BGV")
+    print("---------------------------------")
     sec = 128
     config = algorithms_and_config.EstimationConfiguration()
     def next_parameters(N, p, q):
@@ -175,6 +223,9 @@ def BGV_example():
     N, p, q, security = param_search.generic_search(sec, (2**10, None, None), next_parameters, param_search.unit_cost, parameter_problem, config)
 
 def two_problem_search_example():
+    print("---------------------------------")
+    print("Two Problem Search Problem")
+    print("---------------------------------")
     # k: width (over R_q) of commitment matrices
     # n: height (over R_q) of commitment matrices
     # l: dimension (over R_q) of message space
@@ -265,5 +316,6 @@ def two_problem_search_example():
     print(f"Estimate results: {str(res['result'])}")
 
 if __name__ == "__main__":
-    SIS_example()
-    Regev_example()
+    # SIS_example()
+    # Regev_example()
+    runtime_analysis()

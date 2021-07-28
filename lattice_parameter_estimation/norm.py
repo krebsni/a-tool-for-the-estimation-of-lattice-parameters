@@ -29,7 +29,7 @@ oo = est.PlusInfinity()
 
 class BaseNorm(ABC):
     """
-    Provides norm transformations and property access to value in norm and dimension .
+    Provides norm transformations and property access to value in norm and dimension.
     """
     @abstractmethod
     def to_L1(self, dimension=None):

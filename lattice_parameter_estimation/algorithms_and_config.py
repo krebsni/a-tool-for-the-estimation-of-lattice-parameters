@@ -126,7 +126,7 @@ class SIS:
     Namespace for SIS algorithms
     """
 
-    def lattice_reduction(n, q, m, bound, reduction_cost_model):
+    def lattice_reduction(n, q, m, bound : norm.BaseNorm, reduction_cost_model):
         r""" 
         Estimate cost of solving SIS by means of lattice reduction according to :cite:p:`RS10`.
 
@@ -182,9 +182,6 @@ class SIS:
         """
         # TODO check if use of n and m are correct
         # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
-        if not isinstance(bound, norm.BaseNorm):
-            raise ValueError("bound must be instance of (subclass of) norm.BaseNorm.")
-
         beta = RR(bound.to_L2(n).value) # we need L2 norm TODO: check
         if beta <= 1:
             raise ValueError("beta < 1")
@@ -239,7 +236,7 @@ class SIS:
             raise  ValueError("Trivial. beta > q")
             
 
-    def combinatorial(q, n, m, bound, reduction_cost_model=None):
+    def combinatorial(q, n, m, bound : norm.BaseNorm, reduction_cost_model=None):
         r""" 
         Estimate cost of solving SIS by means of the combinatorial method as described in :cite:`MR09`.
 
@@ -258,9 +255,6 @@ class SIS:
         :param q: modulus
         :param bound: bound of solution, must be instance of :class:`Norm.BaseNorm`
         """
-        if not isinstance(bound, norm.BaseNorm):
-            raise ValueError("bound must be instance of (subclass of) norm.BaseNorm.")
-        
         beta = bound.to_Loo(n).value # we need Loo norm
         if beta <= 1:
             raise ValueError("beta < 1")

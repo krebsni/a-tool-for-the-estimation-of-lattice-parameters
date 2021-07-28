@@ -4,16 +4,43 @@ from cost_models_log import BKZ_COST_MODELS
 def runtime_results():
     import json
     import statistics  
-    with open('runtime_CRYSTALS.json') as json_file:
-        data = json.load(json_file)
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    with open('runtime_Regev.json') as json_file:
+        runtime = json.load(json_file)
 
-    data = [x for x in data if x["successful"] == True]
-    algs = {algn for algn in (x["algname"] for x in data)}
-    print(algs)
-    avg_list = [(algn, statistics.mean([x["log_rop"] for x in data if x["algname"] == algn])) for algn in algs]
-    # for algn in algs:
-    #     avg_list.append((algn, [x["runtime"] for x in data if x["algname"] == algn]))
-    print(avg_list)
+    # data = [x for x in data if x["successful"] == True]
+    # algs = {algn for algn in (x["algname"] for x in data)}
+    # print(algs)
+    # avg_list = [(algn, statistics.mean([x["log_rop"] for x in data if x["algname"] == algn])) for algn in algs]
+    # # for algn in algs:
+    # #     avg_list.append((algn, [x["runtime"] for x in data if x["algname"] == algn]))
+
+    algs = {algn for algn in (x["algname"] for x in runtime)}
+    algs_res = {}
+    for algn in algs:
+        cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
+        algs_res[algn] = {}
+        for cname in cmodels:
+            algs_res[algn][cname] = sorted([x for x in runtime if (x["algname"] == algn and x["cname"] == cname)], key=lambda k : k["parameters"]["n"])
+
+    fig1, ax1 = plt.subplots(1,1)
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
+    i = 0
+    for algn in algs_res:
+        j = 0
+        for cname in algs_res[algn]:
+            label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
+            ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + styles[j], label=label)
+            j += 1
+        i += 1
+    ax1.set_xlabel(r'Secret dimension $n$')
+    ax1.set_ylabel('Runtime [s]')
+    ax1.legend()
+    plt.grid()
+    plt.savefig('cost_models.png')
+    plt.show()
 
 def cost_model_plotter():
     import numpy as np
@@ -120,4 +147,4 @@ def cost_model_d_plotter():
     plt.show()
 
 if __name__ == "__main__":
-    cost_model_d_2d_plotter()
+    runtime_results()

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 ## Configuration ##
 STATISTICAL_SEC = 128 #: for statistical security # TODO
-RUNTIME_ANALYSIS = True
+RUNTIME_ANALYSIS = False
 TIMEOUT = 600
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
@@ -265,7 +265,7 @@ def estimate(parameter_problems : Iterator[BaseProblem],
         raise RuntimeError("All estimate algorithms failed")
     
     duration = time.time() - start
-    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(float(log(best_res.cost['rop'], 2)))}. "
+    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(float(log(ceil(best_res.cost['rop']), 2)))}. "
     if sec is not None:
         message += f"Result is {['insecure', 'secure'][log(best_res.cost['rop'], 2) > sec]} (sec={sec})."
     logger.info(message) 
