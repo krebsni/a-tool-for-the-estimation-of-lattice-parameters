@@ -19,17 +19,25 @@ oo = est.PlusInfinity()
 logger = logging.getLogger(__name__)
 
 
+## Exception class ##
+class TrivialSolution(Exception):
+    pass
+
+class IntractableSolution(Exception):
+    pass
+
+
 class EstimationConfiguration():
     """
     Configuration of the cost estimation parameters (including cost models and algorithms used).
     """
     # TODO: custom reduction_cost_function
 
-    def __init__(self, conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, algorithms=["usvp", "lattice-reduction"], parallel=True, num_cpus=None):
+    def __init__(self, conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, custom_cost_models=[], algorithms=["usvp", "lattice-reduction"], parallel=True, num_cpus=None):
         r""" 
         Configure cost estimation. 
         
-        .. list-table:: List of cost models included for `conservative=True`
+        .. list-table:: List of cost models included for ``conservative=True``
             :header-rows: 1
             
             * - Selection
@@ -41,22 +49,34 @@ class EstimationConfiguration():
             * - `quantum=False`
               - "Core‑Sieve", "Lotus"
         
-        If `sieving=False` or `enumeration=False`, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_asymptotics <cost-models>`.
+        If ``sieving=False`` or ``enumeration=False``, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_models <cost-models>`.
+
+        To add custom cost models parameter ``custom_cost_models`` must be a list of dicts as in the following example:
+        .. code::
+            cost_models = [
+                {
+                    "name": "Q-Enum",
+                    "cost_model": lambda beta, d, B: ZZ(2)**RR(0.5*beta),
+                    "success_probability": 0.99,
+                    "human_friendly": "2<sup>0.5 β</sup>",
+                    "group": "Quantum enumeration",
+                    "prio": 0,
+                },
+            ]
+        
+
+        Set ``prio`` to 0 in order to prioritize custom cost models. If you only want to use ``custom_cost_models`` for the estimate, set ``classical = quantum = sieving = enumeration = False``. Note that the filters will not apply to the list of custom_cost_models.
         
         :param conservative: use conservative estimates
-        :param classical: use classical cost_models, `True` by default (at least one of classical/quantum must be `True`)
-        :param quantum: use quantum quantum, `True` by default 
-        :param sieving: use sieving cost_models, `True` by default (at least one of sieving/enumeration must be `True`)
-        :param enumeration: use enumeration cost_models, `True` by default
+        :param classical: use classical cost_models, ``True`` by default 
+        :param quantum: use quantum quantum, ``True`` by default 
+        :param sieving: use sieving cost_models, ``True`` by default
+        :param enumeration: use enumeration cost_models, ``True`` by default
         :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain "usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw". For SIS and its variants, the list can contain "combinatorial", "lattice-reduction". Note that if all algorithms are in list, no estimate is computed and the return cost will be :math:`\infty`. 
+        :param custom_cost_models: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
         """
-        if not classical and not quantum:
-            raise ValueError("At least one of classical or quantum must be True")
-        if not sieving and not enumeration:
-            raise ValueError("At least one of sieving or enumeration must be True")
-
         self.classical = classical
         self.quantum = quantum
         self.sieving = sieving
@@ -65,51 +85,31 @@ class EstimationConfiguration():
         self.parallel = parallel
         self.num_cpus = num_cpus
 
-        # TODO: change way of specifying cost models?
-        if conservative:
-            if self.quantum and self.classical and self.sieving and self.enumeration:
-                bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Lotus"]]
+        if (not classical and not quantum) or (not sieving and not enumeration):
+            if not custom_cost_models:
+                raise ValueError("At least one of classical or quantum/sieving and enumeration must be True or custom_cost_models must be specified")
+            self.cost_models = custom_cost_models
+        else: 
+            if conservative:
+                if self.quantum and self.classical and self.sieving and self.enumeration:
+                    bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Lotus"]]
+                else:
+                    if self.quantum and not self.classical:
+                        bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"]]
+                    elif self.classical and not self.quantum:
+                        bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Core‑Sieve", "Lotus"]]
+                    if self.sieving and not self.enumeration:
+                        bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["method"]]
+                    elif self.enumeration and not self.sieving:
+                        bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["method"]]
+                self.cost_models = bkz_cost_models + custom_cost_models
             else:
-                if self.quantum and not self.classical:
-                    bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"]]
-                elif self.classical and not self.quantum:
-                    bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS if c["name"] in ["Core‑Sieve", "Lotus"]]
-                if self.sieving and not self.enumeration:
-                    bkz_cost_models = [c for c in bkz_cost_models if "sieving" in c["method"]]
-                elif self.enumeration and not self.sieving:
-                    bkz_cost_models = [c for c in bkz_cost_models if "enumeration" in c["method"]]
-            self.cost_models = bkz_cost_models
-        else:
-            self.cost_models = reduction_cost_models.BKZ_COST_MODELS
+                bkz_cost_models = [c for c in reduction_cost_models.BKZ_COST_MODELS 
+                                    if c["quantum"] in {quantum, not enumeration} 
+                                    and c["method"] in ["", "enumeration"][enumeration] + ["", "sieving"][sieving]]
+                self.cost_models = bkz_cost_models + custom_cost_models
         
         logger.debug("Attack configuration:" + str(self))
-    
-    def add_reduction_cost_models(self, cost_models, replace_default=False):
-        """
-        Add custom reduction_cost_model. 
-
-        Set "prio" to 0 in order to prioritize custom cost models.
-
-        Example::
-
-            cost_models = [
-                {
-                    "name": "Q-Enum",
-                    "reduction_cost_model": lambda beta, d, B: ZZ(2)**RR(0.5*beta),
-                    "success_probability": 0.99,
-                    "human_friendly": "2<sup>0.5 β</sup>",
-                    "group": "Quantum enumeration",
-                    "prio": 0,
-                },
-            ]
-        
-        :param cost_model: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
-        :param replace_default: overwrite default cost model list
-        """
-        if replace_default:
-            self.cost_models = cost_models
-        else:
-            self.cost_models = self.cost_models.extend(cost_models)
 
     def reduction_cost_models(self):
         """
@@ -182,9 +182,11 @@ class SIS:
         """
         # TODO check if use of n and m are correct
         # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
+        # TODO: rinse and repeat? adapt to code in estimator?
+
         beta = RR(bound.to_L2(n).value) # we need L2 norm TODO: check
         if beta <= 1:
-            raise ValueError("beta < 1")
+            raise IntractableSolution("beta < 1")
         if beta < q:
             rs10_failed = False
             try:
@@ -198,42 +200,43 @@ class SIS:
                 n = ZZ(n)
                 q = ZZ(q)
                 # Calculate optimal dimension for delta-HSVP solver
-                d = ceil(2 * n * log(q, 2) / log(beta, 2)) 
-                if d > m:
-                    d = m            
+                m_optimal = ceil(2 * n * log(q, 2) / log(beta, 2)) 
+                if m_optimal > m:
+                    m_optimal = m            
 
                 # Calculate approximation factor for delta-HSVP solver
-                delta_0 = RR((beta / (q ** (n / d))) ** (1 / d))
+                delta_0 = RR((beta / (q ** (n / m_optimal))) ** (1 / m_optimal))
+                if delta_0 < 1:
+                    ValueError("delta_0 < 1")
                 log_delta_0 = log(delta_0, 2)
             
             except ValueError:
                 rs10_failed = True
-                
+            
             # [APS15]
             log_delta_0_APS15 = log(beta, 2) ** 2  / (4  * n * log(q, 2))
-            d_APS15 = sqrt(n * log(q, 2) / log_delta_0_APS15)
-            if d_APS15 > m:
-                d_APS15 = m
+            m_optimal_APS15 = sqrt(n * log(q, 2) / log_delta_0_APS15)
+            
+            if m_optimal_APS15 > m:
+                m_optimal_APS15 = m
                 log_delta_0_APS15 = log(beta, 2) / m - n * log(q, 2) / (m ** 2)
 
             # take best value
             if rs10_failed or log_delta_0_APS15 < log_delta_0: 
                 log_delta_0 = log_delta_0_APS15
-                d = d_APS15
+                m_optimal = m_optimal_APS15
+            
+            if 2**log_delta_0 < 1:
+                raise IntractableSolution("delta_0 < 1")
 
-            if log_delta_0 < 0: # intractable
-                    raise ValueError("Intractable: delta_0 < 1")
+            k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
+            B = log(q, 2)
 
-            else: # standard case
-                k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
-                B = log(q, 2)
-
-                # TODO: is that all we need?
-                cost = reduction_cost_model(k, d, B) 
-                return est.Cost([("rop", cost), ("d", d), ("beta", k)]) # d is lattice dimension, beta is block size
+            cost = reduction_cost_model(k, m_optimal, B) 
+            return est.Cost([("rop", cost), ("d", m_optimal), ("beta", k)]) # d is lattice dimension, beta is block size
 
         else: # not a hard problem, trivial solution exists
-            raise  ValueError("Trivial. beta > q")
+            raise TrivialSolution("beta > q") 
             
 
     def combinatorial(q, n, m, bound : norm.BaseNorm, reduction_cost_model=None):
@@ -257,7 +260,7 @@ class SIS:
         """
         beta = bound.to_Loo(n).value # we need Loo norm
         if beta <= 1:
-            raise ValueError("beta < 1")
+            raise IntractableSolution("beta < 1")
         elif beta < q:
             # find optimal k
             k = 1
@@ -285,4 +288,4 @@ class SIS:
             return est.Cost([("rop", cost), ("k", RR(2**k))]) # TODO other information?, return k just as k?
 
         else: # not a hard problem, trivial solution exists
-            raise  ValueError("Trivial. beta > q")
+            raise TrivialSolution("beta > q")

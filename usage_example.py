@@ -53,6 +53,36 @@ def plot_runtime(title, file_name, runtime):
     plt.savefig(file_name)
     plt.show()
 
+
+    # Mean of different cost models
+    algs = {algn for algn in (x["algname"] for x in runtime)}
+    algs_res = {}
+    for algn in algs:
+        cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
+        algs_res[algn] = {}
+        for cname in cmodels:
+            algs_res[algn][cname] = sorted([x for x in runtime if (x["algname"] == algn and x["cname"] == cname)], key=lambda k : k["parameters"]["n"])
+
+    fig1, ax1 = plt.subplots(1,1)
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
+    i = 0
+    # TODO: do mean from cost models?
+    for algn in algs_res:
+        j = 0
+        for cname in algs_res[algn]:
+            label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
+            ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + styles[j], label=label)
+            j += 1
+        i += 1
+    ax1.set_xlabel(r'Secret dimension $n$')
+    ax1.set_ylabel('Runtime [s]')
+    ax1.set_title(title)
+    ax1.legend()
+    plt.grid()
+    plt.savefig(file_name)
+    plt.show()
+
 def runtime_analysis():
     print("---------------------------------")
     print("Runtime Analysis")
@@ -61,7 +91,7 @@ def runtime_analysis():
     # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
     # TODO: arora-gb did not yield any results yet (tested for normal sec_dis)
     #   arora-gb so far either returns infinity or segmentation fault after long runtime even for small n (at least for a few minutes)...
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "dual", "dual-without-lll", "mitm", "coded-bkw", "decode"])
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["arora-gb"])
 
     problem_instances = []
     for i in range(7, 10):
@@ -261,31 +291,25 @@ def two_problem_search_example():
     sec = 128
     statistical_sec = 128
     N = 2**10
-    q, d = findPrime(2**(32), N, True)
-    n, l = 2**50, 1 # TODO: for th
-    m = 1
+    q, d = findPrime(2**(16), N, True)
+    n, l = 1, 1 # TODO: for th
+    m = N*q
     initial_parameters = N, q, n, m, l
     config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
     
                         
     def next_parameters(N, q, n, m, l):
-        if l == 1:
-            logq = param_search.number_of_bits(q)
-            q_new, d = findPrime(2**(logq + 2), N, True)
-            logger.debug(f">>>>>>>>>>>><q: {q_new}, d: {d}")
-            yield N, q_new, n, m, l
-        
-        elif l == 2:
-            yield N, q, n * 8, m, l
-
-        yield N * 2, q, n, int(N * 2 * log(q, 2)), l + 1
+        logq = param_search.number_of_bits(q)
+        q_new, d = findPrime(2**(logq + 2), N, True)
+        yield N, q_new, n, m, l
+        yield N * 2, q, n, m * 2, l + 1
         
     def parameter_cost(N, q, n, m, l):
         message = param_search.number_of_bits(q) * N * l
         rndness = param_search.number_of_bits(q) * N * (n + m + l)
         cmmtmnt = param_search.number_of_bits(q) * N * n + message
         cost = cmmtmnt + rndness
-        return q**(1/8) + 4*N + m + 0.5* n
+        return q**(1/2) + N + m 
 
     def parameter_problem(N, q, n, m, l):
         try:
@@ -318,4 +342,4 @@ def two_problem_search_example():
 if __name__ == "__main__":
     # SIS_example()
     # Regev_example()
-    runtime_analysis()
+    two_problem_search_example()

@@ -37,6 +37,7 @@ from datetime import timedelta
 import bisect
 from collections import deque
 import multiprocessing
+import psutil
 from collections import OrderedDict
 from functools import partial
 from scipy.optimize import newton
@@ -92,31 +93,50 @@ def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : 
     return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
-        config : algorithms_and_config.EstimationConfiguration):
+        config : algorithms_and_config.EstimationConfiguration, scalar_parameters=False):
     """TODO: summary
     The search terminates after the best cost (``log(rop, 2)``) of some parameter set exceeds ``sec``. TODO: if (*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))) not satisfied the solution may not be ideal...
 
     :param sec: required security level in bits
-    :param initial_parameters: initial parameter set of search
-    :param next_parameters: generator function yielding (possibly multiple) new parameter sets with previous parameter set as input. Note that duplicate detection does not work if paramter_cost(*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))). It is recommended to yield parameter sets in some ascending order. 
+    :param initial_parameters: initial parameter set of search. Must be tuple or scalar. If it is a scalar, set ``scalar_parameters`` to ``True``. 
+    :param next_parameters: generator function yielding (possibly multiple) new parameter sets with previous parameter set as input. Note that duplicate detection does not work if paramter_cost(*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))). It is recommended to yield parameter sets in some ascending order. The function must yield a tuple or a scalar. If a scalar is yielded, set ``scalar_parameters`` to ``True``. 
     :param parameter_cost: cost function of a parameter set used in the scheme to determine to order currently queued parameter sets. Use lib.unit_cost if sequence does not matter
     :param parameter_problem: function yielding possibly multiple problem instances with a paramter set as input
+    :scalar_parameters: True if parameter sets are scalars, else parameter sets must be tuples. 
 
     :returns: parameter set fulfulling security condition
     """
-    # TODO: check validity of parameters, or that if not proper exceptions are thrown 
     # TODO: LWE: search vs decision?
 
     parameters = [initial_parameters]
-    costs = [parameter_cost(*initial_parameters)]
+    if scalar_parameters:
+        costs = [parameter_cost(initial_parameters)]
+    else:
+        costs = [parameter_cost(*initial_parameters)]
 
     def insort(parameter_set):
+        if scalar_parameters:
+            costs = parameter_cost(initial_parameters)
+        else:
+            costs = parameter_cost(*initial_parameters)
         cost = parameter_cost(*parameter_set)
 
         i = bisect.bisect_right(costs, cost)
-        if parameters[i-1] != parameter_set:
-            parameters.insert(i, parameter_set)
+
+        # only insert if not duplicate
+        if i == 0:
             costs.insert(i, cost)
+            parameters.insert(i, parameter_set)
+        while i > 0:
+            if costs[i-1] == cost and parameters[i-1] != parameter_set:
+                i -= 1
+            elif parameters[i-1] != parameter_set:
+                costs.insert(i, cost)
+                parameters.insert(i, parameter_set)
+                break
+            else:
+                break
+
 
     while parameters:
         current_parameter_set = parameters.pop(0)
@@ -124,12 +144,30 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
         logger.info("----------------------------------------------------------------------------")
         logger.info(f"Checking next parameter set: {current_parameter_set}") # TODO: print nicely
+        
         try:
-            res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
+            if scalar_parameters:
+                res = problem.estimate(parameter_problems=parameter_problem(current_parameter_set), config=config, sec=sec)
+            else:
+                res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
             if res.is_secure:
+                logger.info("----------------------------------------------------------------------------")
+                logger.info("Generic search successful!")
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
-            pass
+            pass    
         
-        for parameter_set in next_parameters(*current_parameter_set):
-            insort(parameter_set)
+        if scalar_parameters:
+            for parameter_set in next_parameters(current_parameter_set):
+                insort(parameter_set)
+        else:
+            for parameter_set in next_parameters(*current_parameter_set):
+                insort(parameter_set)
+        
+        # Check RAM
+        perc_RAM = psutil.virtual_memory()[2]
+        if perc_RAM > 95:
+            logger.critical(f"RAM almost full {perc_RAM}. Terminating...")
+            break
+        else:
+            logger.debug(f"{perc_RAM} % of RAM used.")

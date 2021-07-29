@@ -110,7 +110,11 @@ def algorithms_executor(algorithms, sec, res_queue=None):
     all_failed = True
     for alg in algorithms:
         algf = alg["algf"]
-        logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)]))}')
+        parameters = str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] 
+                            + [(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)]
+                            + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
+                            + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)]))
+        logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {parameters}')
         start = time.time()
         try:
             cost = algf() # TODO: handle intractable/trivial error from algorithms_and_config.py? 
@@ -119,6 +123,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
             if cost["rop"] <= best_res.cost["rop"]:
                 all_failed = False
                 best_res.cost = cost
+                best_res.error = None
                 best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
                 if sec and log(cost["rop"], 2) < sec:
                     best_res.is_secure = False; break
@@ -131,6 +136,14 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     d = int(cost["d"])
                 else:
                     d = None
+                try:
+                    rop = float(log(cost["rop"], 2))
+                    if rop < 0:
+                        rop = 0
+                except Exception:
+                    logger.warning(f"Exception in calculating log_rop = float(log({cost['rop']}), 2). Assume that log_rop = oo.")
+                    logger.debug(traceback.format_exc())
+                    rop = oo
                 runtime.append({
                     "algname": alg["algname"], 
                     "cname": alg["cname"], 
@@ -138,14 +151,50 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     "log_rop": float(log(cost["rop"], 2)),
                     "beta": beta,
                     "d": d,
-                    "parameters": dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)])
+                    "parameters": parameters,
                 })
+
+        except algorithms_and_config.IntractableSolution:
+            duration = time.time() - start     
+            logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(oo)}] (intractable), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            if oo <= best_res.cost["rop"]:
+                all_failed = False
+                best_res.cost["rop"] = oo
+                best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
+                best_res.error = "intractable"
+            if RUNTIME_ANALYSIS:
+                runtime.append({
+                    "algname": alg["algname"], 
+                    "cname": alg["cname"], 
+                    "runtime": duration, 
+                    "log_rop": oo,
+                    "parameters": parameters,
+                })
+
+        except algorithms_and_config.TrivialSolution:
+            duration = time.time() - start     
+            logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            all_failed = False
+            if sec and 0 < sec:
+                best_res.is_secure = False
+            best_res.cost["rop"] = 1
+            best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
+            best_res.error = "trivial"
+            if RUNTIME_ANALYSIS:
+                runtime.append({
+                    "algname": alg["algname"], 
+                    "cname": alg["cname"], 
+                    "runtime": duration, 
+                    "log_rop": 0,
+                    "parameters": parameters,
+                })
+            
         except Exception:
             # TODO: what to do with the exception??? => extra exception logger for estimator computions?
             # TODO: add error parameter to best_res
             duration = time.time() - start
-            logger.debug(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] +[(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)] + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] + [(k, algf.keywords[k].value) for k in ["bound"] if k in set(algf.keywords)]))}')
-            logger.debug(traceback.format_exc())
+            logger.error(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {parameters}')
+            logger.error(traceback.format_exc())
     
     if RUNTIME_ANALYSIS:
         best_res.runtime = runtime # runtime of all algorithms (not just the one for best result)
@@ -265,9 +314,17 @@ def estimate(parameter_problems : Iterator[BaseProblem],
         raise RuntimeError("All estimate algorithms failed")
     
     duration = time.time() - start
-    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(float(log(ceil(best_res.cost['rop']), 2)))}. "
+    try:
+        rop = float(log(best_res.cost['rop'], 2))
+        if rop < 0:
+            rop = 0
+    except Exception:
+        logger.warning(f"Exception in calculating log_rop = float(log({best_res.cost['rop']}), 2). Assume that log_rop = oo.")
+        logger.debug(traceback.format_exc())
+        rop = oo
+    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(rop)}. " # TODO: deal with values out of bound
     if sec is not None:
-        message += f"Result is {['insecure', 'secure'][log(best_res.cost['rop'], 2) > sec]} (sec={sec})."
+        message += f"Result is {['insecure', 'secure'][best_res.is_secure]} (sec={sec})."
     logger.info(message) 
     return best_res
 
@@ -287,10 +344,7 @@ class LWE(BaseProblem):
         # check soundness of parameters
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(secret_distribution, distributions.Gaussian) and not isinstance(secret_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
-        if not isinstance(error_distribution, distributions.Gaussian) and not isinstance(error_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
+
         self.n = n
         self.q = q
         self.m = m
@@ -305,10 +359,7 @@ class LWE(BaseProblem):
         :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "cprio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
-        """ 
-        if not isinstance(config, algorithms_and_config.EstimationConfiguration):
-            raise ValueError("config must be instance of EstimationConfiguration")
-        
+        """         
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
         alpha = RR(self.error_distribution.get_alpha())
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
@@ -320,8 +371,6 @@ class LWE(BaseProblem):
         # TODO: coded-bkw: find a case that is working?
         # TODO: arora-gb seems to be not working for sec_dis = "normal" => perhaps change test before adding arora-gb to alg list?
 
-        # TODO: find meaningful prio values
-        # algname is algorithm name, cname name of cost model, algf function, 
         algorithms = []
         # Choose algorithms. Similar to estimate_lwe function in estimator.py
         for reduction_cost_model in cost_models:
@@ -417,7 +466,7 @@ class LWE(BaseProblem):
                                         "prio": 20,
                                         "cprio": cprio,
                                         "inst": self.variant})                                                                
-                elif "dual" in config.algorithms: # else this algorithm will be run twice
+                elif "dual" not in config.algorithms: # else this algorithm will be run twice
                     algorithms.append({"algname": "dual-without-lll", 
                                         "cname": cname, 
                                         "algf": partial(est.dual, reduction_cost_model=cost_model, 
@@ -529,10 +578,7 @@ class MLWE(BaseProblem):
         # check soundness of parameters
         if not n or not d or not q or not m or n<0 or d<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(secret_distribution, distributions.Gaussian) and not isinstance(secret_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
-        if not isinstance(error_distribution, distributions.Gaussian) and not isinstance(error_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
+            
         self.n = n
         self.d = d
         self.q = q
@@ -597,10 +643,6 @@ class RLWE(BaseProblem):
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(secret_distribution, distributions.Gaussian) and not isinstance(secret_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
-        if not isinstance(error_distribution, distributions.Gaussian) and not isinstance(error_distribution, distributions.Uniform):
-            raise ValueError("secret_distribution must be subclass of Distributions.Gaussian or Distributions.Uniform.")
 
         ## interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6] TODO: check 
         self.n = n
@@ -679,7 +721,7 @@ class StatisticalGaussianMLWE():
             self.sec = n
         
     def get_secret_distribution_min_width(self):
-        # TODO: auch bei Statistical_MSIS
+        # TODO: auch bei StatisticalMSIS
         return distributions.GaussianSigma(self.min_sigma, q=self.q, componentwise=True, sec=self.sec) 
 
 
@@ -786,8 +828,8 @@ class StatisticalUniformMLWE():
         max_beta = RR(1 / (2 * sqrt(d_2)) * q**(1 / d_2)) - 1
         logger.debug("max_beta: " + str(max_beta))
 
-        if min_beta > max_beta:
-            raise ValueError("Could not find (min_beta, max_beta). Lemma 4 in BDLOP18 does not apply for the given input parameters.")
+        if min_beta >= max_beta:
+            logger.warning("Could not find (min_beta, max_beta) such that min_beta < max_beta.")
 
         self.min_beta = norm.Lp(min_beta, oo, n * d)
         self.max_beta = norm.Lp(max_beta, oo, n * d)
@@ -867,8 +909,7 @@ class SIS(BaseProblem):
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(bound, norm.BaseNorm):
-            raise ValueError("Norm must be subclass of BaseNorm.")
+
         self.q = q
         self.n = n
         self.m = m
@@ -883,15 +924,7 @@ class SIS(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        if not isinstance(config, algorithms_and_config.EstimationConfiguration):
-            raise ValueError("config must be instance of Estimation_Configuration")
-
-        cost_models = config.reduction_cost_models() # TODO
-
-        # attack_name = ""
-        # is_secure = True  
-        # best_cost = {"rop": oo, "error": "All estimates failed"}
-
+        cost_models = config.reduction_cost_models() 
         algorithms = []
         for reduction_cost_model in cost_models:
             cost_model = reduction_cost_model["cost_model"]
@@ -906,6 +939,7 @@ class SIS(BaseProblem):
                                         "prio": 1,
                                         "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
+                # TODO: can drop_and_solve or scale be used here?
 
         if "combinatorial" in config.algorithms:
             algorithms.append({"algname": "combinatorial", 
@@ -934,8 +968,6 @@ class MSIS(BaseProblem):
         """
         if not n or not d or not q or not m or n<0 or d<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(bound, norm.BaseNorm):
-            raise ValueError("Norm must be subclass of BaseNorm.")
         self.n = n
         self.d = d
         self.q = q
@@ -1000,8 +1032,6 @@ class RSIS(BaseProblem):
         ## We interpret the coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-        if not isinstance(bound, norm.Base_Norm):
-            raise ValueError("Norm must be subclass of Base_Norm.")
         self.n = n
         self.q = q
         self.m = m
