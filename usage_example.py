@@ -11,13 +11,13 @@ from lattice_parameter_estimation import distributions
 from lattice_parameter_estimation import norm
 from lattice_parameter_estimation import problem
 import lattice_parameter_estimation
-import lattice_parameter_estimation.estimate_all_schemes.estimator as est
+import lattice_parameter_estimation.estimator as est
 import sage.all 
 from sage.rings.all import QQ, RR, ZZ
 from sage.symbolic.all import pi, e
 from sage.functions.log import exp, log
 from sage.functions.other import ceil, sqrt, floor, binomial
-from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Param, arora_gb, bkw_coded
+from lattice_parameter_estimation.estimator.estimator import Param, arora_gb, bkw_coded
 
 from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEMES
 

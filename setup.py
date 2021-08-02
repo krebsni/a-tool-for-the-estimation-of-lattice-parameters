@@ -11,7 +11,7 @@ sys.path.append(here)
 
 import lattice_parameter_estimation
 
-check_call("git submodule update --init --recursive".split())
+check_call("git submodule update --init".split())
 
 estimator = "lattice_parameter_estimation/estimator/estimator.py"
 estimator_init = "lattice_parameter_estimation/estimator/__init__.py"

@@ -48,10 +48,7 @@ from sage.functions.other import ceil, sqrt, floor, binomial
 from sage.rings.all import QQ, RR, ZZ, RealField, PowerSeriesRing, RDF
 from sage.symbolic.all import pi, e
 from sage.arith.all import random_prime as make_prime
-from estimate_all_schemes import cost_asymptotics
-from estimate_all_schemes import estimator as est
-
-oo = est.PlusInfinity()
+from estimator import oo
 
 ## Logging ##
 logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ from sage.functions.log import log
 from sage.functions.other import ceil, sqrt
 from sage.rings.all import QQ, RR
 from sage.symbolic.all import pi
-from estimate_all_schemes.estimator import estimator as est
+import estimator as est
 oo = est.PlusInfinity()
 
 

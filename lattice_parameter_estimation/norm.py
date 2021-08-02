@@ -23,7 +23,7 @@ from abc import ABC
 from abc import abstractmethod
 import sage.all
 from sage.functions.other import sqrt
-import estimate_all_schemes.estimator as est
+import estimator as est
 oo = est.PlusInfinity()
 
 

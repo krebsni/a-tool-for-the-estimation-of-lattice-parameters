@@ -24,7 +24,7 @@ from sage.functions.other import ceil, sqrt, floor, binomial
 from sage.rings.all import QQ, RR
 from sage.symbolic.all import pi, e
 from sage.misc.functional import round
-import estimate_all_schemes.estimator as est
+import estimator as est
 oo = est.PlusInfinity()
 
 
@@ -739,7 +739,7 @@ class StatisticalGaussianMatrixMLWE(StatisticalGaussianMLWE):
     """
 
     def __init__(self, n, q, width, height, sec=None):
-        """
+        r"""
         :param n: degree of polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
@@ -866,7 +866,7 @@ class StatisticalUniformMatrixMLWE(StatisticalUniformMLWE):
     :ivar max_beta: :math:`\beta_{max}`
     """
     def __init__(self, sec, n, q, width, height, d_2=None):
-        """
+        r"""
         :param n: degree of polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
@@ -1038,7 +1038,7 @@ class RSIS(BaseProblem):
         self.bound = bound
 
     def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
-        """
+        r"""
         Compute list of estimate functions on a corresponding SIS instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6.
 
         :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
@@ -1123,7 +1123,7 @@ class StatisticalMatrixMSIS(StatisticalMSIS):
     :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
     """
     def __init__(self, n, q, width, height, sec=None):
-        """
+        r"""
         :param n: degree of polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
