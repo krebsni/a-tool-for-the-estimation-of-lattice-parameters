@@ -10,17 +10,24 @@ from lattice_parameter_estimation import param_search
 from lattice_parameter_estimation import distributions
 from lattice_parameter_estimation import norm
 from lattice_parameter_estimation import problem
+import lattice_parameter_estimation
 import lattice_parameter_estimation.estimate_all_schemes.estimator as est
 import sage.all 
-from sage.rings.all import QQ, RR
+from sage.rings.all import QQ, RR, ZZ
 from sage.symbolic.all import pi, e
 from sage.functions.log import exp, log
 from sage.functions.other import ceil, sqrt, floor, binomial
-from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Param
+from lattice_parameter_estimation.estimate_all_schemes.estimator.estimator import Param, arora_gb, bkw_coded
 
 from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEMES
 
+logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
 logger = logging.getLogger(__name__)
+
+lattice_parameter_estimation.Logging.set_level(logging.INFO)
+lattice_parameter_estimation.Logging.disable_estimation_exception_logging_level()
+
+# TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
 def plot_runtime(title, file_name, runtime):
     import matplotlib.pyplot as plt
@@ -91,14 +98,18 @@ def runtime_analysis():
     # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
     # TODO: arora-gb did not yield any results yet (tested for normal sec_dis)
     #   arora-gb so far either returns infinity or segmentation fault after long runtime even for small n (at least for a few minutes)...
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["arora-gb"])
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw"])
 
     problem_instances = []
-    for i in range(7, 10):
+    for i in range(9, 10):
         n, alpha, q = Param.Regev(2**i)
         m = n**2
         err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
         sec_dis = err_dis
+        # print(est.bkw_coded(n=n, alpha=alpha, q=q, m=m,  
+        #                 secret_distribution=alpha, 
+        #                 success_probability=0.99))
+        # return
         problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
     problem.RUNTIME_ANALYSIS = True
     result = problem.estimate(parameter_problems=problem_instances, config=config)
@@ -159,7 +170,7 @@ def estimation_example():
     n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
     err_dis = distributions.GaussianSigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["mitm"], parallel=True)
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["mitm"])
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates
@@ -342,4 +353,7 @@ def two_problem_search_example():
 if __name__ == "__main__":
     # SIS_example()
     # Regev_example()
-    two_problem_search_example()
+    # two_problem_search_example()
+    runtime_analysis()
+    # import sage.misc.trace
+    # sage.misc.trace.trace("runtime_analysis()")

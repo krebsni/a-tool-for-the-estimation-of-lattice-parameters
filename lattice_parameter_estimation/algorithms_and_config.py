@@ -33,7 +33,11 @@ class EstimationConfiguration():
     """
     # TODO: custom reduction_cost_function
 
-    def __init__(self, conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, custom_cost_models=[], algorithms=["usvp", "lattice-reduction"], parallel=True, num_cpus=None):
+    def __init__(self, 
+                 conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, 
+                 custom_cost_models=[], 
+                 algorithms=["usvp", "lattice-reduction"], 
+                 parallel=True, num_cpus=None, timeout=600):
         r""" 
         Configure cost estimation. 
         
@@ -76,6 +80,7 @@ class EstimationConfiguration():
         :param custom_cost_models: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
+        :param timeout: timeout for algorithm execution
         """
         self.classical = classical
         self.quantum = quantum
@@ -84,6 +89,7 @@ class EstimationConfiguration():
         self.algorithms = algorithms # TODO: check docstring once all attacks have been implemented
         self.parallel = parallel
         self.num_cpus = num_cpus
+        self.timeout = timeout
 
         if (not classical and not quantum) or (not sieving and not enumeration):
             if not custom_cost_models:

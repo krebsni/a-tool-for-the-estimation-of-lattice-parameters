@@ -30,11 +30,14 @@ oo = est.PlusInfinity()
 
 ## Logging ##
 logger = logging.getLogger(__name__)
+# info about running algorithms and results
+alg_logger = logging.getLogger(logger.name + ".estimation_logging")
+# exceptions from estimator
+alg_exception_logger = logging.getLogger(logger.name + ".estimation_exception_logging")
 
 ## Configuration ##
 STATISTICAL_SEC = 128 #: for statistical security # TODO
 RUNTIME_ANALYSIS = False
-TIMEOUT = 600
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
 ## Helper class
@@ -103,6 +106,8 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         problem_instance ([type]): [description]
         res_queue ([type]): [description]
     """
+    alg_exception_logger.info(">>>>>>>>>>>>>exc")
+    alg_logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     if RUNTIME_ANALYSIS:
         runtime = []
     
@@ -114,35 +119,29 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                             + [(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)]
                             + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
                             + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)]))
-        logger.debug(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {parameters}')
+        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {parameters}')
         start = time.time()
         try:
             cost = algf() # TODO: handle intractable/trivial error from algorithms_and_config.py? 
             duration = time.time() - start           
-            logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if cost["rop"] <= best_res.cost["rop"]:
                 all_failed = False
-                best_res.cost = cost
-                best_res.error = None
-                best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
+                best_res = EstimateRes(
+                    info={"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
+                    cost=cost
+                )
                 if sec and log(cost["rop"], 2) < sec:
                     best_res.is_secure = False; break
             if RUNTIME_ANALYSIS:
-                if "beta" in cost:
-                    beta = int(cost["beta"])
-                else:
-                    beta = None
-                if "d" in cost:
-                    d = int(cost["d"])
-                else:
-                    d = None
+                beta = int(cost["beta"]) if "beta" in cost else None
+                d = int(cost["d"]) if "d" in cost else None
                 try:
                     rop = float(log(cost["rop"], 2))
-                    if rop < 0:
-                        rop = 0
+                    rop = 0 if rop < 0 else rop
                 except Exception:
-                    logger.warning(f"Exception in calculating log_rop = float(log({cost['rop']}), 2). Assume that log_rop = oo.")
-                    logger.debug(traceback.format_exc())
+                    alg_logger.warning(f'Estimate result for "{alg["algname"]}" with paramters {parameters}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
+                    alg_logger.debug(traceback.format_exc())
                     rop = oo
                 runtime.append({
                     "algname": alg["algname"], 
@@ -156,12 +155,13 @@ def algorithms_executor(algorithms, sec, res_queue=None):
 
         except algorithms_and_config.IntractableSolution:
             duration = time.time() - start     
-            logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(oo)}] (intractable), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(oo)}] (intractable), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if oo <= best_res.cost["rop"]:
                 all_failed = False
-                best_res.cost["rop"] = oo
-                best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
-                best_res.error = "intractable"
+                best_res = EstimateRes(
+                    info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
+                    error = "intractable"
+                )
             if RUNTIME_ANALYSIS:
                 runtime.append({
                     "algname": alg["algname"], 
@@ -173,13 +173,15 @@ def algorithms_executor(algorithms, sec, res_queue=None):
 
         except algorithms_and_config.TrivialSolution:
             duration = time.time() - start     
-            logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             all_failed = False
             if sec and 0 < sec:
                 best_res.is_secure = False
-            best_res.cost["rop"] = 1
-            best_res.info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]}
-            best_res.error = "trivial"
+            best_res = EstimateRes(
+                cost = {"rop": 1},
+                info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
+                error = "trivial"
+            )
             if RUNTIME_ANALYSIS:
                 runtime.append({
                     "algname": alg["algname"], 
@@ -193,8 +195,9 @@ def algorithms_executor(algorithms, sec, res_queue=None):
             # TODO: what to do with the exception??? => extra exception logger for estimator computions?
             # TODO: add error parameter to best_res
             duration = time.time() - start
-            logger.error(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {parameters}')
-            logger.error(traceback.format_exc())
+            alg_logger.info(f'Estimate for "{alg["algname"]}" not successful (took {duration:.3f} s).') 
+            alg_exception_logger.error(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {parameters}')
+            alg_exception_logger.error(traceback.format_exc())
     
     if RUNTIME_ANALYSIS:
         best_res.runtime = runtime # runtime of all algorithms (not just the one for best result)
@@ -240,15 +243,15 @@ def estimate(parameter_problems : Iterator[BaseProblem],
         for i in range(len(algorithms)):
             split_list[i % num_procs].append(algorithms[i])
 
-        logger.debug(f"Starting {num_procs} processes for {len(algorithms)} algorithms...")
-        logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
+        alg_logger.debug(f"Starting {num_procs} processes for {len(algorithms)} algorithms...")
+        alg_logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
         p = [None]*len(split_list)
         best_res = EstimateRes()
         result_queue = mp.Queue()
         for i in range(len(split_list)):
             p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, result_queue))
             p[i].start()
-            logger.debug(str(p[i].pid) + " started...") # TODO: perhaps add debug logging in algorithm_executor
+            alg_logger.debug(str(p[i].pid) + " started...") # TODO: perhaps add debug logging in algorithm_executor
         
         terminated = False
         all_failed = True
@@ -283,7 +286,7 @@ def estimate(parameter_problems : Iterator[BaseProblem],
                         all_failed = False
                         best_res = res
                         if sec and not res.is_secure: # early termination only if sec parameter is specified
-                            logger.debug("Received insecure result. Terminate all other processes.")
+                            alg_logger.debug("Received insecure result. Terminate all other processes.")
                             # insecure result obtained => terminate all other processes
                             for i in range(len(split_list)):
                                 p[i].terminate() # TODO: could it happen that exception is cast when a process is already terminated
@@ -292,15 +295,15 @@ def estimate(parameter_problems : Iterator[BaseProblem],
                                 result_queue.close()
                                 terminated = True
             except Empty: # result not yet available
-                if time.time() - start > TIMEOUT:
+                if time.time() - start > config.timeout:
                     # Computation too long, result not expected anymore
                     for i in range(len(split_list)):
                         p[i].terminate() 
                         p[i].join()
                         result_queue.close()
                         terminated = True
-                    message = f"Cost estimation not terminating after {TIMEOUT}s. Forcefully end all computations."
-                    if ERROR_HANDLING_ON:
+                    message = f"Cost estimation not terminating after {config.timeout}s. Forcefully stop all computations."
+                    if ERROR_HANDLING_ON: # TODO
                         logger.error(message)
                     else:
                         raise RuntimeError(message)
@@ -315,17 +318,17 @@ def estimate(parameter_problems : Iterator[BaseProblem],
     
     duration = time.time() - start
     try:
-        rop = float(log(best_res.cost['rop'], 2))
-        if rop < 0:
-            rop = 0
+        log_rop = float(log(best_res.cost['rop'], 2))
+        if log_rop < 0:
+            log_rop = 0
     except Exception:
-        logger.warning(f"Exception in calculating log_rop = float(log({best_res.cost['rop']}), 2). Assume that log_rop = oo.")
-        logger.debug(traceback.format_exc())
-        rop = oo
-    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(rop)}. " # TODO: deal with values out of bound
+        alg_logger.warning(f"Exception in calculating log_rop = float(log({best_res.cost['rop']}), 2). Assume that log_rop = oo.")
+        alg_logger.debug(traceback.format_exc())
+        log_rop = oo
+    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(log_rop)}. " # TODO: deal with values out of bound
     if sec is not None:
         message += f"Result is {['insecure', 'secure'][best_res.is_secure]} (sec={sec})."
-    logger.info(message) 
+    alg_logger.info(message) 
     return best_res
 
 
@@ -822,11 +825,8 @@ class StatisticalUniformMLWE():
         self.m = m
         self.d = d
         self.d_2 = d_2
-        logger.debug("d: " + str(d_2))
         min_beta = RR(q**(m / (m + d)) * 2**(2 * sec / ((m + d) * n)) / 2)
-        logger.debug("min_beta: " + str(min_beta))
         max_beta = RR(1 / (2 * sqrt(d_2)) * q**(1 / d_2)) - 1
-        logger.debug("max_beta: " + str(max_beta))
 
         if min_beta >= max_beta:
             logger.warning("Could not find (min_beta, max_beta) such that min_beta < max_beta.")

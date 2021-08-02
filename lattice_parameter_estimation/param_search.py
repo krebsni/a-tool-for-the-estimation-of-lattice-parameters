@@ -55,8 +55,6 @@ oo = est.PlusInfinity()
 
 ## Logging ##
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
-# TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
 # Utility # perhaps export if more is added in the future
 def number_of_bits(v):
@@ -151,8 +149,16 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
             else:
                 res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
             if res.is_secure:
+                try:
+                    log_rop = floor(float(log(res.cost["rop"], 2)))
+                    if log_rop < 0:
+                        log_rop = 0
+                except:
+                    logger.warning(f"Exception in calculating log_rop = float(log({res.cost['rop']}), 2). Assume that log_rop = oo.")
+                    logger.debug(traceback.format_exc())
+                    log_rop = oo
                 logger.info("----------------------------------------------------------------------------")
-                logger.info("Generic search successful!")
+                logger.info(f"Generic search successful. Estimated security level is > {log_rop}.") # TODO: print more info?
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass    

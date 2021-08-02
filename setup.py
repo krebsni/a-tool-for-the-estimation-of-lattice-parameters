@@ -13,23 +13,23 @@ import lattice_parameter_estimation
 
 check_call("git submodule update --init --recursive".split())
 
-estimator = "lattice_parameter_estimation/estimate_all_schemes/estimator/estimator.py"
-estimator_init = "lattice_parameter_estimation/estimate_all_schemes/estimator/__init__.py"
+estimator = "lattice_parameter_estimation/estimator/estimator.py"
+estimator_init = "lattice_parameter_estimation/estimator/__init__.py"
 
 # Fix old python version in estimator
 # Existice of backup file used as indicator that fix happened
 if not os.path.exists(f"{estimator}.bak"):
-    # prevent syntax errors from old python version
-    error = two_to_three("lib2to3.fixes", args=f"-w {estimator}".split())
-    if error != 0:
-        sys.exit(error)
+    # # prevent syntax errors from old python version
+    # error = two_to_three("lib2to3.fixes", args=f"-w {estimator}".split())
+    # if error != 0:
+    #     sys.exit(error)
 
-    # fix error with not found __round__ on sage's RR
-    with open(estimator, "r") as f:
-        content = f.read()
-    with open(estimator, "w") as f:
-        content = content.replace(" step_size/2", "step_size//2")
-        f.write(f"from sage.misc.functional import round # added to fix errors\n\n{content}")
+    # # fix error with not found __round__ on sage's RR
+    # with open(estimator, "r") as f:
+    #     content = f.read()
+    # with open(estimator, "w") as f:
+    #     content = content.replace(" step_size/2", "step_size//2")
+    #     f.write(f"from sage.misc.functional import round # added to fix errors\n\n{content}")
 
     # make the estimator nicer to import
     with open(estimator_init, "w") as f:
