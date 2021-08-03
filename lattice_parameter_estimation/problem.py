@@ -621,7 +621,7 @@ class MLWE(BaseProblem):
             
         else:
             lwe = LWE(n=self.n*self.d, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
-                        error_distribution=self.error_distributionm, variant="MLWE")
+                        error_distribution=self.error_distribution, variant="MLWE")
             return lwe.get_estimate_algorithms(config=config)
 
     def __str__(self):

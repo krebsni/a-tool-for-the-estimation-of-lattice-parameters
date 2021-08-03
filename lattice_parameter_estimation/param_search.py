@@ -111,26 +111,21 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
 
     def insort(parameter_set):
         if scalar_parameters:
-            costs = parameter_cost(initial_parameters)
+            cost = parameter_cost(parameter_set)
         else:
-            costs = parameter_cost(*initial_parameters)
-        cost = parameter_cost(*parameter_set)
+            cost = parameter_cost(*parameter_set)
 
         i = bisect.bisect_right(costs, cost)
 
         # only insert if not duplicate
-        if i == 0:
-            costs.insert(i, cost)
-            parameters.insert(i, parameter_set)
-        while i > 0:
-            if costs[i-1] == cost and parameters[i-1] != parameter_set:
-                i -= 1
-            elif parameters[i-1] != parameter_set:
-                costs.insert(i, cost)
-                parameters.insert(i, parameter_set)
-                break
-            else:
-                break
+        j = i - 1
+        while j >= 0 and costs[j] == cost:
+            if parameters[j] == parameter_set:
+                return # duplicate
+            j -= 1
+
+        costs.insert(i, cost)
+        parameters.insert(i, parameter_set)
 
 
     while parameters:

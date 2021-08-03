@@ -270,76 +270,69 @@ def two_problem_search_example():
     # kappa: maximum L1-norm of any element in challenge space
     # sigma: stddev used in zero-knowledge proof => sigma = 11*kappa*beta*sqrt(k*N)
     # m: width of commitment matrix A_2' => m = k - n - l
-    import sympy, math
-    def findPrime(minP, N, maximizeD):
-        m = 2 * N
-        assert(log(N, 2) % 1 == 0)
-
-        if maximizeD:
-            ds = []
-            d = 2
-            while d <= N:
-                ds.append(d)
-                d *= 2
-            # ds.reverse()
-
-        while True:
-            p = sympy.ntheory.generate.randprime(minP, 2 * minP)
-            if math.gcd(p, 2 * N) == 1:
-                if not maximizeD:
-                    return p, None
-                else:
-                    for d in ds:
-                        a = p % (4 * d)
-                        b = (2 * d + 1) % (4 * d)
-                        if a == b:
-                            return (p, d)
     
     sec = 128
-    statistical_sec = 128
-    N = 2**10
-    q, d = findPrime(2**(16), N, True)
-    n, l = 1, 1 # TODO: for th
-    m = N*q
-    initial_parameters = N, q, n, m, l
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
+    sigma = 1
+    N = 2**15
+    p = 2**32
+    q = p
+    l = 1
+    d1 = 1
+    d2 = 1
+    h = 2**56
+    kappa = 11
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "lattice-reduction"])
     
-                        
-    def next_parameters(N, q, n, m, l):
-        logq = param_search.number_of_bits(q)
-        q_new, d = findPrime(2**(logq + 2), N, True)
-        yield N, q_new, n, m, l
-        yield N * 2, q, n, m * 2, l + 1
+    def rejection_sample(dimension, modulus, bound, rho=100/99):
+        assert dimension >= sec
+        sigma = 12 / log(rho) * bound.to_L2().value
+        gausssian = distributions.GaussianSigma(sigma, modulus, componentwise=False, sec=sec)
+        return gausssian
+
+    def amortized_rejection_sample(dimension, modulus, bound, rho=100/99):
+        V = 2 * sec - 1
+        response = rejection_sample(V * dimension, modulus, norm.Lp(sec * bound.value, bound.p, bound.dimension), rho)
+        assert sec % 2 == 0
+        amortization_slack = 2**(sec // 2)
+        return norm.Lp(2 * amortization_slack * response.to_Loo(dimension=N).value, norm.oo, dimension=N)
+
+    def next_parameters(q, d1, d2):
+        yield 2 * q, d1, d2
+        if q == p and d1 == 1:
+            d2 = d2 + 1
+            k = d2 + d1 + l
+            for d1 in range(1, k - l):
+                assert d1 + l < k
+                yield q, d1, d2
         
-    def parameter_cost(N, q, n, m, l):
-        message = param_search.number_of_bits(q) * N * l
-        rndness = param_search.number_of_bits(q) * N * (n + m + l)
-        cmmtmnt = param_search.number_of_bits(q) * N * n + message
-        cost = cmmtmnt + rndness
-        return q**(1/2) + N + m 
+    def parameter_cost(q, d1, d2):
+        log_q = param_search.number_of_bits(q)
+        log_p = param_search.number_of_bits(p)
+        m = log_p * N * l
+        r = log_q * N * (d2 + d1 + l)
+        c = log_q * N * d1 + m
+        return m + r + c
 
-    def parameter_problem(N, q, n, m, l):
-        try:
-            lwe = problem.StatisticalGaussianMLWE(sec=statistical_sec, n=N, q=q, d=n + l, m=n + m + l)
+    def parameter_problem(q, d1, d2):
+        gaussian = distributions.GaussianSigma(sigma, q, componentwise=False, sec=sec)
+        normal_randomness = gaussian.to_Loo(dimension=N)
+        normal_response = norm.Lp(normal_randomness.value * kappa, norm.oo, dimension=N) # left : Loo * right : L1 = Loo(left.value * right.value)
+        normal_response_distribution = rejection_sample((d2 + d1 + l) * N, q, normal_response)
+        amortized_response_distribution = amortized_rejection_sample((d2 + d1 + l), q, normal_randomness)
 
-            # TODO: Question: what was the though with the sigmas here?
-            # sigma = lwe.sigma
-            # min_sigma, max_sigma = lwe.get_sigma_bounds()
-            
-            # if min_sigma <= sigma <= max_sigma:
-            #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=sigma)
-            #     yield problem.MSIS(N=N, q=q, d=n, m=n + m + l, sigma=max_sigma)
-                # TODO: is the above correct (i.e. value for d)? Why sigma? SIS requires beta (norm bound of solution)
-                # TODO: how to transform norm bound in BDLOP16 into stddev?
+        def hiding(distribution):
+            return problem.MLWE(N, d1 + l, q, d2 + d1 + l, distribution, distribution)
 
-            sec_dis = lwe.get_secret_distribution_min_width()
-            yield problem.MSIS(n=N, q=q, d=n, m=n + m + l, bound=sec_dis.to_Lp(statistical_sec, N*n)) # TODO: is this correct?
-        
-        except ValueError as e:
-            logger.error(e)
-        
+        def binding(norm):
+            return problem.MSIS(N, d1, q, d2 + d1 + l, norm)
 
-    res = param_search.generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, config)
+        yield hiding(gaussian)
+        yield binding(normal_response_distribution.to_Loo(dimension=N))
+        yield binding(norm.Lp(h * normal_response_distribution.to_Loo(dimension=N).value, norm.oo, dimension=N))
+        yield binding(amortized_response_distribution.to_Loo(dimension=N))
+
+
+    res = param_search.generic_search(sec, (q, d1, d2), next_parameters, parameter_cost, parameter_problem, config)
 
     print("---------------------------------")
     print("Search successful")
@@ -350,6 +343,6 @@ if __name__ == "__main__":
     # SIS_example()
     # Regev_example()
     # two_problem_search_example()
-    runtime_analysis()
+    two_problem_search_example()
     # import sage.misc.trace
     # sage.misc.trace.trace("runtime_analysis()")
