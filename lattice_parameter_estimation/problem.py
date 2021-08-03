@@ -50,7 +50,7 @@ class EstimateRes():
     :param error: string with error description
     :param runtime: list of runtime of algorithms run during estimation
     """
-    def __init__(self, is_secure=False, info={}, cost=est.Cost([("rop", oo)]), error=None, runtime=None):
+    def __init__(self, is_secure=True, info={}, cost=est.Cost([("rop", oo)]), error=None, runtime=None):
         self.is_secure = is_secure
         self.info = info
         self.cost = cost

@@ -279,13 +279,13 @@ def two_problem_search_example():
     sigma = 1
     N = 2**15
     p = 2**32
-    q = 2**150
+    q = p
     l = 1
     d1 = 1
     d2 = 1
     h = 2**56
     kappa = 11
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp"])
+    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "lattice-reduction"])
     
     def rejection_sample(dimension, modulus, bound, rho=100/99):
         assert dimension >= sec
@@ -347,6 +347,6 @@ if __name__ == "__main__":
     # SIS_example()
     # Regev_example()
     # two_problem_search_example()
-    runtime_analysis()
+    two_problem_search_example()
     # import sage.misc.trace
     # sage.misc.trace.trace("runtime_analysis()")
