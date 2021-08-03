@@ -25,13 +25,12 @@ logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
 logger = logging.getLogger(__name__)
 
 lattice_parameter_estimation.Logging.set_level(logging.INFO)
-lattice_parameter_estimation.Logging.disable_estimation_exception_logging_level()
 
 # TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
-def plot_runtime(title, file_name, runtime):
-    import matplotlib.pyplot as plt
+def plot_runtime(title, output_file_name, runtime):
     logging.getLogger("matplotlib").setLevel(logging.INFO)
+    import matplotlib.pyplot as plt
     algs = {algn for algn in (x["algname"] for x in runtime)}
     algs_res = {}
     for algn in algs:
@@ -44,7 +43,6 @@ def plot_runtime(title, file_name, runtime):
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
     styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
     i = 0
-    # TODO: do mean from cost models?
     for algn in algs_res:
         j = 0
         for cname in algs_res[algn]:
@@ -57,37 +55,37 @@ def plot_runtime(title, file_name, runtime):
     ax1.set_title(title)
     ax1.legend()
     plt.grid()
-    plt.savefig(file_name)
+    plt.savefig(output_file_name)
     plt.show()
 
 
     # Mean of different cost models
-    algs = {algn for algn in (x["algname"] for x in runtime)}
+    from statistics import mean
+    algs = set([algn for algn in (x["algname"] for x in runtime)])
+    n_set = sorted(set([x["parameters"]["n"] for x in runtime]))
     algs_res = {}
     for algn in algs:
         cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
         algs_res[algn] = {}
-        for cname in cmodels:
-            algs_res[algn][cname] = sorted([x for x in runtime if (x["algname"] == algn and x["cname"] == cname)], key=lambda k : k["parameters"]["n"])
+        
+        mean_runtime = []
+        for n in n_set:
+            mean_runtime.append(mean([x for x in runtime if (x["algname"] == algn and x["parameters"]["n"] == n)]))
+        mean_runtime = sorted(mean_runtime, key=lambda k : k["parameters"]["n"])
 
     fig1, ax1 = plt.subplots(1,1)
     colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-    styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
     i = 0
-    # TODO: do mean from cost models?
     for algn in algs_res:
-        j = 0
-        for cname in algs_res[algn]:
-            label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
-            ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + styles[j], label=label)
-            j += 1
+        label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
+        ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + '-', label=label)
         i += 1
     ax1.set_xlabel(r'Secret dimension $n$')
     ax1.set_ylabel('Runtime [s]')
     ax1.set_title(title)
     ax1.legend()
     plt.grid()
-    plt.savefig(file_name)
+    plt.savefig(output_file_name + "_mean")
     plt.show()
 
 def runtime_analysis():
@@ -95,21 +93,18 @@ def runtime_analysis():
     print("Runtime Analysis")
     print("---------------------------------")
     problem.RUNTIME_ANALYSIS = True
-    # TODO: coded-bkw: find a case that is working - not even example case in script is working (same with online sage runner... maybe worked for sage 2.x?)
-    # TODO: arora-gb did not yield any results yet (tested for normal sec_dis)
-    #   arora-gb so far either returns infinity or segmentation fault after long runtime even for small n (at least for a few minutes)...
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw"])
+    config = algorithms_and_config.EstimationConfiguration(
+        algorithms=["usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw"])
 
     problem_instances = []
-    for i in range(9, 10):
-        n, alpha, q = Param.Regev(2**i)
-        m = n**2
+    for i in range(7, 15):
+        # n, alpha, q = Param.Regev(2**i)
+        n = 2**i
+        q = param_search.make_prime(2**(i+1), lbound=2**i)
+        alpha = est.alphaf(est.sigmaf(sqrt(16/2)), q)
+        m = est.PlusInfinity()
         err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
         sec_dis = err_dis
-        # print(est.bkw_coded(n=n, alpha=alpha, q=q, m=m,  
-        #                 secret_distribution=alpha, 
-        #                 success_probability=0.99))
-        # return
         problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
     problem.RUNTIME_ANALYSIS = True
     result = problem.estimate(parameter_problems=problem_instances, config=config)
@@ -117,10 +112,11 @@ def runtime_analysis():
     print("---------------------------------")
     print("Estimates complete")
     runtime = result.runtime
-    # plot_runtime("Regev", "runtime_regev", runtime)
-    # import json
-    # with open('runtime_Regev.json', 'w') as fout:
-    #     json.dump(runtime, fout)
+    import json
+    with open('runtime_New_Hope.json', 'w') as fout:
+        json.dump(runtime, fout)
+    plot_runtime("New Hope", "runtime_New_Hope", runtime)
+    
 
     return
 

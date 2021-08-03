@@ -106,8 +106,6 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         problem_instance ([type]): [description]
         res_queue ([type]): [description]
     """
-    alg_exception_logger.info(">>>>>>>>>>>>>exc")
-    alg_logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     if RUNTIME_ANALYSIS:
         runtime = []
     
@@ -115,11 +113,11 @@ def algorithms_executor(algorithms, sec, res_queue=None):
     all_failed = True
     for alg in algorithms:
         algf = alg["algf"]
-        parameters = str(dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)] 
-                            + [(k, int(algf.keywords[k])) for k in ["n", "q", "m"] if k in set(algf.keywords)]
-                            + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
-                            + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)]))
-        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {parameters}')
+        parameters = dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)]
+                        + [(k, int(algf.keywords[k])) for k in ["n", "q"] if k in set(algf.keywords)]
+                        + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
+                        + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)])
+        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(parameters)}')
         start = time.time()
         try:
             cost = algf() # TODO: handle intractable/trivial error from algorithms_and_config.py? 
@@ -140,7 +138,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     rop = float(log(cost["rop"], 2))
                     rop = 0 if rop < 0 else rop
                 except Exception:
-                    alg_logger.warning(f'Estimate result for "{alg["algname"]}" with paramters {parameters}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
+                    alg_logger.warning(f'Estimate result for "{alg["algname"]}" with paramters {str(parameters)}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
                     alg_logger.debug(traceback.format_exc())
                     rop = oo
                 runtime.append({
