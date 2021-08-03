@@ -102,7 +102,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     :returns: parameter set fulfulling security condition
     """
     # TODO: LWE: search vs decision?
-
+    start = time.time()
     parameters = [initial_parameters]
     if scalar_parameters:
         costs = [parameter_cost(initial_parameters)]
@@ -149,8 +149,9 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
                     logger.warning(f"Exception in calculating log_rop = float(log({res.cost['rop']}), 2). Assume that log_rop = oo.")
                     logger.debug(traceback.format_exc())
                     log_rop = oo
+                duration = time.time() - start 
                 logger.info("----------------------------------------------------------------------------")
-                logger.info(f"Generic search successful. Estimated security level is > {log_rop}.") # TODO: print more info?
+                logger.info(f"Generic search successful (took {duration}s). Estimated security level is > {log_rop}.") # TODO: print more info?
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass    

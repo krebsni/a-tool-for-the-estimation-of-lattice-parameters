@@ -173,13 +173,13 @@ def algorithms_executor(algorithms, sec, res_queue=None):
             duration = time.time() - start     
             alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             all_failed = False
-            if sec and 0 < sec:
-                best_res.is_secure = False
             best_res = EstimateRes(
                 cost = {"rop": 1},
                 info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
                 error = "trivial"
             )
+            if sec and 0 < sec:
+                best_res.is_secure = False
             if RUNTIME_ANALYSIS:
                 runtime.append({
                     "algname": alg["algname"], 
@@ -607,6 +607,7 @@ class MLWE(BaseProblem):
         # TODO: check if correct
         use_reduction = False
         if use_reduction:
+            raise NotImplementedError()
             alpha_MLWE = self.error_distribution.get_alpha()
             alpha_RLWE = RR(alpha_MLWE * self.n**2 * sqrt(self.d))
             q_RLWE = self.q**self.d
@@ -620,7 +621,7 @@ class MLWE(BaseProblem):
                                         use_reduction=use_reduction)
             
         else:
-            lwe = LWE(n=self.n*self.d, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
+            lwe = LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                         error_distribution=self.error_distribution, variant="MLWE")
             return lwe.get_estimate_algorithms(config=config)
 
@@ -652,7 +653,7 @@ class RLWE(BaseProblem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration, use_reduction=False):
+    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
         r"""
         Compute list of estimate functions on the RLWE instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
@@ -661,7 +662,7 @@ class RLWE(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        lwe = LWE(n=self.n, q=self.q, m=self.m, secret_distribution=self.secret_distribution,    
+        lwe = LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="RLWE")
         return lwe.get_estimate_algorithms(config=config)
 
@@ -993,6 +994,7 @@ class MSIS(BaseProblem):
         """ 
         # TODO
         if use_reduction:
+            raise NotImplementedError()
             # transform to L2-norm
             self.beta = self.bound.to_L2(self.n * self.d).value # TODO: check dimension
 
@@ -1011,7 +1013,7 @@ class MSIS(BaseProblem):
                                         use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
         else:
-            sis = SIS(n=self.n*self.d, q=self.q, m=self.m, bound=self.bound, variant="MSIS")
+            sis = SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS")
             return sis.get_estimate_algorithms(config=config)
 
     def __str__(self):
@@ -1043,7 +1045,7 @@ class RSIS(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        sis = SIS(n=self.n, q=self.q, m=self.m, bound=self.bound, variant="RSIS")
+        sis = SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS")
         return sis.get_estimate_algorithms(config=config)
 
     def __str__(self):

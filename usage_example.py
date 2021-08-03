@@ -270,7 +270,7 @@ def two_problem_search_example():
     # kappa: maximum L1-norm of any element in challenge space
     # sigma: stddev used in zero-knowledge proof => sigma = 11*kappa*beta*sqrt(k*N)
     # m: width of commitment matrix A_2' => m = k - n - l
-    
+    problem.RUNTIME_ANALYSIS = False
     sec = 128
     sigma = 1
     N = 2**15
