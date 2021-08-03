@@ -2,6 +2,7 @@ r"""
 TODO: documentation
 """
 
+from multiprocessing import Value
 import sys
 import os
 import logging 
@@ -26,8 +27,29 @@ class TrivialSolution(Exception):
 class IntractableSolution(Exception):
     pass
 
+## Algorithms ##
+# LWE
+USVP = "usvp"
+PRIMAL_USVP = "usvp"
+PRIMAL_DECODE = "decode"
+DECODE = "decode"
+DUAL = "dual"
+DUAL_NO_LLL = "dual-without-lll"
+ARORA_GB = "arora-gb"
+MITM = "mitm"
+CODED_BKW = "coded-bkw"
+BKW = "coded-bkw"
 
-class EstimationConfiguration():
+# SIS
+LATTICE_REDUCTION = "reduction"
+REDUCTION = "reduction"
+COMBINATORIAL = "combinatorial"
+
+# All
+ALL = ["usvp", "decode", "dual", "dual-without-lll", "arora-gb", "mitm", "coded-bkw", "reduction", "combinatorial"]
+
+
+class Configuration():
     """
     Configuration of the cost estimation parameters (including cost models and algorithms used).
     """
@@ -36,7 +58,7 @@ class EstimationConfiguration():
     def __init__(self, 
                  conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, 
                  custom_cost_models=[], 
-                 algorithms=["usvp", "lattice-reduction"], 
+                 algorithms=[USVP, LATTICE_REDUCTION], 
                  parallel=True, num_cpus=None, timeout=600):
         r""" 
         Configure cost estimation. 
@@ -76,12 +98,17 @@ class EstimationConfiguration():
         :param quantum: use quantum quantum, ``True`` by default 
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
-        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain "usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw". For SIS and its variants, the list can contain "combinatorial", "lattice-reduction". Note that if all algorithms are in list, no estimate is computed and the return cost will be :math:`\infty`. 
+        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain USVP (or PRIMAL_USVP), PRIMAL_DECODE (or DECODE), DUAL, DUAL_NO_LLL, ARORA_GB, MITM, CODED_BKW (or BKW). For SIS and its variants, the list can contain LATTICE_REDUCTION (or REDUCTION), COMBINATORIAL. Instead of a list, the parameter can be set to ALL (or algorithms=algorithms.ALL) to run all algorithms. 
         :param custom_cost_models: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
         :param timeout: timeout for algorithm execution
         """
+        if not algorithms:
+            ValueError("algorithms empty. Please choose algorithms to run the estimates.")
+        if not all(x in ALL for x in algorithms):
+            ValueError("algorithms not specified correctly. Please use the constants specified in the documentation.")
+
         self.classical = classical
         self.quantum = quantum
         self.sieving = sieving
@@ -90,6 +117,7 @@ class EstimationConfiguration():
         self.parallel = parallel
         self.num_cpus = num_cpus
         self.timeout = timeout
+
 
         if (not classical and not quantum) or (not sieving and not enumeration):
             if not custom_cost_models:

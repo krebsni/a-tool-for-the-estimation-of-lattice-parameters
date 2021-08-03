@@ -21,7 +21,7 @@ AUTHOR:
 
 from queue import Empty
 from . import problem
-from . import algorithms_and_config
+from . import algorithms
 from . import problem
 import logging
 from typing import Generator, Iterator
@@ -84,11 +84,11 @@ class ParameterSet():
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
-def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : algorithms_and_config.EstimationConfiguration):
+def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : algorithms.Configuration):
     return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
-        config : algorithms_and_config.EstimationConfiguration, scalar_parameters=False):
+        config : algorithms.Configuration, scalar_parameters=False):
     """TODO: summary
     The search terminates after the best cost (``log(rop, 2)``) of some parameter set exceeds ``sec``. TODO: if (*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))) not satisfied the solution may not be ideal...
 

@@ -4,7 +4,7 @@ TODO: documentation
 
 from numpy.core.fromnumeric import var
 from . import distributions
-from . import algorithms_and_config
+from . import algorithms
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -77,11 +77,11 @@ class BaseProblem(ABC):
 
     # TODO: check, perhaps add other operators
     def __ge__(self, sec) -> EstimateRes:
-        config = algorithms_and_config.EstimationConfiguration() # use default config
+        config = algorithms.Configuration() # use default config
         return estimate(parameter_problem=[self], config=config, sec=sec)
 
     def __gt__(self, sec) -> EstimateRes:
-        config = algorithms_and_config.Estimatio_Configuration() # use default config
+        config = algorithms.Estimatio_Configuration() # use default config
         return estimate(parameter_problem=[self], config=config, sec=sec + 1)
 
     def __lt__(self, sec) -> EstimateRes:
@@ -96,7 +96,7 @@ class BaseProblem(ABC):
 
 
 ## Estmation ##
-def algorithms_executor(algorithms, sec, res_queue=None):
+def algorithms_executor(algs, sec, res_queue=None):
     """TODO
 
     Args:
@@ -111,7 +111,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
     
     best_res = EstimateRes()
     all_failed = True
-    for alg in algorithms:
+    for alg in algs:
         algf = alg["algf"]
         parameters = dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)]
                         + [(k, int(algf.keywords[k])) for k in ["n", "q"] if k in set(algf.keywords)]
@@ -120,7 +120,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(parameters)}')
         start = time.time()
         try:
-            cost = algf() # TODO: handle intractable/trivial error from algorithms_and_config.py? 
+            cost = algf() # TODO: handle intractable/trivial error from algorithms.py? 
             duration = time.time() - start           
             alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if cost["rop"] <= best_res.cost["rop"]:
@@ -151,7 +151,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     "parameters": parameters,
                 })
 
-        except algorithms_and_config.IntractableSolution:
+        except algorithms.IntractableSolution:
             duration = time.time() - start     
             alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(oo)}] (intractable), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             if oo <= best_res.cost["rop"]:
@@ -169,7 +169,7 @@ def algorithms_executor(algorithms, sec, res_queue=None):
                     "parameters": parameters,
                 })
 
-        except algorithms_and_config.TrivialSolution:
+        except algorithms.TrivialSolution:
             duration = time.time() - start     
             alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
             all_failed = False
@@ -210,25 +210,25 @@ def algorithms_executor(algorithms, sec, res_queue=None):
         
 
 def estimate(parameter_problems : Iterator[BaseProblem], 
-                config : algorithms_and_config.EstimationConfiguration, 
+                config : algorithms.Configuration, 
                 sec=None):
-    algorithms = []
+    algs = []
     for problem_instance in parameter_problems: 
-        algorithms.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
+        algs.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
             problem_instance.get_estimate_algorithms(config=config))
-    if not algorithms: # no instance
+    if not algs: # no instance
         raise EmptyProblem("Could not find any algorithms for given input parameters.")
     start = time.time()
 
     # sort first by algorithm priority, then by cost model priority
-    algorithms = sorted(algorithms, key=lambda a: (a["prio"], a["cprio"])) 
+    algs = sorted(algs, key=lambda a: (a["prio"], a["cprio"])) 
     
     if RUNTIME_ANALYSIS:
         runtime = []
 
     if config.parallel:
         if config.num_cpus is None:
-            num_procs = min(mp.cpu_count(), len(algorithms))
+            num_procs = min(mp.cpu_count(), len(algs))
         else:
             num_procs = config.num_cpus
 
@@ -238,10 +238,10 @@ def estimate(parameter_problems : Iterator[BaseProblem],
         split_list = num_procs * [None]
         for j in range(num_procs):
             split_list[j] = []
-        for i in range(len(algorithms)):
-            split_list[i % num_procs].append(algorithms[i])
+        for i in range(len(algs)):
+            split_list[i % num_procs].append(algs[i])
 
-        alg_logger.debug(f"Starting {num_procs} processes for {len(algorithms)} algorithms...")
+        alg_logger.debug(f"Starting {num_procs} processes for {len(algs)} algorithms...")
         alg_logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
         p = [None]*len(split_list)
         best_res = EstimateRes()
@@ -309,7 +309,7 @@ def estimate(parameter_problems : Iterator[BaseProblem],
             best_res.runtime = runtime
 
     else: # not parallel
-        best_res = algorithms_executor(algorithms, sec) 
+        best_res = algorithms_executor(algs, sec) 
     
     if all_failed:
         raise RuntimeError("All estimate algorithms failed")
@@ -353,11 +353,11 @@ class LWE(BaseProblem):
         self.error_distribution = error_distribution
         self.variant = variant
 
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         """
         Compute list of estimate functions on the LWE instance according to the attack configuration.
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "cprio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """         
@@ -372,7 +372,7 @@ class LWE(BaseProblem):
         # TODO: coded-bkw: find a case that is working?
         # TODO: arora-gb seems to be not working for sec_dis = "normal" => perhaps change test before adding arora-gb to alg list?
 
-        algorithms = []
+        algs = []
         # Choose algorithms. Similar to estimate_lwe function in estimator.py
         for reduction_cost_model in cost_models:
             cost_model = reduction_cost_model["cost_model"]
@@ -383,181 +383,181 @@ class LWE(BaseProblem):
             if "usvp" in config.algorithms:
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
                     # Try guessing secret entries via drop_and_solve
-                    algorithms.append({"algname": "primal-usvp-drop", 
-                                        "cname": cname, 
-                                        "algf": partial(est.drop_and_solve, est.primal_usvp, 
-                                                        postprocess=False, decision=False, rotations=False, 
-                                                        reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 10,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "primal-usvp-drop", 
+                                    "cname": cname, 
+                                    "algf": partial(est.drop_and_solve, est.primal_usvp, 
+                                                    postprocess=False, decision=False, rotations=False, 
+                                                    reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 10,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
-                     algorithms.append({"algname": "primal-usvp", 
-                                        "cname": cname, 
-                                        "algf": partial(est.primal_usvp, 
-                                                        reduction_cost_model=cost_model, n=self.n, 
-                                                        alpha=alpha, q=self.q, m=self.m,
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 10,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                     algs.append({"algname": "primal-usvp", 
+                                    "cname": cname, 
+                                    "algf": partial(est.primal_usvp, 
+                                                    reduction_cost_model=cost_model, n=self.n, 
+                                                    alpha=alpha, q=self.q, m=self.m,
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 10,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
             
             if "dual" in config.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
                     # Try guessing secret entries via drop_and_solve
-                    algorithms.append({"algname": "dual-scale-drop", 
-                                        "cname": cname, 
-                                        "algf": partial(est.drop_and_solve, est.dual_scale, 
-                                                        postprocess=True, rotations=False, use_lll=True, 
-                                                        reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "dual-scale-drop", 
+                                    "cname": cname, 
+                                    "algf": partial(est.drop_and_solve, est.dual_scale, 
+                                                    postprocess=True, rotations=False, use_lll=True, 
+                                                    reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
-                    algorithms.append({"algname": "dual-scale", 
-                                        "cname": cname, 
-                                        "algf": partial(est.dual_scale, 
-                                                        use_lll=True, reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})                                                               
+                    algs.append({"algname": "dual-scale", 
+                                    "cname": cname, 
+                                    "algf": partial(est.dual_scale, 
+                                                    use_lll=True, reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})                                                               
                 else:
-                    algorithms.append({"algname": "dual", 
-                                        "cname": cname, 
-                                        "algf": partial(est.dual, reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "dual", 
+                                    "cname": cname, 
+                                    "algf": partial(est.dual, reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
 
             if "dual-without-lll" in config.algorithms:
                 if est.SDis.is_ternary(secret_distribution): # TODO can drop and solve yield worse results than standard?
                     # Try guessing secret entries via drop_and_solve
-                    algorithms.append({"algname": "dual-scale-drop-without-lll", 
-                                        "cname": cname, 
-                                        "algf": partial(est.drop_and_solve, est.dual_scale, 
-                                                        postprocess=True, rotations=False, use_lll=False, 
-                                                        reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "dual-scale-drop-without-lll", 
+                                    "cname": cname, 
+                                    "algf": partial(est.drop_and_solve, est.dual_scale, 
+                                                    postprocess=True, rotations=False, use_lll=False, 
+                                                    reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
-                    algorithms.append({"algname": "dual-scale-without-lll", 
-                                        "cname": cname, 
-                                        "algf": partial(est.dual_scale, 
-                                                        use_lll=False, reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})                                                                
+                    algs.append({"algname": "dual-scale-without-lll", 
+                                    "cname": cname, 
+                                    "algf": partial(est.dual_scale, 
+                                                    use_lll=False, reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})                                                                
                 elif "dual" not in config.algorithms: # else this algorithm will be run twice
-                    algorithms.append({"algname": "dual-without-lll", 
-                                        "cname": cname, 
-                                        "algf": partial(est.dual, reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 20,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "dual-without-lll", 
+                                    "cname": cname, 
+                                    "algf": partial(est.dual, reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 20,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
 
             if "decode" in config.algorithms:
                 # TODO: Runtime much worse than primal-usvp, may yield better values for small n (Regev scheme n < 256?)
                 # TODO: Could be used when early termination is on perhaps, then it would only be called when all other tests succeed?
                 if est.SDis.is_sparse(secret_distribution) and est.SDis.is_ternary(secret_distribution):
-                    algorithms.append({"algname": "primal-decode-drop", 
-                                        "cname": cname, 
-                                        "algf": partial(est.drop_and_solve, est.primal_decode, 
-                                                        postprocess=False, decision=False, rotations=False, 
-                                                        reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 100,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "primal-decode-drop", 
+                                    "cname": cname, 
+                                    "algf": partial(est.drop_and_solve, est.primal_decode, 
+                                                    postprocess=False, decision=False, rotations=False, 
+                                                    reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 100,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
                 else: # TODO: can drop and solve yield worse results than standard decode?
-                    algorithms.append({"algname": "primal-decode", 
-                                        "cname": cname, 
-                                        "algf": partial(est.primal_decode, reduction_cost_model=cost_model, 
-                                                        n=self.n, alpha=alpha, q=self.q, m=self.m,
-                                                        secret_distribution=secret_distribution, 
-                                                        success_probability=success_probability),
-                                        "prio": 100,
-                                        "cprio": cprio,
-                                        "inst": self.variant})
+                    algs.append({"algname": "primal-decode", 
+                                    "cname": cname, 
+                                    "algf": partial(est.primal_decode, reduction_cost_model=cost_model, 
+                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,
+                                                    secret_distribution=secret_distribution, 
+                                                    success_probability=success_probability),
+                                    "prio": 100,
+                                    "cprio": cprio,
+                                    "inst": self.variant})
 
         # attacks without reduction cost model
         if "mitm" in config.algorithms: # estimates are very bad but very fast, so no need to exclude 
-            algorithms.append({"algname": "mitm", 
-                                "cname": "-", 
-                                "algf": partial(est.mitm, n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                secret_distribution=secret_distribution, 
-                                                success_probability=success_probability),
-                                "prio": 0,
-                                "cprio": 0,
-                                "inst": self.variant})
+            algs.append({"algname": "mitm", 
+                            "cname": "-", 
+                            "algf": partial(est.mitm, n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                            secret_distribution=secret_distribution, 
+                                            success_probability=success_probability),
+                            "prio": 0,
+                            "cprio": 0,
+                            "inst": self.variant})
             
         if "coded-bkw" in config.algorithms:
-            algorithms.append({"algname": "coded-bkw", 
-                                "cname": "-", 
-                                "algf": partial(est.bkw_coded, n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                secret_distribution=secret_distribution, 
-                                                success_probability=success_probability),
-                                "prio": 0, # TODO
-                                "cprio": 0,
-                                "inst": self.variant})
+            algs.append({"algname": "coded-bkw", 
+                            "cname": "-", 
+                            "algf": partial(est.bkw_coded, n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                            secret_distribution=secret_distribution, 
+                                            success_probability=success_probability),
+                            "prio": 0, # TODO
+                            "cprio": 0,
+                            "inst": self.variant})
 
         if "arora-gb" in config.algorithms:
             if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
-                algorithms.append({"algname": "arora-gb-drop", 
-                                    "cname": "-", 
-                                    "algf": partial(est.drop_and_solve, est.arora_gb, rotations=False, 
-                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                    secret_distribution=secret_distribution, 
-                                                    success_probability=success_probability),
-                                    "prio": 200, # TODO: no results obtained yet
-                                    "cprio": 0, 
-                                    "inst": self.variant})
+                algs.append({"algname": "arora-gb-drop", 
+                                "cname": "-", 
+                                "algf": partial(est.drop_and_solve, est.arora_gb, rotations=False, 
+                                                n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                secret_distribution=secret_distribution, 
+                                                success_probability=success_probability),
+                                "prio": 200, # TODO: no results obtained yet
+                                "cprio": 0, 
+                                "inst": self.variant})
             elif secret_distribution != "normal" and est.SDis.is_small(secret_distribution): # switch_modulus does not work for normal sec_dis
-                algorithms.append({"algname": "arora-gb-switch-modulus", 
-                                    "cname": "-", 
-                                    "algf": partial(est.switch_modulus, est.arora_gb,
-                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                    secret_distribution=secret_distribution, 
-                                                    success_probability=success_probability),
-                                    "prio": 200, 
-                                    "cprio": 0,
-                                    "inst": self.variant})
+                algs.append({"algname": "arora-gb-switch-modulus", 
+                                "cname": "-", 
+                                "algf": partial(est.switch_modulus, est.arora_gb,
+                                                n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                secret_distribution=secret_distribution, 
+                                                success_probability=success_probability),
+                                "prio": 200, 
+                                "cprio": 0,
+                                "inst": self.variant})
             else:
-                algorithms.append({"algname": "arora-gb", 
-                                    "cname": "-", 
-                                    "algf": partial(est.arora_gb,
-                                                    n=self.n, alpha=alpha, q=self.q, m=self.m,  
-                                                    secret_distribution=secret_distribution, 
-                                                    success_probability=success_probability),
-                                    "prio": 200, 
-                                    "cprio": 0,
-                                    "inst": self.variant})
+                algs.append({"algname": "arora-gb", 
+                                "cname": "-", 
+                                "algf": partial(est.arora_gb,
+                                                n=self.n, alpha=alpha, q=self.q, m=self.m,  
+                                                secret_distribution=secret_distribution, 
+                                                success_probability=success_probability),
+                                "prio": 200, 
+                                "cprio": 0,
+                                "inst": self.variant})
         # TODO: if empty raise exception, also for SIS
-        return algorithms
+        return algs
 
     def __str__(self):
         # TODO
@@ -587,7 +587,7 @@ class MLWE(BaseProblem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration, use_reduction=False):
+    def get_estimate_algorithms(self, config : algorithms.Configuration, use_reduction=False):
         r"""
         Compute list of estimate functions on the MLWE instance according to the attack configuration.
 
@@ -599,7 +599,7 @@ class MLWE(BaseProblem):
 
         Note that the reduction only works for Search-MLWE TODO: find reduction for decision-MLWE?
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
@@ -641,7 +641,7 @@ class RLWE(BaseProblem):
         :param m: number of samples
         :param secret_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
         :param error_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
@@ -653,11 +653,11 @@ class RLWE(BaseProblem):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         r"""
         Compute list of estimate functions on the RLWE instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
@@ -915,24 +915,24 @@ class SIS(BaseProblem):
         self.bound = bound
         self.variant = variant
     
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         """
         Compute list of estimate functions on the SIS instance according to the attack configuration.
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         cost_models = config.reduction_cost_models() 
-        algorithms = []
+        algs = []
         for reduction_cost_model in cost_models:
             cost_model = reduction_cost_model["cost_model"]
             cname = reduction_cost_model["name"]
 
-            if "lattice-reduction" in config.algorithms:
-                algorithms.append({"algname": "lattice-reduction", 
+            if "reduction" in config.algorithms:
+                algs.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
-                                        "algf": partial(algorithms_and_config.SIS.lattice_reduction, 
+                                        "algf": partial(algorithms.SIS.lattice_reduction, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound, 
                                                         reduction_cost_model=cost_model),
                                         "prio": 1,
@@ -941,15 +941,15 @@ class SIS(BaseProblem):
                 # TODO: can drop_and_solve or scale be used here?
 
         if "combinatorial" in config.algorithms:
-            algorithms.append({"algname": "combinatorial", 
+            algs.append({"algname": "combinatorial", 
                                         "cname": "-",
-                                        "algf": partial(algorithms_and_config.SIS.combinatorial, 
+                                        "algf": partial(algorithms.SIS.combinatorial, 
                                                         n=self.n, q=self.q, m=self.m, bound=self.bound),
                                         "prio": 0,
                                         "cprio": 0,
                                         "inst": self.variant})
         # TODO: add more algorithms?
-        return algorithms
+        return algs
         
     def __str__(self):
         return "SIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound.value)  + ")"
@@ -973,7 +973,7 @@ class MSIS(BaseProblem):
         self.m = m
         self.bound = bound
     
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration, use_reduction=False):
+    def get_estimate_algorithms(self, config : algorithms.Configuration, use_reduction=False):
         r"""
         Compute list of estimate functions on the MSIS instance according to the attack configuration.
 
@@ -987,7 +987,7 @@ class MSIS(BaseProblem):
         
         Then there exists a reduction from :math:`\text{M-SIS}_{q^k,m^k,\beta'}` to :math:`\text{R-SIS}_{q,m,\beta}` with :math:`\beta' = m^{k(d-1)/2} \cdot \beta^{k(2d-1)}`.
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
         :param use_reduction: specify if reduction to RSIS is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
@@ -1037,11 +1037,11 @@ class RSIS(BaseProblem):
         self.m = m
         self.bound = bound
 
-    def get_estimate_algorithms(self, config : algorithms_and_config.EstimationConfiguration):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         r"""
         Compute list of estimate functions on a corresponding SIS instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6.
 
-        :param config: instance of :class:`algorithms_and_config.EstimationConfiguration`
+        :param config: instance of :class:`algorithms.Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 

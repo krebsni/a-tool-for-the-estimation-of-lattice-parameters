@@ -5,7 +5,7 @@ import fire
 import sys
 import os
 import logging
-from lattice_parameter_estimation import algorithms_and_config
+from lattice_parameter_estimation import algorithms
 from lattice_parameter_estimation import param_search
 from lattice_parameter_estimation import distributions
 from lattice_parameter_estimation import norm
@@ -93,7 +93,7 @@ def runtime_analysis():
     print("Runtime Analysis")
     print("---------------------------------")
     problem.RUNTIME_ANALYSIS = True
-    config = algorithms_and_config.EstimationConfiguration(
+    config = algorithms.Configuration(
         algorithms=["usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw"])
 
     problem_instances = []
@@ -166,7 +166,7 @@ def estimation_example():
     n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
     err_dis = distributions.GaussianSigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["mitm"])
+    config = algorithms.Configuration(algorithms=[algorithms.MITM])
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates
@@ -199,7 +199,7 @@ def estimation_example():
 
 
 def Regev_example():
-    config = algorithms_and_config.EstimationConfiguration()
+    config = algorithms.Configuration()
     sec = 128
     def next_parameters(n, q=None, m=None, alpha=None):
         n, alpha, q = Param.Regev(n*2)
@@ -222,7 +222,7 @@ def SIS_example():
     print("---------------------------------")
     print("SIS")
     print("---------------------------------")
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["combinatorial", "lattice-reduction"])
+    config = algorithms.Configuration(algorithms=[algorithms.COMBINATORIAL, algorithms.LATTICE_REDUCTION])
     sec = 128
     def next_parameters(n, q=None, m=None, beta=None):
         n, alpha, q = Param.Regev(n*2)
@@ -246,7 +246,7 @@ def BGV_example():
     print("BGV")
     print("---------------------------------")
     sec = 128
-    config = algorithms_and_config.EstimationConfiguration()
+    config = algorithms.Configuration()
     def next_parameters(N, p, q):
         N = 2 * N
         p = 1 # find p depending on new N
@@ -281,7 +281,7 @@ def two_problem_search_example():
     d2 = 1
     h = 2**56
     kappa = 11
-    config = algorithms_and_config.EstimationConfiguration(algorithms=["usvp", "lattice-reduction"])
+    config = algorithms.Configuration(algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION])
     
     def rejection_sample(dimension, modulus, bound, rho=100/99):
         assert dimension >= sec
