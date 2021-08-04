@@ -263,6 +263,8 @@ class SIS:
             if 2**log_delta_0 < 1:
                 raise IntractableSolution("delta_0 < 1")
 
+            if delta_0 < est.delta_0f(m_optimal):
+                raise est.OutOfBoundsError("delta_0 = %f < %f" % (delta_0, est.delta_0f(m_optimal)))
             k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
             B = log(q, 2)
 

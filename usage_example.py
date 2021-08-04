@@ -282,7 +282,7 @@ def two_problem_search_example():
     d2 = 1
     h = 2**155
     kappa = 10
-    config = algorithms.Configuration(conservative=False, algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION])
+    config = algorithms.Configuration(conservative=True, algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION], parallel=False)
     
     def rejection_sample(dimension, modulus, bound, rho=100/99):
         assert dimension >= sec
