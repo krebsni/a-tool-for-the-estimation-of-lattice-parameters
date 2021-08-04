@@ -274,19 +274,20 @@ def two_problem_search_example():
     sec = 128
     sigma = 1
     N = 2**15
-    p = 2**32
+    # p = 2**128
+    p = 11417981541647679048466287755595961091061972992
     q = p
     l = 1
     d1 = 1
     d2 = 1
-    h = 2**56
-    kappa = 11
-    config = algorithms.Configuration(algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION])
+    h = 2**155
+    kappa = 10
+    config = algorithms.Configuration(conservative=False, algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION])
     
     def rejection_sample(dimension, modulus, bound, rho=100/99):
         assert dimension >= sec
         sigma = 12 / log(rho) * bound.to_L2().value
-        gausssian = distributions.GaussianSigma(sigma, modulus, componentwise=False, sec=sec)
+        gausssian = distributions.GaussianSigma(sigma, modulus, componentwise=False, sec=sec, dimension=N)
         return gausssian
 
     def amortized_rejection_sample(dimension, modulus, bound, rho=100/99):
@@ -294,7 +295,7 @@ def two_problem_search_example():
         response = rejection_sample(V * dimension, modulus, norm.Lp(sec * bound.value, bound.p, bound.dimension), rho)
         assert sec % 2 == 0
         amortization_slack = 2**(sec // 2)
-        return norm.Lp(2 * amortization_slack * response.to_Loo(dimension=N).value, norm.oo, dimension=N)
+        return norm.Lp(2 * amortization_slack * response.to_Loo().value, norm.oo, dimension=N)
 
     def next_parameters(q, d1, d2):
         yield 2 * q, d1, d2
@@ -314,8 +315,8 @@ def two_problem_search_example():
         return m + r + c
 
     def parameter_problem(q, d1, d2):
-        gaussian = distributions.GaussianSigma(sigma, q, componentwise=False, sec=sec)
-        normal_randomness = gaussian.to_Loo(dimension=N)
+        gaussian = distributions.GaussianSigma(sigma, q, componentwise=False, sec=sec, dimension=N)
+        normal_randomness = gaussian.to_Loo()
         normal_response = norm.Lp(normal_randomness.value * kappa, norm.oo, dimension=N) # left : Loo * right : L1 = Loo(left.value * right.value)
         normal_response_distribution = rejection_sample((d2 + d1 + l) * N, q, normal_response)
         amortized_response_distribution = amortized_rejection_sample((d2 + d1 + l), q, normal_randomness)
@@ -327,9 +328,9 @@ def two_problem_search_example():
             return problem.MSIS(N, d1, q, d2 + d1 + l, norm)
 
         yield hiding(gaussian)
-        yield binding(normal_response_distribution.to_Loo(dimension=N))
-        yield binding(norm.Lp(h * normal_response_distribution.to_Loo(dimension=N).value, norm.oo, dimension=N))
-        yield binding(amortized_response_distribution.to_Loo(dimension=N))
+        yield binding(normal_response_distribution.to_Loo())
+        yield binding(norm.Lp(h * normal_response_distribution.to_Loo().value, norm.oo, dimension=N))
+        yield binding(amortized_response_distribution.to_Loo())
 
 
     res = param_search.generic_search(sec, (q, d1, d2), next_parameters, parameter_cost, parameter_problem, config)

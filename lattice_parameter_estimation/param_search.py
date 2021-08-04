@@ -88,7 +88,7 @@ def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : 
     return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
-        config : algorithms.Configuration, scalar_parameters=False):
+        config : algorithms.Configuration = algorithms.Configuration(), scalar_parameters=False):
     """TODO: summary
     The search terminates after the best cost (``log(rop, 2)``) of some parameter set exceeds ``sec``. TODO: if (*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))) not satisfied the solution may not be ideal...
 

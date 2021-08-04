@@ -39,7 +39,7 @@ class Uniform(norm.BaseNorm, Distribution):
     TODO
     """
 
-    def __init__(self, a=None, b=None, h=None, uniform_mod_q=False, q=None):
+    def __init__(self, a=None, b=None, h=None, uniform_mod_q=False, q=None, dimension=None):
         r"""
         :param a: lower bound if b is specified, else take range [-a, a]
         :param b: upper bound, optional
@@ -61,6 +61,7 @@ class Uniform(norm.BaseNorm, Distribution):
                 raise ValueError("q must be set for uniform_mod_q uniform distribution.")
             else:
                 self.range = (0, q)
+        self.dimension = dimension
 
     def get_alpha(self, q, n=None):
         r"""
@@ -92,19 +93,35 @@ class Uniform(norm.BaseNorm, Distribution):
         else:
             return self.range
     
-    def to_L1(self, dimension):
+    def to_L1(self, dimension=None):
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError("Dimension must be specified as the object has not be initialized with dimension.")
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_L1()
     
-    def to_L2(self, dimension):
+    def to_L2(self, dimension=None):
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError("Dimension must be specified as the object has not be initialized with dimension.")
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_L2()
     
-    def to_Loo(self, dimension):
+    def to_Loo(self, dimension=None):
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError("Dimension must be specified as the object has not be initialized with dimension.")
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension)
     
-    def to_Coo(self, dimension):
+    def to_Coo(self, dimension=None):
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError("Dimension must be specified as the object has not be initialized with dimension.")
         bound = max(abs(self.range[0]), abs(self.range[1]))
         return norm.Lp(value=bound, p=oo, dimension=dimension).to_Coo()
     
@@ -169,10 +186,9 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
                 raise ValueError("sec parameter must be specified")
 
         if dimension is None:
+            dimension = self.dimension
             if self.dimension is None:
-                raise AttributeError("Dimension must be set before calling norm transformations (e.g. 'secret_distribution.dimension = n'") # TODO consistent, maybe per parameter?
-        else:
-            self.dimension = dimension
+                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.") # TODO consistent, maybe per parameter?
 
         bound = self.s * sqrt(log(2.0)* (sec + 1)  / pi)
         if self.componentwise:
@@ -231,7 +247,7 @@ class GaussianAlpha(Gaussian):
     r"""
     Helper class for Gaussian distribution with input parameter :math:`\alpha`. 
     """
-    def __init__(self, alpha, q, componentwise=True, sec=None):
+    def __init__(self, alpha, q, componentwise=True, sec=None, dimension=None):
         r"""
         :param sigma: noise rate :math:`\alpha`
         :param q: modulus
@@ -244,13 +260,14 @@ class GaussianAlpha(Gaussian):
         self.s = est.sigmaf(self.sigma)
         self.componentwise = componentwise
         self.sec = sec
+        self.dimension = dimension
 
 
 class GaussianSigma(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
     """
-    def __init__(self, sigma, q, componentwise=True, sec=None):
+    def __init__(self, sigma, q, componentwise=True, sec=None, dimension=None):
         """
         :param sigma: standard deviation :math:`\sigma`
         :param q: modulus
@@ -262,13 +279,14 @@ class GaussianSigma(Gaussian):
         self.alpha = est.alphaf(self.sigma, q, sigma_is_stddev=True)
         self.componentwise = componentwise
         self.sec = sec
+        self.dimension = dimension
 
 
 class GaussianS(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
     """
-    def __init__(self, s, q, componentwise=True, sec=None):
+    def __init__(self, s, q, componentwise=True, sec=None, dimension=None):
         """
         :param sigma: Gaussian width :math:`s = \sigma \cdot \sqrt{2\pi}`
         :param q: modulus
@@ -280,3 +298,4 @@ class GaussianS(Gaussian):
         self.alpha = est.alphaf(s, q)
         self.componentwise = componentwise
         self.sec = sec 
+        self.dimension = dimension

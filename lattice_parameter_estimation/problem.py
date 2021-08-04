@@ -117,12 +117,12 @@ def algorithms_executor(algs, sec, res_queue=None):
                         + [(k, int(algf.keywords[k])) for k in ["n", "q"] if k in set(algf.keywords)]
                         + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
                         + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)])
-        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]}... Parameters: {str(parameters)}')
+        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]} ({alg["cname"]})... Parameters: {str(parameters)}')
         start = time.time()
         try:
             cost = algf() # TODO: handle intractable/trivial error from algorithms.py? 
             duration = time.time() - start           
-            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[{str(cost)}], cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[{str(cost)}], problem={alg["inst"]},  (took {duration:.3f} s)') 
             if cost["rop"] <= best_res.cost["rop"]:
                 all_failed = False
                 best_res = EstimateRes(
@@ -138,7 +138,7 @@ def algorithms_executor(algs, sec, res_queue=None):
                     rop = float(log(cost["rop"], 2))
                     rop = 0 if rop < 0 else rop
                 except Exception:
-                    alg_logger.warning(f'Estimate result for "{alg["algname"]}" with paramters {str(parameters)}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
+                    alg_logger.warning(f'Estimate result for "{alg["algname"]}, {alg["cname"]}" with paramters {str(parameters)}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
                     alg_logger.debug(traceback.format_exc())
                     rop = oo
                 runtime.append({
@@ -153,7 +153,7 @@ def algorithms_executor(algs, sec, res_queue=None):
 
         except algorithms.IntractableSolution:
             duration = time.time() - start     
-            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(oo)}] (intractable), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[rop: {str(oo)}] (intractable), problem={alg["inst"]},  (took {duration:.3f} s)') 
             if oo <= best_res.cost["rop"]:
                 all_failed = False
                 best_res = EstimateRes(
@@ -171,7 +171,7 @@ def algorithms_executor(algs, sec, res_queue=None):
 
         except algorithms.TrivialSolution:
             duration = time.time() - start     
-            alg_logger.info(f'Estimate for "{alg["algname"]}" successful: result=[rop: {str(1)}] (trivial), cost_model={alg["cname"]}, problem={alg["inst"]},  (took {duration:.3f} s)') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[rop: {str(1)}] (trivial), problem={alg["inst"]},  (took {duration:.3f} s)') 
             all_failed = False
             best_res = EstimateRes(
                 cost = {"rop": 1},
@@ -193,7 +193,7 @@ def algorithms_executor(algs, sec, res_queue=None):
             # TODO: what to do with the exception??? => extra exception logger for estimator computions?
             # TODO: add error parameter to best_res
             duration = time.time() - start
-            alg_logger.info(f'Estimate for "{alg["algname"]}" not successful (took {duration:.3f} s).') 
+            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" not successful (took {duration:.3f} s).') 
             alg_exception_logger.error(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {parameters}')
             alg_exception_logger.error(traceback.format_exc())
     

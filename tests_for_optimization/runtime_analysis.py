@@ -39,7 +39,7 @@ def runtime_results():
     ax1.set_ylabel('Runtime [s]')
     ax1.legend()
     plt.grid()
-    plt.savefig('cost_models.png')
+    plt.savefig('algorithms.png')
     plt.show()
 
 def cost_model_plotter():
@@ -147,4 +147,5 @@ def cost_model_d_plotter():
     plt.show()
 
 if __name__ == "__main__":
+    cost_model_plotter()
     runtime_results()

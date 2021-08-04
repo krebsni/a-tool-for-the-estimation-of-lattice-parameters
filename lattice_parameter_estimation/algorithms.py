@@ -255,7 +255,7 @@ class SIS:
                 m_optimal_APS15 = m
                 log_delta_0_APS15 = log(beta, 2) / m - n * log(q, 2) / (m ** 2)
 
-            # take best value
+            # take best value TODO: is smaller delta_0 really better?
             if rs10_failed or log_delta_0_APS15 < log_delta_0: 
                 log_delta_0 = log_delta_0_APS15
                 m_optimal = m_optimal_APS15
