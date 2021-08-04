@@ -152,6 +152,7 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
                 duration = time.time() - start 
                 logger.info("----------------------------------------------------------------------------")
                 logger.info(f"Generic search successful (took {duration}s). Estimated security level is > {log_rop}.") # TODO: print more info?
+                # TODO: Warning for algorithms that didn't work if option is set that not all algs must be successful 
                 return {"parameters": current_parameter_set, "result": res}
         except problem.EmptyProblem:
             pass    

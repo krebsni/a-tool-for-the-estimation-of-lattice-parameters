@@ -142,7 +142,10 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         r"""
         :returns: noise rate :math:`\alpha`
         """
-        return self.alpha
+        if self.componentwise:
+            return self.alpha
+        else:
+            pass # TODO
     
     def get_stddev(self):
         """

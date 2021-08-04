@@ -8,7 +8,7 @@ from . import algorithms
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Generator, Iterator
+from typing import Generator, Iterator, List
 import time
 import sys
 import os
@@ -40,31 +40,140 @@ STATISTICAL_SEC = 128 #: for statistical security # TODO
 RUNTIME_ANALYSIS = False
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
+
+## Helper Classes ##
+class EmptyProblem(Exception):
+    pass
+
+class BaseProblem():
+    pass
+
 ## Helper class
-class EstimateRes():
+class AlgorithmResult():
     """
-    Type of return value needed for overloaded lt-operator :class:`Problem` instances.
+    Return value encupsulation for algorithm estimates.
 
-    :param is_secure: true if Problem instance satisfies security requirment
-    :param info: attack, cost_model, inst
+    :param runtime: runtime [s]
+    :param alg_name: name of algorithm
+    :param c_name: name of cost model
+    :param cost: cost dict (:class:`est.Cost` from lwe-estimator)
+    :param is_successful: ``True`` if algorithm was successful
     :param error: string with error description
-    :param runtime: list of runtime of algorithms run during estimation
+    :param is_insecure: ``True`` if found estimate violates security requirement
     """
-    def __init__(self, is_secure=True, info={}, cost=est.Cost([("rop", oo)]), error=None, runtime=None):
-        self.is_secure = is_secure
-        self.info = info
-        self.cost = cost
-        self.error = error
+    def __init__(self, runtime, problem_instance : BaseProblem, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):    
         self.runtime = runtime
-
+        self.problem_instance = problem_instance
+        self.alg_name = alg_name
+        self.c_name = c_name
+        self.cost = cost
+        self.is_successful = is_successful
+        self.error = error
+        self.is_insecure = is_insecure
+        
     def __bool__(self):
         return self.is_secure
 
     def __str__(self) -> str:
-        return 'Cost: ' + str(self.cost) + '\nInfo: ' + str(self.info) + ["", f"\nError: {self.error}"][self.error != None]
-
-class EmptyProblem(Exception):
+        return ["Insecure ", "Secure "][self.is_secure] + f'result of {self.alg_name}' \
+            + ["", f" ({self.c_name})"][self.cname != ""] + f' (took {self.runtime}s): {str(self.cost)}' \
+            + ["", f"\nError: {self.error}"][self.error != None]
     pass
+    # store trace in case of exception
+    # name, params, runtime, is_secure, success
+
+class AggregateEstimationResult():
+    """
+    Type of return value needed for overloaded lt-operator :class:`Problem` instances.
+    
+    TODO
+    :problem_instances: list of all problem instances (e.g. instance of :class:`MLWE`) for which estimates are run
+    :param error: set to ``"all_failed"`` if no algorithm passes TODO
+    :param runtime: list of runtime of algorithms run during estimation
+    """
+    def __init__(self, problem_instances : List[BaseProblem], algorithm_result : AlgorithmResult, config : algorithms.Configuration, error="all_failed", runtime=0):
+        self.error = error
+        self.is_insecure = False
+        self.sec = oo
+        self.alg_res_dict = {}
+        for inst in problem_instances:
+            self.alg_res_dict[inst] = []
+        self.runtime = runtime
+        self.config = config
+        self.add_algorithm_result(algorithm_result=algorithm_result)
+
+    def add_algorithm_result(self, algorithm_result : AlgorithmResult):
+        if algorithm_result.is_insecure:
+            self.is_insecure = True
+        if algorithm_result.is_successful:
+            self.error = None # Is this sufficient?
+        new_sec = log(abs(algorithm_result.cost["rop"]), 2).n()
+        if new_sec <= self.sec:
+            self.best_cost = new_sec
+        self.alg_res_dict[algorithm_result.problem_instance].append(algorithm_result)
+    
+    def get_algorithm_result_dict(self, sort_by_rop=False, only_best_per_algorithm=False, only_successful=False):
+        """
+        Returns dict of that for each problem instance contains a list of estimation results corresponding to an algorithm and (not in all cases) a cost model. 
+
+        :param sort_by_rop: if ``True`` list is sorted in ascending order by rop
+        :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
+        :param only_successful: only return estimate results for successful algorithms
+        """
+        result_dict = {}
+        for inst in self.alg_res_dict:
+            result_dict[inst]
+            result_dict[inst] = self.alg_res_dict[inst]
+
+            if only_successful:
+                result_dict[inst] = [x for x in result_dict[inst] if x.is_successful]
+
+            if only_best_per_algorithm:
+                alg_names = set()
+                for alg_res in result_dict[inst]:
+                    alg_names.add(alg_res.alg_name)
+                best_results = {}
+                for alg_name in alg_names:
+                    best_results[alg_name] = min([x for x in result_dict[inst] if x.alg_name == alg_name], key=lambda x: x.cost["rop"])
+                result_dict[inst] = list(best_results.values())
+
+            if sort_by_rop:
+                result_dict[inst] = sorted(result_dict[inst], key=lambda x: x.cost["rop"])
+
+        return result_dict
+    
+    def is_secure(self):
+        """
+        Returns if secure according to security strategy in config
+        """
+        if self.is_insecure:
+            return False
+        
+        for inst in self.alg_res_dict:
+            if not self.alg_res_dict[inst]:
+                raise ValueError(f"No algorithm result for instance {inst}.")
+
+            if isinstance(self.config.security_strategy, algorithms.ALL_SECURE):
+                if not all([(x.is_successful and not x.is_insecure) for x in self.alg_res_dict[inst]]):
+                    return False
+
+            elif isinstance(self.config.security_strategy, algorithms.SOME_SECURE):
+                if not any([(x.is_successful and not x.is_insecure) for x in self.alg_res_dict[inst]]):
+                    return False
+                    
+            elif not isinstance(self.config.security_strategy, algorithms.NOT_INSECURE):
+                raise ValueError("Security strategy in config improperly configured.")
+
+        return True
+
+
+    def __bool__(self):
+        return self.is_secure()
+
+    def __str__(self) -> str:
+        return ["Insecure ", "Secure "][self.is_secure()] + f'result (took {self.runtime}s): {str(self.sec)}' \
+            + ["", f"\nError: {self.error}"][self.error != None]
+
 
 class BaseProblem(ABC):
     @abstractmethod
@@ -76,18 +185,18 @@ class BaseProblem(ABC):
         pass
 
     # TODO: check, perhaps add other operators
-    def __ge__(self, sec) -> EstimateRes:
+    def __ge__(self, sec) -> AggregateEstimationResult:
         config = algorithms.Configuration() # use default config
         return estimate(parameter_problem=[self], config=config, sec=sec)
 
-    def __gt__(self, sec) -> EstimateRes:
-        config = algorithms.Estimatio_Configuration() # use default config
+    def __gt__(self, sec) -> AggregateEstimationResult:
+        config = algorithms.Configuration() # use default config
         return estimate(parameter_problem=[self], config=config, sec=sec + 1)
 
-    def __lt__(self, sec) -> EstimateRes:
+    def __lt__(self, sec) -> AggregateEstimationResult:
         return not self.__ge__(sec)
 
-    def __le__(self, sec) -> EstimateRes:
+    def __le__(self, sec) -> AggregateEstimationResult:
         return not self.__gt__(sec)
 
     @abstractmethod
@@ -109,7 +218,7 @@ def algorithms_executor(algs, sec, res_queue=None):
     if RUNTIME_ANALYSIS:
         runtime = []
     
-    best_res = EstimateRes()
+    best_res = AggregateEstimationResult()
     all_failed = True
     for alg in algs:
         algf = alg["algf"]
@@ -311,7 +420,7 @@ def estimate(parameter_problems : Iterator[BaseProblem],
     else: # not parallel
         best_res = algorithms_executor(algs, sec) 
     
-    if all_failed:
+    if all_failed: # TODO: don't raise exception 
         raise RuntimeError("All estimate algorithms failed")
     
     duration = time.time() - start

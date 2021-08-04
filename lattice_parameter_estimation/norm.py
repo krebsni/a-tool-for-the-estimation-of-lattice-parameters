@@ -2,7 +2,7 @@ r"""
 Module for norms and norm transformation.
 
 Let :math:`n` be the dimension of the vector and with a slight abuse of notation :math:`L_i` represent the value of :math:`L_i`-norm of the vector. From section 2.1 in :cite:`BDLOP18` we have:
-TODO: change definition to match BDLOP 
+TODO: change definition to match BDLOP => ring elements as vectors...
 
 #. :math:`\;\;L_1 \leq \sqrt{n} L_2`
 #. :math:`\;\;L_1 \leq n L_\infty`
@@ -181,7 +181,7 @@ class Lp(BaseNorm):
 
     def __mul__(self, other):
         r""" 
-        Multiply :math:`_p`-norm norm with ``other`` by converting other norm to :math:`C_\infty`-norm or with a scalar.
+        Multiply :math:`L_p`-norm with ``other`` by converting other norm to :math:`C_\infty`-norm or with a scalar.
 
         From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f, g \in \mathcal{R}_q`
 
@@ -202,7 +202,7 @@ class Lp(BaseNorm):
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
         if self.p == oo and other.p == oo:
-            return Lp(value=self.dimension * self.value * other.value, p=oo, dimension=self.dimension) # TODO check
+            return Lp(value=self.dimension * self.value * other.value, p=oo, dimension=self.dimension)
         elif (self.p == 1 and other.p == oo) \
                 or (self.p == oo and other.p == 1) \
                 or (self.p == 2 and other.p == 2):

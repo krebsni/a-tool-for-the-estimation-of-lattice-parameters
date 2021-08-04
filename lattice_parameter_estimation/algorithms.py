@@ -49,6 +49,28 @@ COMBINATORIAL = "combinatorial"
 ALL = ["usvp", "decode", "dual", "dual-without-lll", "arora-gb", "mitm", "coded-bkw", "reduction", "combinatorial"]
 
 
+## Solution passing strategy ##
+class SecurityStrategy():
+    """ 
+    Strategy for a secure solution
+    """
+    pass
+class ALL_SECURE(SecurityStrategy):
+    """ 
+    All algorithms must yield results that satisfy security parameter.
+    """
+    pass
+class SOME_SECURE(SecurityStrategy):
+    """ 
+    At least one algorithm must yield results that satisfy security parameter (other algorithms may fail in case of timeout or exception, but no insecure result).
+    """
+    pass
+class NOT_INSECURE(SecurityStrategy):
+    """ 
+    Algorithms may fail in case of timeout or exception, but no insecure result. Secure result not needed to continue with search.
+    """
+    pass
+
 class Configuration():
     """
     Configuration of the cost estimation parameters (including cost models and algorithms used).
@@ -59,7 +81,8 @@ class Configuration():
                  conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, 
                  custom_cost_models=[], 
                  algorithms=[USVP, LATTICE_REDUCTION], 
-                 parallel=True, num_cpus=None, timeout=600):
+                 security_strategy : SecurityStrategy = SOME_SECURE,
+                 parallel=True, num_cpus=None, timeout=1000):
         r""" 
         Configure cost estimation. 
         
@@ -109,6 +132,7 @@ class Configuration():
         if not all(x in ALL for x in algorithms):
             ValueError("algorithms not specified correctly. Please use the constants specified in the documentation.")
 
+        self.security_strategy = security_strategy
         self.classical = classical
         self.quantum = quantum
         self.sieving = sieving
@@ -263,8 +287,10 @@ class SIS:
             if 2**log_delta_0 < 1:
                 raise IntractableSolution("delta_0 < 1")
 
+            # check for valid delta
             if delta_0 < est.delta_0f(m_optimal):
                 raise est.OutOfBoundsError("delta_0 = %f < %f" % (delta_0, est.delta_0f(m_optimal)))
+
             k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
             B = log(q, 2)
 
