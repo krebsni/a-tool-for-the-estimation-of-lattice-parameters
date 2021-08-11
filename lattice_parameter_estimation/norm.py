@@ -1,21 +1,24 @@
 r"""
 Module for norms and norm transformation.
 
-Let :math:`n` be the dimension of the vector and with a slight abuse of notation :math:`L_i` represent the value of :math:`L_i`-norm of the vector. From section 2.1 in :cite:`BDLOP18` we have:
-TODO: change definition to match BDLOP => ring elements as vectors...
+From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f \in \mathcal{R}_q` with :math:`f = \sum_i f_i X^i`. Then the following inequations hold:
 
-#. :math:`\;\;L_1 \leq \sqrt{n} L_2`
-#. :math:`\;\;L_1 \leq n L_\infty`
-#. :math:`\;\;L_2 \leq \sqrt{n} L_\infty \;\;\;(\text{since }  \sqrt{n} L_2 \leq n L_\infty)`
-#. :math:`\;\;L_\infty \leq L_1`
+.. math::
+    \begin{align}
+        \| f \|_1 &\leq \sqrt{n} \| f \|_2 \label{norm1} \tag{1}\\
+        \| f \|_1 &\leq n \| f \|_\infty \label{norm2} \tag{2}\\
+        \| f \|_2 &\leq \sqrt{n} \| f \|_\infty \;\;(\text{since }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \tag{3}\\
+        \| f \|_\infty& \leq \| f \|_1 \label{norm4} \tag{4}
+    \end{align}
 
 
-And from Theorem 7 in :cite:`DPSZ12`:
+And from :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1`):
 
-5. :math:`\;\;L_\infty \leq C_\infty`
-6. :math:`\;\;C_\infty \leq L_1`
-
-# TODO: norm transformations documentation
+.. math::
+    \begin{align}
+        \| f \|_\infty &\leq \| \sigma(f) \|_\infty \label{norm5} \tag{5}\\
+        \| \sigma(f) \|_\infty &\leq \| f \|_1 \label{norm6} \tag{6}
+    \end{align}
 """
 
 from multiprocessing.sharedctypes import Value
@@ -67,9 +70,7 @@ class Lp(BaseNorm):
 
     def to_L1(self, dimension=None):
         r"""
-        .. math::
-            L_1 &\leq \sqrt{n} L_2  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\; &[1]\\
-            L_1 &\leq n L_\infty &[2]
+        From :math:`\ref{norm1}`, it follows that :math:`\| f \|_1 \leq \sqrt{n} \| f \|_2` and from :math:`\ref{norm2}`, :math:`\| f \|_1 \leq n \| f \|_\infty`.
             
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of the vector
@@ -90,9 +91,7 @@ class Lp(BaseNorm):
 
     def to_L2(self, dimension=None):
         r"""
-        .. math::
-            L_2 &\leq \sqrt{n} L_1  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\; &[3,4]\\
-            L_2 &\leq \sqrt{n} L_\infty &[3]
+        From :math:`\ref{norm3}` and :math:`\ref{norm4}`, it follows that :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_1` and from :math:`\ref{norm3}`, :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_\infty`.
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of the vector
@@ -113,9 +112,7 @@ class Lp(BaseNorm):
 
     def to_Loo(self, dimension=None):
         r"""
-        .. math::
-            L_\infty &\leq L_1  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\; &[4]\\
-            L_\infty &\leq \sqrt{n} L_2 &[1,4]
+        From :math:`\ref{norm4}`, it follows that :math:`\| f \|_\infty \leq  \| f \|_1` and from :math:`\ref{norm1}` and :math:`\ref{norm4}`, :math:`\| f \|_\infty \leq \sqrt{n}  \| f \|_2`.
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of the vector
@@ -136,10 +133,7 @@ class Lp(BaseNorm):
 
     def to_Coo(self, dimension=None):
         r"""
-        .. math::
-            C_\infty &\leq L_1  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\; &[6]\\
-            C_\infty &\leq \sqrt{n} L_2 &[1,6]\\
-            C_\infty &\leq n L_\infty &[2, 6]
+        From :math:`\ref{norm6}`, it follows that :math:`\| \sigma(f) \|_\infty \leq  \| f \|_1`, from :math:`\ref{norm1}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2`, and from :math:`\ref{norm2}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq n  \| f \|_\infty`.
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`C_\infty`-norm of the vector
@@ -246,8 +240,7 @@ class Coo(BaseNorm):
 
     def to_L1(self, dimension):
         r"""
-        .. math::
-            L_1 \leq n C_\infty  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;[2,5]
+        From :math:`\ref{norm2}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_1 \leq  n \| \sigma(f) \|_\infty`.
             
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_1`-norm of the vector
@@ -261,9 +254,8 @@ class Coo(BaseNorm):
 
     def to_L2(self, dimension):
         r"""
-        .. math::
-            L_2 \leq \sqrt{n} C_\infty  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;[3,5]
-
+        From :math:`\ref{norm3}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty`.
+        
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
@@ -276,8 +268,7 @@ class Coo(BaseNorm):
 
     def to_Loo(self, dimension):
         r"""
-        .. math::
-            L_\infty \leq C_\infty  \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;[5]
+        From :math:`\ref{norm5}`, it follows that :math:`\| f \|_\infty \leq  \| \sigma(f) \|_\infty`.
 
         :param dimension: dimension of the vector
         :returns: upper bound of :math:`L_\infty`-norm of the vector

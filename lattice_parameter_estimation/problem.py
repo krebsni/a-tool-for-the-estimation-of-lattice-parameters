@@ -18,6 +18,7 @@ import multiprocessing as mp
 from concurrent.futures import ThreadPoolExecutor
 from queue import Empty
 from functools import partial
+import json
 import sage.all 
 from sage.functions.log import exp, log
 from sage.functions.other import ceil, sqrt, floor, binomial
@@ -37,12 +38,14 @@ alg_exception_logger = logging.getLogger(logger.name + ".estimation_exception_lo
 
 ## Configuration ##
 STATISTICAL_SEC = 128 #: for statistical security # TODO
-RUNTIME_ANALYSIS = False
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
 
 ## Helper Classes ##
 class EmptyProblem(Exception):
+    pass
+
+class AllFailedError(Exception):
     pass
 
 class BaseProblem():
@@ -56,62 +59,104 @@ class AlgorithmResult():
     :param runtime: runtime [s]
     :param alg_name: name of algorithm
     :param c_name: name of cost model
-    :param cost: cost dict (:class:`est.Cost` from lwe-estimator)
+    :param cost: cost dict (:py:mod:`lattice_parameter_estimation.estimator.estimator.Cost` from lwe-estimator)
     :param is_successful: ``True`` if algorithm was successful
     :param error: string with error description
     :param is_insecure: ``True`` if found estimate violates security requirement
     """
-    def __init__(self, runtime, problem_instance : BaseProblem, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):    
+    def __init__(self, runtime, problem_instance, params, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):    
         self.runtime = runtime
         self.problem_instance = problem_instance
+        self.params = params
         self.alg_name = alg_name
         self.c_name = c_name
         self.cost = cost
         self.is_successful = is_successful
         self.error = error
         self.is_insecure = is_insecure
-        
+    
+    def to_dict(self):
+        return {
+            "inst": self.problem_instance,
+            "alg_name": self.alg_name,
+            "cost_model": self.c_name,
+            "params": self.params,
+            "sec": max(0, float(log(abs(self.cost["rop"]), 2).n())),
+            "cost": str(self.cost),
+            "runtime": self.runtime,
+            "is_successful": self.is_successful,
+            "is_insecure": self.is_insecure,
+            "error": self.error
+        }
+
     def __bool__(self):
         return self.is_secure
 
     def __str__(self) -> str:
-        return ["Insecure ", "Secure "][self.is_secure] + f'result of {self.alg_name}' \
-            + ["", f" ({self.c_name})"][self.cname != ""] + f' (took {self.runtime}s): {str(self.cost)}' \
-            + ["", f"\nError: {self.error}"][self.error != None]
-    pass
-    # store trace in case of exception
-    # name, params, runtime, is_secure, success
+        ret = self.str_no_err()
+        if not self.is_successful:
+            ret += f"\nError: {self.error}"
+        return ret
+    
+    def str_no_err(self) -> str:
+        if not self.is_successful:
+            detail = f"insuccessful (took {str(self.runtime)}s): params={str(self.params)}"
+        else:
+            sec = max(0, float(log(abs(self.cost["rop"]), 2).n()))
+            detail = f'{["secure", "insecure"][self.is_insecure]} (took {self.runtime:.1f}s): sec={str(sec)}, params={str(self.params)}'
+        return f'Estimate for "{self.alg_name}"{["", " " + self.c_name][self.c_name != ""]} - {self.problem_instance}' + detail
+
+
 
 class AggregateEstimationResult():
     """
-    Type of return value needed for overloaded lt-operator :class:`Problem` instances.
+    Type of return value needed for overloaded lt-operator :class:`BaseProblem` instances.
     
     TODO
     :problem_instances: list of all problem instances (e.g. instance of :class:`MLWE`) for which estimates are run
-    :param error: set to ``"all_failed"`` if no algorithm passes TODO
+    :param error: set to ``"all_failed"`` if no algorithm passes, can also be ``"timeout"`` and ``"early_termination"``
     :param runtime: list of runtime of algorithms run during estimation
     """
-    def __init__(self, problem_instances : List[BaseProblem], algorithm_result : AlgorithmResult, config : algorithms.Configuration, error="all_failed", runtime=0):
+    def __init__(self, config : algorithms.Configuration, error="all_failed", runtime=0, problem_instances : List[BaseProblem] = []):
         self.error = error
         self.is_insecure = False
-        self.sec = oo
+        self.lowest_sec = oo
         self.alg_res_dict = {}
         for inst in problem_instances:
             self.alg_res_dict[inst] = []
         self.runtime = runtime
         self.config = config
-        self.add_algorithm_result(algorithm_result=algorithm_result)
+        self._contains_res = False
 
     def add_algorithm_result(self, algorithm_result : AlgorithmResult):
+        self._contains_res = True
         if algorithm_result.is_insecure:
             self.is_insecure = True
         if algorithm_result.is_successful:
-            self.error = None # Is this sufficient?
-        new_sec = log(abs(algorithm_result.cost["rop"]), 2).n()
-        if new_sec <= self.sec:
-            self.best_cost = new_sec
+            self.error = None
+
+        if algorithm_result.cost is not None:
+            new_sec = max(0, log(abs(algorithm_result.cost["rop"]), 2).n()) # make sure this does not raise an exception
+            if new_sec <= self.lowest_sec:
+                self.lowest_sec = new_sec
+        if not algorithm_result.problem_instance in self.alg_res_dict:
+            self.alg_res_dict[algorithm_result.problem_instance] = []
         self.alg_res_dict[algorithm_result.problem_instance].append(algorithm_result)
     
+    def add_aggragate_result(self, aggregate_result):
+        if not aggregate_result.is_secure():
+            self.is_insecure = True
+        if aggregate_result.error != "all_failed": # => error is "early_termination" or
+            self.error = aggregate_result.error
+
+        if aggregate_result.lowest_sec < self.lowest_sec:
+            self.lowest_sec = aggregate_result.lowest_sec
+
+        for inst in aggregate_result.alg_res_dict:
+            if not inst in self.alg_res_dict:
+                self.alg_res_dict[inst] = []
+            self.alg_res_dict[inst].extend(aggregate_result.alg_res_dict[inst])
+
     def get_algorithm_result_dict(self, sort_by_rop=False, only_best_per_algorithm=False, only_successful=False):
         """
         Returns dict of that for each problem instance contains a list of estimation results corresponding to an algorithm and (not in all cases) a cost model. 
@@ -120,9 +165,11 @@ class AggregateEstimationResult():
         :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
         :param only_successful: only return estimate results for successful algorithms
         """
+        if not self._contains_res:
+            return self.alg_res_dict
+
         result_dict = {}
         for inst in self.alg_res_dict:
-            result_dict[inst]
             result_dict[inst] = self.alg_res_dict[inst]
 
             if only_successful:
@@ -141,7 +188,7 @@ class AggregateEstimationResult():
                 result_dict[inst] = sorted(result_dict[inst], key=lambda x: x.cost["rop"])
 
         return result_dict
-    
+
     def is_secure(self):
         """
         Returns if secure according to security strategy in config
@@ -151,28 +198,67 @@ class AggregateEstimationResult():
         
         for inst in self.alg_res_dict:
             if not self.alg_res_dict[inst]:
-                raise ValueError(f"No algorithm result for instance {inst}.")
+                return False
 
-            if isinstance(self.config.security_strategy, algorithms.ALL_SECURE):
-                if not all([(x.is_successful and not x.is_insecure) for x in self.alg_res_dict[inst]]):
+            if self.config.security_strategy == algorithms.ALL_SECURE:
+                # TODO: x.is_insecure should not be necessary
+                if not all([x.is_successful for x in self.alg_res_dict[inst]]):
                     return False
 
-            elif isinstance(self.config.security_strategy, algorithms.SOME_SECURE):
-                if not any([(x.is_successful and not x.is_insecure) for x in self.alg_res_dict[inst]]):
+            elif self.config.security_strategy == algorithms.SOME_SECURE:
+                if not any([x.is_successful for x in self.alg_res_dict[inst]]):
                     return False
                     
-            elif not isinstance(self.config.security_strategy, algorithms.NOT_INSECURE):
+            elif not self.config.security_strategy == algorithms.NOT_INSECURE:
                 raise ValueError("Security strategy in config improperly configured.")
-
         return True
 
+    def to_dict(self, sort_by_rop=False, only_best_per_algorithm=False, only_successful=False):
+        """ 
+        Returns results in JSON-serializable dict.
+        
+        :param sort_by_rop: if ``True`` list is sorted in ascending order by rop
+        :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
+        :param only_successful: only return estimate results for successful algorithms
+        """
+        alg_result_dict = {}
+        former_dict = self.get_algorithm_result_dict(sort_by_rop=sort_by_rop,   
+            only_best_per_algorithm=only_best_per_algorithm, only_successful=only_successful)
+        for inst in former_dict:
+            alg_result_dict[inst] = [x.to_dict() for x in former_dict[inst]]
+        res = {
+            "alg_results": alg_result_dict,
+            "error": self.error,
+            "is_insecure": self.is_insecure,
+            "lowest_sec": float(self.lowest_sec), # TODO warning
+            "runtime": self.runtime,
+        }
+        return res
+    
+    def save_as_JSON(self, filename, sort_by_rop=False, only_best_per_algorithm=False, only_successful=False):
+        """ 
+        Save results in file.
+        
+        :param filename: filename
+        :param sort_by_rop: if ``True`` list is sorted in ascending order by rop
+        :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
+        :param only_successful: only return estimate results for successful algorithms
+        """
+        with open(filename + ".json", 'w') as fout:
+            json.dump(self.to_dict(sort_by_rop=sort_by_rop, only_best_per_algorithm=only_best_per_algorithm, 
+                        only_successful=only_successful), fout, indent=4)
 
     def __bool__(self):
+        """ 
+        Calls :meth:`is_secure`.
+        """
         return self.is_secure()
 
     def __str__(self) -> str:
-        return ["Insecure ", "Secure "][self.is_secure()] + f'result (took {self.runtime}s): {str(self.sec)}' \
-            + ["", f"\nError: {self.error}"][self.error != None]
+        error = ", Error: " + self.error if self.error is not None else ""
+        return f'Estimates successful and {["insecure", "secure"][self.is_secure()]}' \
+            + f' (took {self.runtime:.1f}s):' \
+            + f' best sec={str(self.lowest_sec)}' + error
 
 
 class BaseProblem(ABC):
@@ -205,136 +291,134 @@ class BaseProblem(ABC):
 
 
 ## Estmation ##
-def algorithms_executor(algs, sec, res_queue=None):
+def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=None):
     """TODO
 
-    Args:
-        cname: Cost model name
-        algorithms: Dict like {"name_alg": algname, ...}
-        sec ([type]): [description]
-        problem_instance ([type]): [description]
-        res_queue ([type]): [description]
+    :param algs: list of tuples as ``[(problem_instance, alg)]``, where alg is dict as ``{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}`` (item in list returned from :meth:`BaseProblem.get_estimate_algorithms`)
+    :param sec: bit security parameter
+    :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+    :param res_queue: for multiprocessing support, instance of :py:mod:`multiprocessing.Queue`
     """
-    if RUNTIME_ANALYSIS:
-        runtime = []
-    
-    best_res = AggregateEstimationResult()
-    all_failed = True
-    for alg in algs:
+    start = time.time()
+    # results = AggregateEstimationResult(config=config)
+    results = []
+    early_termination = False
+    timeout = False
+    for alg_tuple in algs:
+        if time.time() - start > config.timeout: # won't prevent algorithm from looping infinitively
+            timeout = True
+            break 
+
+        # alg_tuple is tuple (problem_instance, alg)
+        inst = alg_tuple[0]
+        alg = alg_tuple[1]
         algf = alg["algf"]
-        parameters = dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)]
+        # TODO: maybe delete params in AlgRes, as params in problem_instance (not transformed though) additional memory overhead should be small though...
+        params = dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)]
                         + [(k, int(algf.keywords[k])) for k in ["n", "q"] if k in set(algf.keywords)]
                         + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
-                        + [(k, float(algf.keywords[k].value)) for k in ["bound"] if k in set(algf.keywords)])
-        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]} ({alg["cname"]})... Parameters: {str(parameters)}')
-        start = time.time()
+                        + [(k, float(algf.keywords[k])) for k in ["bound"] if k in set(algf.keywords)])
+        cname = f'({alg["cname"]})' if alg["cname"] != "" else ""
+        alg_logger.info(str(os.getpid()) + f' Running algorithm {alg["algname"]} {cname}... Parameters: {str(params)}')
+
+        start_alg = time.time()
+        cost = est.Cost([("rop", oo)]) # else finding best doesn't work
+        error = None
+        # TODO: could be encapsulated in AlgorithmResult
+        is_insecure = False
+        is_successful = False
         try:
-            cost = algf() # TODO: handle intractable/trivial error from algorithms.py? 
-            duration = time.time() - start           
-            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[{str(cost)}], problem={alg["inst"]},  (took {duration:.3f} s)') 
-            if cost["rop"] <= best_res.cost["rop"]:
-                all_failed = False
-                best_res = EstimateRes(
-                    info={"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
-                    cost=cost
-                )
-                if sec and log(cost["rop"], 2) < sec:
-                    best_res.is_secure = False; break
-            if RUNTIME_ANALYSIS:
-                beta = int(cost["beta"]) if "beta" in cost else None
-                d = int(cost["d"]) if "d" in cost else None
-                try:
-                    rop = float(log(cost["rop"], 2))
-                    rop = 0 if rop < 0 else rop
-                except Exception:
-                    alg_logger.warning(f'Estimate result for "{alg["algname"]}, {alg["cname"]}" with paramters {str(parameters)}: Exception in calculating log_rop = float(log({cost["rop"]}), 2). Assume that log_rop = oo.')
-                    alg_logger.debug(traceback.format_exc())
-                    rop = oo
-                runtime.append({
-                    "algname": alg["algname"], 
-                    "cname": alg["cname"], 
-                    "runtime": duration, 
-                    "log_rop": float(log(cost["rop"], 2)),
-                    "beta": beta,
-                    "d": d,
-                    "parameters": parameters,
-                })
-
+            cost = algf()
+            if cost == None:
+                cost = est.Cost([("rop", oo)])
+                raise RuntimeError("Bug in estimator (returned None). No solution found.")
+            if sec and cost["rop"] < 2**sec:
+                is_insecure = True
+            is_successful = True
         except algorithms.IntractableSolution:
-            duration = time.time() - start     
-            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[rop: {str(oo)}] (intractable), problem={alg["inst"]},  (took {duration:.3f} s)') 
-            if oo <= best_res.cost["rop"]:
-                all_failed = False
-                best_res = EstimateRes(
-                    info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
-                    error = "intractable"
-                )
-            if RUNTIME_ANALYSIS:
-                runtime.append({
-                    "algname": alg["algname"], 
-                    "cname": alg["cname"], 
-                    "runtime": duration, 
-                    "log_rop": oo,
-                    "parameters": parameters,
-                })
-
-        except algorithms.TrivialSolution:
-            duration = time.time() - start     
-            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" successful: result=[rop: {str(1)}] (trivial), problem={alg["inst"]},  (took {duration:.3f} s)') 
-            all_failed = False
-            best_res = EstimateRes(
-                cost = {"rop": 1},
-                info = {"attack": alg["algname"], "cost_model": alg["cname"], "inst": alg["inst"]},
-                error = "trivial"
-            )
-            if sec and 0 < sec:
-                best_res.is_secure = False
-            if RUNTIME_ANALYSIS:
-                runtime.append({
-                    "algname": alg["algname"], 
-                    "cname": alg["cname"], 
-                    "runtime": duration, 
-                    "log_rop": 0,
-                    "parameters": parameters,
-                })
+            # from SIS algorithms
+            cost = est.Cost([("rop", oo)])
+            is_successful = True
+            if sec and cost["rop"] < 2**sec:
+                is_insecure = True
+            error = "intractable"
             
-        except Exception:
-            # TODO: what to do with the exception??? => extra exception logger for estimator computions?
-            # TODO: add error parameter to best_res
-            duration = time.time() - start
-            alg_logger.info(f'Estimate for "{alg["algname"]}, {alg["cname"]}" not successful (took {duration:.3f} s).') 
-            alg_exception_logger.error(str(os.getpid()) + f' Exception during {alg["algname"]}... Parameters: {parameters}')
-            alg_exception_logger.error(traceback.format_exc())
-    
-    if RUNTIME_ANALYSIS:
-        best_res.runtime = runtime # runtime of all algorithms (not just the one for best result)
-    if all_failed:
-        best_res.error = "all_failed"
+        except algorithms.TrivialSolution:
+            # from SIS algorithms
+            cost = est.Cost([("rop", RR(1))])
+            if sec and sec > 0:
+                is_insecure = True
+            is_successful = True
+            error = "trivial"
+        except:
+            # something went wrong
+            error = traceback.format_exc()
+
+        runtime = time.time() - start_alg
+        alg_res = AlgorithmResult(
+            runtime=runtime,
+            problem_instance=inst,
+            params=params,
+            alg_name=alg["algname"],
+            c_name= alg["cname"],
+            cost=cost,
+            is_successful=is_successful,
+            error=error,
+            is_insecure=is_insecure
+        )
+
+        if error != None and alg_logger.level > logging.INFO:
+            alg_logger.error(str(alg_res))
+        else:
+            alg_logger.info(str(alg_res))
+
+        results.append(alg_res)
+        if is_insecure or (config.security_strategy == algorithms.ALL_SECURE \
+                and is_successful == False): 
+            # early termination
+            early_termination = True 
+            break
 
     if res_queue is None:
         # no multiprocessing
-        return best_res
+        total_runtime = time.time() - start
+        agg_result = AggregateEstimationResult(config=config)
+        agg_result.runtime = total_runtime
+        for alg_res in results:
+            agg_result.add_algorithm_result(alg_res)
+        if early_termination: # if all_failed no early termination
+            agg_result.error = "early_termination"
+        if timeout:
+            agg_result.error = "timeout"
+        return agg_result
     else:
-        res_queue.put(best_res)
+        res_queue.put(results)
         
 
 def estimate(parameter_problems : Iterator[BaseProblem], 
                 config : algorithms.Configuration, 
                 sec=None):
-    algs = []
-    for problem_instance in parameter_problems: 
-        algs.extend( # TODO what if get_estimate_algorithms returns empty list... raise exception from problem
-            problem_instance.get_estimate_algorithms(config=config))
+    # Create algorithm list of tuples (problem_instance, alg)
+    algs = [] 
+    parameter_problems = list(parameter_problems)
+    for problem_instance in parameter_problems:
+        try:
+            inst_algs = problem_instance.get_estimate_algorithms(config=config)
+        except NotImplementedError as e:
+            if ERROR_HANDLING_ON: # TODO
+                logger.error(e)
+            else:
+                raise e
+        if not inst_algs:
+            raise EmptyProblem(f"No algorithm for instance {str(problem_instance)}")
+        for alg in inst_algs:
+            algs.append((problem_instance.label, alg)) # TODO maybe find better description for inst or change __str__
     if not algs: # no instance
         raise EmptyProblem("Could not find any algorithms for given input parameters.")
-    start = time.time()
-
     # sort first by algorithm priority, then by cost model priority
-    algs = sorted(algs, key=lambda a: (a["prio"], a["cprio"])) 
-    
-    if RUNTIME_ANALYSIS:
-        runtime = []
+    algs = sorted(algs, key=lambda a: (a[1]["prio"], a[1]["cprio"])) 
 
+    start = time.time()
     if config.parallel:
         if config.num_cpus is None:
             num_procs = min(mp.cpu_count(), len(algs))
@@ -353,15 +437,15 @@ def estimate(parameter_problems : Iterator[BaseProblem],
         alg_logger.debug(f"Starting {num_procs} processes for {len(algs)} algorithms...")
         alg_logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
         p = [None]*len(split_list)
-        best_res = EstimateRes()
+        results = AggregateEstimationResult(config=config, 
+                                            problem_instances=[x.label for x in parameter_problems])
         result_queue = mp.Queue()
         for i in range(len(split_list)):
-            p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, result_queue))
+            p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, config, result_queue))
             p[i].start()
-            alg_logger.debug(str(p[i].pid) + " started...") # TODO: perhaps add debug logging in algorithm_executor
+            alg_logger.debug(str(p[i].pid) + " started...")
         
         terminated = False
-        all_failed = True
         while not terminated:
             try:
                 # Check if all processes finished their calculation
@@ -377,30 +461,24 @@ def estimate(parameter_problems : Iterator[BaseProblem],
                         result_queue.close()
                         terminated = True
                     break
+                
 
                 # Try to get result
                 res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
                 # TODO perhaps fine tune, check that wait here is not busy waiting... check if all cores are 100% or not...
-                
-                if RUNTIME_ANALYSIS:
-                    runtime.extend(res.runtime)
-                
-                if res.cost["rop"] <= best_res.cost["rop"]:
-                    if res.error is not None and res.error == "all_failed":
-                        # all algorithms failed
-                        pass
-                    else:
-                        all_failed = False
-                        best_res = res
-                        if sec and not res.is_secure: # early termination only if sec parameter is specified
-                            alg_logger.debug("Received insecure result. Terminate all other processes.")
-                            # insecure result obtained => terminate all other processes
-                            for i in range(len(split_list)):
-                                p[i].terminate() # TODO: could it happen that exception is cast when a process is already terminated
-                                p[i].join()
-                                # data put into queue during terminate may become corrupted => just close it
-                                result_queue.close()
-                                terminated = True
+                for alg_res in res:
+                    results.add_algorithm_result(alg_res)
+
+                # results.add_aggragate_result(res) # TODO
+                if sec and results.is_insecure: # is_secure may not be right as tests not complete
+                    alg_logger.debug("Received insecure result. Terminate all other processes.")
+                    # insecure result obtained => terminate all other processes
+                    for i in range(len(split_list)):
+                        p[i].terminate() # TODO: could it happen that exception is cast when a process is already terminated
+                        p[i].join()
+                        # data put into queue during terminate may become corrupted => just close it
+                        result_queue.close()
+                        terminated = True
             except Empty: # result not yet available
                 if time.time() - start > config.timeout:
                     # Computation too long, result not expected anymore
@@ -408,78 +486,117 @@ def estimate(parameter_problems : Iterator[BaseProblem],
                         p[i].terminate() 
                         p[i].join()
                         result_queue.close()
-                        terminated = True
-                    message = f"Cost estimation not terminating after {config.timeout}s. Forcefully stop all computations."
+                    terminated = True
+                    
+                    if sec and results.is_secure():
+                        if config.security_strategy == algorithms.ALL_SECURE:
+                            # since at least one is not successful => All_SECURE = FALSE 
+                            results.is_insecure = True
+                        
+                    results.error = "timeout"
+                    message = f"Timeout during estimation after {config.timeout}s. Try to specify longer timeout in config. If no result is obtained, one of the algorithms might not terminate for the given parameter set."
+                    if not results.is_secure():
+                        raise TimeoutError(message)
+
+                    # TODO: Problem: if timeout all processes still running are terminated and valid results lost => write back into queue right after result is obtained???
+                    
                     if ERROR_HANDLING_ON: # TODO
                         logger.error(message)
                     else:
                         raise RuntimeError(message)
-        if RUNTIME_ANALYSIS:
-            best_res.runtime = runtime
 
     else: # not parallel
-        best_res = algorithms_executor(algs, sec) 
+        results = algorithms_executor(algs, sec, config) 
     
-    if all_failed: # TODO: don't raise exception 
-        raise RuntimeError("All estimate algorithms failed")
-    
-    duration = time.time() - start
-    try:
-        log_rop = float(log(best_res.cost['rop'], 2))
-        if log_rop < 0:
-            log_rop = 0
-    except Exception:
-        alg_logger.warning(f"Exception in calculating log_rop = float(log({best_res.cost['rop']}), 2). Assume that log_rop = oo.")
-        alg_logger.debug(traceback.format_exc())
-        log_rop = oo
-    message = f"Estimate successful (took {duration:.3f} s). Lowest computed security: {str(log_rop)}. " # TODO: deal with values out of bound
-    if sec is not None:
-        message += f"Result is {['insecure', 'secure'][best_res.is_secure]} (sec={sec})."
-    alg_logger.info(message) 
-    return best_res
+    if results.error == "all_failed": # TODO: don't raise exception 
+        raise AllFailedError("All estimate algorithms failed")
+    if results.error == "early_termination":
+        pass # TODO do anything? Maybe debug message?    
+
+    runtime = time.time() - start
+    results.runtime = runtime
+    alg_logger.info(str(results)) 
+    return results
 
 
 ## LWE and its variants ##
 class LWE(BaseProblem):
     # TODO: docstring (also other variants)
+    _counter = 1
 
-    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant = "LWE"): 
+    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="LWE", label=None): 
         """
         :param q: modulus
         :param n: secret dimension
         :param m: number of samples
-        :param secret_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param error_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
+        :param secret_distribution: secret distribution (instance of subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param error_distribution: secret distribution (instance of subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         # check soundness of parameters
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         self.n = n
         self.q = q
         self.m = m
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
-        self.variant = variant
 
     def get_estimate_algorithms(self, config : algorithms.Configuration):
         """
-        Compute list of estimate functions on the LWE instance according to the attack configuration.
+        Compute list of estimate functions from the lwe-estimator on the LWE instance according to the attack configuration.
 
-        :param config: instance of :class:`algorithms.Configuration`
+        The priorities are assigned as follows:
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "cprio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
+        .. list-table:: Algorithm Priorities
+            :header-rows: 1
+
+             - Algorithm
+             - Priority
+             - Comment
+
+           * - mitm
+             - 5
+             - fastest, high cost estimate, as prefilter
+           * - primal-usvp
+             - 10
+             - fast, low cost estimates
+           * - dual
+             - 20
+             - fast, estimates may be slightly higher than primal-usvp
+           * - dual-no-lll
+             - 30
+             - fast, estimates may be slightly higher than dual
+           * - bkw-coded
+             - 90
+             - slow, somtimes very low cost estimate, does not always yield results
+           * - primal-decode
+             - 100
+             - slow, estimates often higher than faster algorithms
+           * - arora-gb
+             - 200
+             - extremely slow, often higher estimates, does not always yield results
+
+        TODO: add plots
+
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """         
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
         alpha = RR(self.error_distribution.get_alpha())
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
         if secret_distribution == "normal" and self.secret_distribution.get_alpha() != alpha:
-            ValueError("If secret distribution is Gaussian it must follow the error distribution. Different Gaussians not supported by lwe-estimator.") # TODO: perhaps change
+            raise NotImplementedError("If secret distribution is Gaussian it must follow the error distribution. Differing Gaussians not supported by lwe-estimator at the moment.") # TODO: perhaps change
 
         cost_models = config.reduction_cost_models()
-        
-        # TODO: coded-bkw: find a case that is working?
-        # TODO: arora-gb seems to be not working for sec_dis = "normal" => perhaps change test before adding arora-gb to alg list?
 
         algs = []
         # Choose algorithms. Similar to estimate_lwe function in estimator.py
@@ -562,7 +679,7 @@ class LWE(BaseProblem):
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
-                                    "prio": 20,
+                                    "prio": 30,
                                     "cprio": cprio,
                                     "inst": self.variant})
                 elif est.SDis.is_small(secret_distribution):
@@ -573,7 +690,7 @@ class LWE(BaseProblem):
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
-                                    "prio": 20,
+                                    "prio": 30,
                                     "cprio": cprio,
                                     "inst": self.variant})                                                                
                 elif "dual" not in config.algorithms: # else this algorithm will be run twice
@@ -583,7 +700,7 @@ class LWE(BaseProblem):
                                                     n=self.n, alpha=alpha, q=self.q, m=self.m,
                                                     secret_distribution=secret_distribution, 
                                                     success_probability=success_probability),
-                                    "prio": 20,
+                                    "prio": 30,
                                     "cprio": cprio,
                                     "inst": self.variant})
 
@@ -616,38 +733,38 @@ class LWE(BaseProblem):
         # attacks without reduction cost model
         if "mitm" in config.algorithms: # estimates are very bad but very fast, so no need to exclude 
             algs.append({"algname": "mitm", 
-                            "cname": "-", 
+                            "cname": "", 
                             "algf": partial(est.mitm, n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                             secret_distribution=secret_distribution, 
                                             success_probability=success_probability),
-                            "prio": 0,
-                            "cprio": 0,
+                            "prio": 5,
+                            "cprio": 5,
                             "inst": self.variant})
             
-        if "coded-bkw" in config.algorithms:
+        if "coded-bkw" in config.algorithms: # sometimes slow but may yield good results
             algs.append({"algname": "coded-bkw", 
-                            "cname": "-", 
+                            "cname": "", 
                             "algf": partial(est.bkw_coded, n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                             secret_distribution=secret_distribution, 
                                             success_probability=success_probability),
-                            "prio": 0, # TODO
+                            "prio": 90, 
                             "cprio": 0,
                             "inst": self.variant})
 
-        if "arora-gb" in config.algorithms:
+        if "arora-gb" in config.algorithms: # slow and bad results
             if est.SDis.is_sparse(secret_distribution) and est.SDis.is_small(secret_distribution):
                 algs.append({"algname": "arora-gb-drop", 
-                                "cname": "-", 
+                                "cname": "", 
                                 "algf": partial(est.drop_and_solve, est.arora_gb, rotations=False, 
                                                 n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                 secret_distribution=secret_distribution, 
                                                 success_probability=success_probability),
-                                "prio": 200, # TODO: no results obtained yet
+                                "prio": 200, 
                                 "cprio": 0, 
                                 "inst": self.variant})
             elif secret_distribution != "normal" and est.SDis.is_small(secret_distribution): # switch_modulus does not work for normal sec_dis
                 algs.append({"algname": "arora-gb-switch-modulus", 
-                                "cname": "-", 
+                                "cname": "", 
                                 "algf": partial(est.switch_modulus, est.arora_gb,
                                                 n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                 secret_distribution=secret_distribution, 
@@ -657,7 +774,7 @@ class LWE(BaseProblem):
                                 "inst": self.variant})
             else:
                 algs.append({"algname": "arora-gb", 
-                                "cname": "-", 
+                                "cname": "", 
                                 "algf": partial(est.arora_gb,
                                                 n=self.n, alpha=alpha, q=self.q, m=self.m,  
                                                 secret_distribution=secret_distribution, 
@@ -675,20 +792,29 @@ class LWE(BaseProblem):
 
 
 class MLWE(BaseProblem):
-
-    def __init__(self, n, d, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution):
+    
+    _counter = 1
+    
+    def __init__(self, n, d, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, label=None, variant="MLWE"):
         """
         :param n: degree of polynomial
         :param d: rank of module
         :param q: modulus
         :param m: number of samples
-        :param secret_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param error_distribution: secret distribution (instance of subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
+        :param secret_distribution: secret distribution (instance of subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param error_distribution: secret distribution (instance of subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         # check soundness of parameters
         if not n or not d or not q or not m or n<0 or d<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
-            
+        
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         self.n = n
         self.d = d
         self.q = q
@@ -708,10 +834,10 @@ class MLWE(BaseProblem):
 
         Note that the reduction only works for Search-MLWE TODO: find reduction for decision-MLWE?
 
-        :param config: instance of :class:`algorithms.Configuration`
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         # TODO: check if correct
         use_reduction = False
@@ -743,18 +869,27 @@ class MLWE(BaseProblem):
 
 class RLWE(BaseProblem):
 
-    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution):
+    _counter = 1
+
+    def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="RLWE", label=None):
         """
         :param n: degree of polynomial
         :param q: modulus
         :param m: number of samples
-        :param secret_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param error_distribution: secret distribution (subclass of :class:`Distributions.Gaussian` or :class:`Distributions.Uniform`)
-        :param config: instance of :class:`algorithms.Configuration`
+        :param secret_distribution: secret distribution (subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param error_distribution: secret distribution (subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         ## interpret coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6] TODO: check 
         self.n = n
         self.q = q
@@ -766,10 +901,10 @@ class RLWE(BaseProblem):
         r"""
         Compute list of estimate functions on the RLWE instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
-        :param config: instance of :class:`algorithms.Configuration`
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
         :param use_reduction: specify if reduction to RLWE is used
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         lwe = LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="RLWE")
@@ -944,7 +1079,7 @@ class StatisticalUniformMLWE():
 
     def get_beta_bounds(self):
         """
-        :returns: tuple (min_beta, max_beta), betas are instances of :class:`norm.Lp`
+        :returns: tuple (min_beta, max_beta), betas are instances of :py:mod:`lattice_parameter_estimation.norm.Lp`
         """
         return (self.min_beta, self.max_beta)
 
@@ -961,7 +1096,7 @@ class StatisticalUniformMLWE():
                 return d
             else:
                 d *= 2
-        raise ValueError("Could not find d such that 1 < d < n power of 2 and q congruent to 2d + 1 (mod 4d). q=" + str(q) + ", n=" + str(n))   
+        raise ValueError("Could not find d such that 1 < d < n power of 2 and q congruent to 2d + 1 (mod 4d). q=" + str(q) + ", n=" + str(n) + ". Try again or call constructor with d_2.")   
 
 
 class StatisticalUniformMatrixMLWE(StatisticalUniformMLWE):
@@ -1007,30 +1142,57 @@ class StatisticalUniformRLWE(StatisticalUniformMLWE):
 
 ## SIS and its variants ##
 class SIS(BaseProblem):
-        
-    def __init__(self, n, q, m, bound : norm.BaseNorm, variant="SIS"):
+    
+    _counter = 1
+
+    def __init__(self, n, q, m, bound : norm.BaseNorm, variant="SIS", label=None):
         """
         :param q: modulus
         :param n: secret dimension
         :param m: number of samples
-        :param bound: upper bound on norm of secret distribution, must be instance of subclass of :class:`Norm.BaseNorm`. TODO
+        :param bound: upper bound on norm of secret distribution, must be instance of subclass of :py:mod:`lattice_parameter_estimation.norm.BaseNorm`. TODO
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         self.q = q
         self.n = n
         self.m = m
         self.bound = bound
-        self.variant = variant
     
     def get_estimate_algorithms(self, config : algorithms.Configuration):
         """
         Compute list of estimate functions on the SIS instance according to the attack configuration.
+        
+        The priorities are assigned as follows:
 
-        :param config: instance of :class:`algorithms.Configuration`
+        .. list-table:: Algorithm Priorities TODO
+            :header-rows: 1
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self.variant}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+             - Algorithm
+             - Priority
+             - Comment
+
+           * - lattice-reduction
+             - 5
+             - fastest, high cost estimate, as prefilter
+           * - combinatorial
+             - 10
+             - fast, low cost estimates
+
+
+        TODO: add plots
+
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "SIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         cost_models = config.reduction_cost_models() 
         algs = []
@@ -1038,12 +1200,51 @@ class SIS(BaseProblem):
             cost_model = reduction_cost_model["cost_model"]
             cname = reduction_cost_model["name"]
 
-            if "reduction" in config.algorithms:
+            if "reduction-rs" in config.algorithms:
                 algs.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
                                         "algf": partial(algorithms.SIS.lattice_reduction, 
-                                                        n=self.n, q=self.q, m=self.m, bound=self.bound, 
+                                                        n=self.n, q=self.q, m=self.m, 
+                                                        bound=self.bound.to_L2(self.n).value, 
                                                         reduction_cost_model=cost_model),
+                                        "prio": 1,
+                                        "cprio": reduction_cost_model["prio"],
+                                        "inst": self.variant})
+            if "reduction" in config.algorithms:
+                # TODO: implement drop_and_solve and scale variants
+                algs.append({"algname": "lattice-reduction-rs", 
+                                        "cname": cname, 
+                                        "algf": partial(algorithms.SIS._lattice_reduction_rs, 
+                                                        self.n, self.bound.to_L2(self.n).value, self.q,
+                                                        reduction_cost_model["success_probability"], 
+                                                        self.m, reduction_cost_model=cost_model),
+                                        "prio": 1,
+                                        "cprio": reduction_cost_model["prio"],
+                                        "inst": self.variant})
+                algs.append({"algname": "lattice-reduction-rs-rinse", 
+                                        "cname": cname, 
+                                        "algf": partial(algorithms.SIS.lattice_reduction,
+                                                        self.n, self.bound.to_L2(self.n).value, self.q,
+                                                        reduction_cost_model["success_probability"], 
+                                                        self.m, reduction_cost_model=cost_model),
+                                        "prio": 1,
+                                        "cprio": reduction_cost_model["prio"],
+                                        "inst": self.variant})
+                algs.append({"algname": "lattice-reduction", 
+                                        "cname": cname, 
+                                        "algf": partial(algorithms.SIS._lattice_reduction, 
+                                                        self.n, self.bound.to_L2(self.n).value, self.q,
+                                                        reduction_cost_model["success_probability"], 
+                                                        self.m, reduction_cost_model=cost_model),
+                                        "prio": 1,
+                                        "cprio": reduction_cost_model["prio"],
+                                        "inst": self.variant})
+                algs.append({"algname": "lattice-reduction-rinse", 
+                                        "cname": cname, 
+                                        "algf": partial(algorithms.SIS.lattice_reduction,
+                                                        self.n, self.bound.to_L2(self.n).value, self.q,
+                                                        reduction_cost_model["success_probability"], 
+                                                        self.m, reduction_cost_model=cost_model),
                                         "prio": 1,
                                         "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
@@ -1051,9 +1252,9 @@ class SIS(BaseProblem):
 
         if "combinatorial" in config.algorithms:
             algs.append({"algname": "combinatorial", 
-                                        "cname": "-",
+                                        "cname": "",
                                         "algf": partial(algorithms.SIS.combinatorial, 
-                                                        n=self.n, q=self.q, m=self.m, bound=self.bound),
+                                                        n=self.n, q=self.q, m=self.m, bound=self.bound.to_Loo(self.n).value),
                                         "prio": 0,
                                         "cprio": 0,
                                         "inst": self.variant})
@@ -1066,16 +1267,26 @@ class SIS(BaseProblem):
 
 class MSIS(BaseProblem):
 
-    def __init__(self, n, d, q, m, bound : norm.BaseNorm):
+    _counter = 1
+
+    def __init__(self, n, d, q, m, bound : norm.BaseNorm, variant="MSIS", label=None):
         """
         :param n: degree of polynomial
         :param d: rank of module
         :param q: modulus
         :param m: number of samples
-        :param bound: upper bound on norm of solution, must be subclass of :class:`Norm.BaseNorm`
+        :param bound: upper bound on norm of solution, must be subclass of :py:mod:`lattice_parameter_estimation.norm.BaseNorm`
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         if not n or not d or not q or not m or n<0 or d<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
+
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         self.n = n
         self.d = d
         self.q = q
@@ -1096,10 +1307,10 @@ class MSIS(BaseProblem):
         
         Then there exists a reduction from :math:`\text{M-SIS}_{q^k,m^k,\beta'}` to :math:`\text{R-SIS}_{q,m,\beta}` with :math:`\beta' = m^{k(d-1)/2} \cdot \beta^{k(2d-1)}`.
 
-        :param config: instance of :class:`algorithms.Configuration`
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
         :param use_reduction: specify if reduction to RSIS is used
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         # TODO
         if use_reduction:
@@ -1131,16 +1342,26 @@ class MSIS(BaseProblem):
 
 class RSIS(BaseProblem):
 
-    def __init__(self, n, q, m, bound : norm.BaseNorm):
+    _counter = 1
+
+    def __init__(self, n, q, m, bound : norm.BaseNorm, variant="RSIS", label=None):
         """
         :param q: modulus
         :param n: degree of polynomial
         :param m: number of samples
-        :param bound: upper bound on norm of solution, must be subclass of :class:`Norm.BaseNorm`
+        :param bound: upper bound on norm of solution, must be subclass of :py:mod:`lattice_parameter_estimation.norm.BaseNorm`
+        :param variant: for internal use to distinguish variants
+        :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
         ## We interpret the coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
+        
+        if label is None:
+            label = variant + str(self._counter)
+            self._counter += 1
+        self.label = label
+        self.variant = variant
         self.n = n
         self.q = q
         self.m = m
@@ -1150,9 +1371,9 @@ class RSIS(BaseProblem):
         r"""
         Compute list of estimate functions on a corresponding SIS instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6.
 
-        :param config: instance of :class:`algorithms.Configuration`
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
-        :returns: list of algorithms, e.g. ``[{"algname": "algorithm1", "cname": "costmodelname1", "algf": f, "prio": 0, "inst": self}}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         sis = SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS")
         return sis.get_estimate_algorithms(config=config)

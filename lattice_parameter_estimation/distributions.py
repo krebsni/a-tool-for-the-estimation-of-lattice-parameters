@@ -63,17 +63,24 @@ class Uniform(norm.BaseNorm, Distribution):
                 self.range = (0, q)
         self.dimension = dimension
 
-    def get_alpha(self, q, n=None):
+    def get_alpha(self, sec, q):
         r"""
-        Calculates noise rate :math:`\alpha` of approximately equivalent Gaussian distribution.
-
-        TODO: describe how it is calculated?
+        Calculates noise rate :math:`\alpha` of approximately equivalent discrete componentwise Gaussian distribution.
 
         :param q: modulus
         :param n: secret dimension, only needed for uniform mod q and sparse secrets
         :returns: noise rate :math:`\alpha`
         """
-        # TODO: inverse of Gaussian to bounds? with sec parameter? currently via variance
+        # TODO: take this variant instead?
+        # We convert the bound :math:`B` to a Gaussian over :math:`L_2`-norm by following the procedure described in :ref:`to_Lp <to_Lp>`:
+
+        # .. math::
+        #     s  \approx x \sqrt{\frac{\pi}{(sec + 1) \ln(2)}}
+
+        # a, b = self.get_range
+        # s = (b - a) / 2 * sqrt(pi / ((sec + 1) * log(2.0)))
+        # return est.alphaf(sigma=s, q=q)
+
         variance = est.SDis.variance(self._convert_for_lwe_estimator(), q=q, n=n)
         return est.alphaf(sqrt(variance), q, sigma_is_stddev=True)
 
@@ -145,6 +152,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         if self.componentwise:
             return self.alpha
         else:
+            return self.alpha
             pass # TODO
     
     def get_stddev(self):

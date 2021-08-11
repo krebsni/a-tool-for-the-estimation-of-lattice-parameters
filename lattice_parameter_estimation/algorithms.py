@@ -1,16 +1,14 @@
-r""" 
-TODO: documentation
-"""
+r"""TODO: documentation"""
 
 from multiprocessing import Value
 import sys
 import os
-import logging 
+import logging
 import norm
 import sage.all
 from sage.functions.log import log
 from sage.functions.other import ceil, sqrt
-from sage.rings.all import QQ, RR, ZZ
+from sage.rings.all import QQ, RR, ZZ, RealField
 from sage.symbolic.all import pi
 import reduction_cost_models
 import estimator as est
@@ -18,7 +16,7 @@ oo = est.PlusInfinity()
 
 ## Logging ##
 logger = logging.getLogger(__name__)
-
+SEPARATOR = "\n----------------------------------------------------------------------------"
 
 ## Exception class ##
 class TrivialSolution(Exception):
@@ -80,7 +78,7 @@ class Configuration():
     def __init__(self, 
                  conservative=True, classical=True, quantum=True, sieving=True, enumeration=True, 
                  custom_cost_models=[], 
-                 algorithms=[USVP, LATTICE_REDUCTION], 
+                 algorithms=[USVP, REDUCTION], 
                  security_strategy : SecurityStrategy = SOME_SECURE,
                  parallel=True, num_cpus=None, timeout=1000):
         r""" 
@@ -100,8 +98,10 @@ class Configuration():
         
         If ``sieving=False`` or ``enumeration=False``, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_models <cost-models>`.
 
-        To add custom cost models parameter ``custom_cost_models`` must be a list of dicts as in the following example:
-        .. code::
+        .. _cost-model:
+
+        To add custom cost models parameter ``custom_cost_models`` must be a list of dicts as in the following example::
+
             cost_models = [
                 {
                     "name": "Q-Enum",
@@ -121,8 +121,8 @@ class Configuration():
         :param quantum: use quantum quantum, ``True`` by default 
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
-        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain USVP (or PRIMAL_USVP), PRIMAL_DECODE (or DECODE), DUAL, DUAL_NO_LLL, ARORA_GB, MITM, CODED_BKW (or BKW). For SIS and its variants, the list can contain LATTICE_REDUCTION (or REDUCTION), COMBINATORIAL. Instead of a list, the parameter can be set to ALL (or algorithms=algorithms.ALL) to run all algorithms. 
-        :param custom_cost_models: list of reduction cost models (dict with keys "name", "reduction_cost_model" and "success_probability", optionally "human_friendly" and "group")
+        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``COMBINATORIAL``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
+        :param custom_cost_models: list of reduction cost models (see :ref:`cost-model`)
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
         :param timeout: timeout for algorithm execution
@@ -131,12 +131,20 @@ class Configuration():
             ValueError("algorithms empty. Please choose algorithms to run the estimates.")
         if not all(x in ALL for x in algorithms):
             ValueError("algorithms not specified correctly. Please use the constants specified in the documentation.")
-
+        
         self.security_strategy = security_strategy
         self.classical = classical
         self.quantum = quantum
         self.sieving = sieving
         self.enumeration = enumeration
+        sis_algs = ["reduction", "combinatorial"]
+        lwe_algs = ["usvp", "decode", "dual", "dual-without-lll", "arora-gb", "mitm", "coded-bkw"]
+        if not set(sis_algs) & set(algorithms):
+            print(SEPARATOR)
+            input("No algorithm for SIS specified. Press Enter to ignore and continue...")
+        if not set(lwe_algs) & set(algorithms):
+            print(SEPARATOR)
+            input("No algorithm for LWE specified. Press Enter to ignore and continue...")
         self.algorithms = algorithms # TODO: check docstring once all attacks have been implemented
         self.parallel = parallel
         self.num_cpus = num_cpus
@@ -179,14 +187,14 @@ class Configuration():
         return "Cost schemes: [" + ["", "classical "][self.classical] + ["", "quantum "][self.quantum] + ["", " sieving"][self.sieving] + ["", " enumeration"][self.enumeration] + "], " + "Algorithms: " + str(self.algorithms)
 
 
-class SIS:
+class SIS():
+
     """
     Namespace for SIS algorithms
     """
-
-    def lattice_reduction(n, q, m, bound : norm.BaseNorm, reduction_cost_model):
+    def _lattice_reduction_rs(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
         r""" 
-        Estimate cost of solving SIS by means of lattice reduction according to :cite:p:`RS10`.
+        Estimate cost of solving SIS by means of lattice reduction according to :cite:p:`RS10`. Part of this method is based on :py:mod:`lattice_parameter_estimation.estimator.estimator._dual`.
 
         Find optimal lattice subdimension :math:`d` and root-Hermite factor :math:`\delta_0` for lattice reduction.
         To calculate :math:`d`, we use :cite:p:`RS10` Proposition 1 (Normalization of q-ary Lattices):
@@ -207,9 +215,65 @@ class SIS:
 
         :math:`\delta_0` must be larger than 1 for the reduction to be tractable. From :math:`\delta_0 = \sqrt[d]{\beta / q^{n/d}} \geq 1` it follows that :math:`d \geq n \log_2(q) / \log_2(\beta)`. If :math:`m \leq n \log_2(q) / \log_2(\beta)` a :class:`ValueError` is raised. 
 
-        
-        Another approach is found in section 3.3 of :cite:`APS15`:
-        
+        :param n: height of matrix
+        :param m: width of matrix
+        :param q: modulus
+        :param beta: bound in :math:`L_2`-norm (value not class)
+        """
+        # TODO check if use of n and m are correct
+        # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
+        # TODO: rinse and repeat? adapt to code in estimator?
+
+        try:
+            prec = beta.prec()
+        except:
+            prec = 128
+        RR = RealField(prec)
+        beta = RR(beta)
+
+        if beta <= 1:
+            raise IntractableSolution("beta < 1")
+        if beta < q:
+            # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
+            # Requirements
+            if n < 128 or q < n*n: 
+                raise ValueError("Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2")
+            if m < n * log(q, 2) / log(beta, 2):
+                raise ValueError("m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1.")
+            
+            n = ZZ(n)
+            q = ZZ(q)
+            # Calculate optimal dimension for delta-HSVP solver
+            m_optimal = ceil(2 * n * log(q, 2) / log(beta, 2)) 
+            if m > m_optimal:
+                m = m_optimal          
+
+            # Calculate approximation factor for delta-HSVP solver
+            delta_0 = RR((beta / (q ** (n / m))) ** (1 / m))
+
+            # check for valid delta
+            if delta_0 < 1:
+                raise IntractableSolution("delta_0 < 1")
+            if delta_0 < est.delta_0f(m_optimal):
+                raise est.OutOfBoundsError("delta_0 = %f < %f" % (delta_0, est.delta_0f(m)))
+            
+            ret = est.lattice_reduction_cost(reduction_cost_model, delta_0, m, B=log(q, 2))
+            ret[u"m"] = m
+            ret[u"d"] = m # d is lattice dimension, beta is block size
+            ret[u"|v|"] = RR(delta_0 ** m * q ** (n / m))
+            return ret.reorder(["rop", "m"])
+
+        else: # not a hard problem, trivial solution exists
+            raise TrivialSolution("beta > q") 
+
+
+    lattice_reduction_rs = est.partial(est.rinse_and_repeat, _lattice_reduction_rs, repeat_select={"m": False})
+
+
+    def _lattice_reduction(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
+        r""" 
+        Estimate cost of solving SIS by means of lattice reduction according to section 3.3 of :cite:`APS15` and :cite:`MR09`. Part of this method is based on :py:mod:`lattice_parameter_estimation.estimator.estimator._dual`.
+
         .. math::
 
             \beta = \|x\|_2 = \delta_0 ^ m  \text{vol}(L) ^ {\frac{1}{m}} 
@@ -231,77 +295,56 @@ class SIS:
             \sqrt{\log \delta_0} &= \frac{\log \beta}{ 2 \sqrt{n \log q}} \\ 
             \log \delta_0 &= \frac{\log^2 \beta}{ 4n \log q}
 
-        In case both approaches succeed, the results of the approach that yields a lower :math:`\log \delta_0` are chosen to compute the block size :math:`k` to apply the reduction cost model.
-
         :param n: height of matrix
         :param m: width of matrix
         :param q: modulus
-        :param bound: bound of solution, must be instance of :class:`Norm.BaseNorm` 
+        :param beta: bound of solution in :math:`L_2`-norm (value not class)
         """
         # TODO check if use of n and m are correct
         # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
         # TODO: rinse and repeat? adapt to code in estimator?
+        
+        try:
+            prec = beta.prec()
+        except:
+            prec = 128
+        RR = RealField(prec)
+        beta = RR(beta)
 
-        beta = RR(bound.to_L2(n).value) # we need L2 norm TODO: check
         if beta <= 1:
             raise IntractableSolution("beta < 1")
         if beta < q:
-            rs10_failed = False
-            try:
-                # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
-                # Requirements
-                if n < 128 or q < n*n: 
-                    raise ValueError("Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2")
-                if m < n * log(q, 2) / log(beta, 2):
-                    raise ValueError("m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1.")
-                
-                n = ZZ(n)
-                q = ZZ(q)
-                # Calculate optimal dimension for delta-HSVP solver
-                m_optimal = ceil(2 * n * log(q, 2) / log(beta, 2)) 
-                if m_optimal > m:
-                    m_optimal = m            
+            
+            log_delta_0 = log(beta, 2) ** 2  / (4  * n * log(q, 2))
+            delta_0 = min(RR(2) ** log_delta_0, RR(1.02190))  # at most LLL
+            m_optimal = est.lattice_reduction_opt_m(n, q, delta_0)
 
-                # Calculate approximation factor for delta-HSVP solver
-                delta_0 = RR((beta / (q ** (n / m_optimal))) ** (1 / m_optimal))
-                if delta_0 < 1:
-                    ValueError("delta_0 < 1")
-                log_delta_0 = log(delta_0, 2)
-            
-            except ValueError:
-                rs10_failed = True
-            
-            # [APS15]
-            log_delta_0_APS15 = log(beta, 2) ** 2  / (4  * n * log(q, 2))
-            m_optimal_APS15 = sqrt(n * log(q, 2) / log_delta_0_APS15)
-            
-            if m_optimal_APS15 > m:
-                m_optimal_APS15 = m
-                log_delta_0_APS15 = log(beta, 2) / m - n * log(q, 2) / (m ** 2)
-
-            # take best value TODO: is smaller delta_0 really better?
-            if rs10_failed or log_delta_0_APS15 < log_delta_0: 
-                log_delta_0 = log_delta_0_APS15
-                m_optimal = m_optimal_APS15
-            
-            if 2**log_delta_0 < 1:
-                raise IntractableSolution("delta_0 < 1")
+            if m > m_optimal:
+                m = m_optimal
+            else:
+                log_delta_0 = log(beta, 2) / m - RR(n * log(q, 2)) / (m ** 2)
+                delta_0 = RR(2 ** log_delta_0)
 
             # check for valid delta
-            if delta_0 < est.delta_0f(m_optimal):
-                raise est.OutOfBoundsError("delta_0 = %f < %f" % (delta_0, est.delta_0f(m_optimal)))
+            if delta_0 < 1:
+                raise IntractableSolution("delta_0 < 1")
+            if delta_0 < est.delta_0f(m):
+                raise est.OutOfBoundsError("delta_0 = %f < %f" % (delta_0, est.delta_0f(m))) # TODO catch as intractable?
 
-            k = est.betaf(2**log_delta_0) # block size k [APS15, lattice rule of thumb and Lemma 5]
-            B = log(q, 2)
-
-            cost = reduction_cost_model(k, m_optimal, B) 
-            return est.Cost([("rop", cost), ("d", m_optimal), ("beta", k)]) # d is lattice dimension, beta is block size
+            ret = est.lattice_reduction_cost(reduction_cost_model, delta_0, m, B=log(q, 2))
+            ret[u"m"] = m
+            ret[u"d"] = m # d is lattice dimension, beta is block size
+            ret[u"|v|"] = RR(delta_0 ** m * q ** (n / m))
+            return ret.reorder(["rop", "m"])
 
         else: # not a hard problem, trivial solution exists
             raise TrivialSolution("beta > q") 
-            
+    
 
-    def combinatorial(q, n, m, bound : norm.BaseNorm, reduction_cost_model=None):
+    lattice_reduction = est.partial(est.rinse_and_repeat, _lattice_reduction, repeat_select={"m": False})
+
+
+    def combinatorial(q, n, m, bound, reduction_cost_model=None):
         r""" 
         Estimate cost of solving SIS by means of the combinatorial method as described in :cite:`MR09`.
 
@@ -318,9 +361,9 @@ class SIS:
         :param n: height of matrix
         :param m: width of matrix
         :param q: modulus
-        :param bound: bound of solution, must be instance of :class:`Norm.BaseNorm`
+        :param bound: bound of solution in :math:`L_\infty`-norm (value not class)
         """
-        beta = bound.to_Loo(n).value # we need Loo norm
+        beta = bound # we need Loo norm
         if beta <= 1:
             raise IntractableSolution("beta < 1")
         elif beta < q:
@@ -345,7 +388,7 @@ class SIS:
             L = RR((2 * beta + 1)**(RR(m) / 2**k))
             list_element_cost = log(q, 2) * n
             lists = (2 ** k) * L
-            cost = lists * list_element_cost
+            cost = RR(lists * list_element_cost)
 
             return est.Cost([("rop", cost), ("k", RR(2**k))]) # TODO other information?, return k just as k?
 

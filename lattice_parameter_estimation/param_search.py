@@ -52,6 +52,7 @@ from estimator import oo
 
 ## Logging ##
 logger = logging.getLogger(__name__)
+SEPARATOR = algorithms.SEPARATOR
 
 # Utility # perhaps export if more is added in the future
 def number_of_bits(v):
@@ -127,35 +128,39 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
         costs.insert(i, cost)
         parameters.insert(i, parameter_set)
 
-
+    ignore_all_failed = False
     while parameters:
         current_parameter_set = parameters.pop(0)
         costs.pop(0)
 
-        logger.info("----------------------------------------------------------------------------")
+        logger.info(SEPARATOR)
         logger.info(f"Checking next parameter set: {current_parameter_set}") # TODO: print nicely
         
         try:
             if scalar_parameters:
-                res = problem.estimate(parameter_problems=parameter_problem(current_parameter_set), config=config, sec=sec)
+                results = problem.estimate(parameter_problems=parameter_problem(current_parameter_set), config=config, sec=sec)
             else:
-                res = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
-            if res.is_secure:
-                try:
-                    log_rop = floor(float(log(res.cost["rop"], 2)))
-                    if log_rop < 0:
-                        log_rop = 0
-                except:
-                    logger.warning(f"Exception in calculating log_rop = float(log({res.cost['rop']}), 2). Assume that log_rop = oo.")
-                    logger.debug(traceback.format_exc())
-                    log_rop = oo
+                results = problem.estimate(parameter_problems=parameter_problem(*current_parameter_set), config=config, sec=sec)
+            if results.is_secure():
                 duration = time.time() - start 
-                logger.info("----------------------------------------------------------------------------")
-                logger.info(f"Generic search successful (took {duration}s). Estimated security level is > {log_rop}.") # TODO: print more info?
+                logger.info(SEPARATOR)
+                logger.info(f"Generic search successful (took {duration}s). Estimated security level is > {results.lowest_sec}.") # TODO: print more info?
                 # TODO: Warning for algorithms that didn't work if option is set that not all algs must be successful 
-                return {"parameters": current_parameter_set, "result": res}
+                logger.info(f"Parameters: {current_parameter_set}")
+                return {"parameters": current_parameter_set, "result": results}
         except problem.EmptyProblem:
-            pass    
+            pass
+        except TimeoutError as e:
+            logger.error(e)
+        except problem.AllFailedError:
+            if not ignore_all_failed:
+                print(SEPARATOR)
+                input("All algorithms failed. Press Enter to ignore (from now on) and continue...")
+            ignore_all_failed = True
+            
+        except ValueError as e:
+            # TODO can happen in StatisticalUniformMLWE if d cannot be calculated => user can 
+            raise e
         
         if scalar_parameters:
             for parameter_set in next_parameters(current_parameter_set):

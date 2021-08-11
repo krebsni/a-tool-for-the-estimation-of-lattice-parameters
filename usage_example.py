@@ -24,100 +24,147 @@ from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEME
 logging.basicConfig(level=logging.DEBUG) # set to INFO to hide exceptions
 logger = logging.getLogger(__name__)
 
-lattice_parameter_estimation.Logging.set_level(logging.INFO)
+lattice_parameter_estimation.Logging.set_level(logging.DEBUG)
 
 # TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
-def plot_runtime(title, output_file_name, runtime):
+RUNTIME = "Runtime [s]"
+COST = r"Bit security [$\log_2($rop$)$]"
+def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult, mode=RUNTIME):
+
     logging.getLogger("matplotlib").setLevel(logging.INFO)
     import matplotlib.pyplot as plt
-    algs = {algn for algn in (x["algname"] for x in runtime)}
-    algs_res = {}
-    for algn in algs:
-        cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
-        algs_res[algn] = {}
-        for cname in cmodels:
-            algs_res[algn][cname] = sorted([x for x in runtime if (x["algname"] == algn and x["cname"] == cname)], key=lambda k : k["parameters"]["n"])
+    from matplotlib import gridspec
+    import math
 
-    fig1, ax1 = plt.subplots(1,1)
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-    styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
-    i = 0
-    for algn in algs_res:
+    res_dict = alg_results.get_algorithm_result_dict()
+    n = len(res_dict)
+    cols = min(1, n)
+    rows = int(math.ceil(n / cols))
+    fig, axs = plt.subplots(rows, cols, sharex=True, sharey=False)
+    try:
+        axs = axs.flatten()
+    except:
+        pass
+
+    i = 0 # position in plot
+    for inst in res_dict:
+        # plot for each instance
+        try:
+            ax = axs[i]
+        except:
+            ax = axs
+        res_list = sorted(res_dict[inst], key=lambda x: x.params["n"])
+        alg_names = {algn for algn in (x.alg_name for x in res_list)}        
+
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        # styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
         j = 0
-        for cname in algs_res[algn]:
-            label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
-            ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + styles[j], label=label)
+        for algn in alg_names:
+            label = algn # + ["", f" (Cost model: {cname})"][cname != "-"]
+            x = sorted(list(set([x.params["n"] for x in res_list if x.alg_name == algn])))
+            y = []
+            
+            if mode == RUNTIME:
+                for n in x:
+                    y.append(min([r.runtime for r in res_list 
+                                if r.alg_name == algn and r.params["n"] == n]))
+            elif mode == COST:
+                for n in x:
+                    y.append(min([log(abs(r.cost["rop"]),2).n() for r in res_list 
+                                if r.alg_name == algn and r.params["n"] == n]))
+            ax.plot(x, y, colors[j] + '-', label=label)
             j += 1
+        ax.legend()
+        ax.grid()
         i += 1
-    ax1.set_xlabel(r'Secret dimension $n$')
-    ax1.set_ylabel('Runtime [s]')
-    ax1.set_title(title)
-    ax1.legend()
-    plt.grid()
-    plt.savefig(output_file_name)
+    
+    try:
+        for ax in axs.flat:
+            ax.set(xlabel=r'Dimension $n$', ylabel=mode)
+    except:
+        ax.set(xlabel=r'Dimension $n$', ylabel=mode)
+    plt.savefig(title)
     plt.show()
 
 
-    # Mean of different cost models
-    from statistics import mean
-    algs = set([algn for algn in (x["algname"] for x in runtime)])
-    n_set = sorted(set([x["parameters"]["n"] for x in runtime]))
-    algs_res = {}
-    for algn in algs:
-        cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
-        algs_res[algn] = {}
+    # # Mean of different cost models
+    # from statistics import mean
+    # algs = set([algn for algn in (x["algname"] for x in runtime)])
+    # n_set = sorted(set([x["parameters"]["n"] for x in runtime]))
+    # algs_res = {}
+    # for algn in algs:
+    #     cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
+    #     algs_res[algn] = {}
         
-        mean_runtime = []
-        for n in n_set:
-            mean_runtime.append(mean([x for x in runtime if (x["algname"] == algn and x["parameters"]["n"] == n)]))
-        mean_runtime = sorted(mean_runtime, key=lambda k : k["parameters"]["n"])
+    #     mean_runtime = []
+    #     for n in n_set:
+    #         mean_runtime.append(mean([x for x in runtime if (x["algname"] == algn and x["parameters"]["n"] == n)]))
+    #     mean_runtime = sorted(mean_runtime, key=lambda k : k["parameters"]["n"])
 
-    fig1, ax1 = plt.subplots(1,1)
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-    i = 0
-    for algn in algs_res:
-        label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
-        ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + '-', label=label)
-        i += 1
-    ax1.set_xlabel(r'Secret dimension $n$')
-    ax1.set_ylabel('Runtime [s]')
-    ax1.set_title(title)
-    ax1.legend()
-    plt.grid()
-    plt.savefig(output_file_name + "_mean")
-    plt.show()
+    # fig1, ax1 = plt.subplots(1,1)
+    # colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+    # i = 0
+    # for algn in algs_res:
+    #     label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
+    #     ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + '-', label=label)
+    #     i += 1
+    # ax1.set_xlabel(r'Secret dimension $n$')
+    # ax1.set_ylabel('Runtime [s]')
+    # ax1.set_title(title)
+    # ax1.legend()
+    # plt.grid()
+    # plt.savefig(output_file_name + "_mean")
+    # plt.show()
 
-def runtime_analysis():
+def alg_runtime_analysis():
+    # TODO also write tests for parallel on/off
+    pass
+
+def alg_cost_analysis():
+    # TODO perhaps combine with alg_runtime_analysis
+    pass
+
+def compare_to_literature_examples():
+    pass
+
+def runtime_and_cost_analysis():
     print("---------------------------------")
     print("Runtime Analysis")
     print("---------------------------------")
-    problem.RUNTIME_ANALYSIS = True
-    config = algorithms.Configuration(
-        algorithms=["usvp", "dual", "dual-without-lll", "arora-gb", "decode", "mitm", "coded-bkw"])
-
+    import time
     problem_instances = []
-    for i in range(7, 15):
-        # n, alpha, q = Param.Regev(2**i)
+    for i in range(7, 14):
         n = 2**i
         q = param_search.make_prime(2**(i+1), lbound=2**i)
-        alpha = est.alphaf(est.sigmaf(sqrt(16/2)), q)
+        alpha = est.alphaf(est.sigmaf(sqrt(8)), q)
         m = est.PlusInfinity()
         err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
         sec_dis = err_dis
-        problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis))
-    problem.RUNTIME_ANALYSIS = True
-    result = problem.estimate(parameter_problems=problem_instances, config=config)
+        problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
 
+    start = time.time()
+    start1 = time.time()
+    config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[x for x in algorithms.ALL if x not in [algorithms.PRIMAL_DECODE, algorithms.CODED_BKW, algorithms.ARORA_GB]], timeout=200)
+    result1 = problem.estimate(parameter_problems=problem_instances, config=config)
+    total_runtime = str(round(time.time() - start1))
     print("---------------------------------")
-    print("Estimates complete")
-    runtime = result.runtime
-    import json
-    with open('runtime_New_Hope.json', 'w') as fout:
-        json.dump(runtime, fout)
-    plot_runtime("New Hope", "runtime_New_Hope", runtime)
-    
+    print(f"Estimates complete (took {total_runtime}s)")
+    alg_results_plotter(title=f"runtime_stddev8_{total_runtime}s_", alg_results=result1, mode=RUNTIME)
 
+    start2 = time.time()
+    config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[algorithms.PRIMAL_DECODE, algorithms.CODED_BKW, algorithms.ARORA_GB], timeout=280)  
+    result2 = problem.estimate(parameter_problems=problem_instances, config=config)
+    total_runtime = str(round(time.time() - start2))
+    print("---------------------------------")
+    print(f"Estimates complete (took {total_runtime}s)")
+    alg_results_plotter(title=f"runtime_stddev8_{total_runtime}s_", alg_results=result2, mode=RUNTIME)
+
+    result1.add_aggragate_result(result2)
+    total_runtime = str(round(time.time() - start1))
+    alg_results_plotter(title=f"cost_stddev8_{total_runtime}s", alg_results=result1, mode=COST)
+
+    result1.save_as_JSON("results_stddev8")
     return
 
     schemes = [s for s in LWE_SCHEMES if s["name"] == "Lizard"]
@@ -161,27 +208,24 @@ def runtime_analysis():
 
 def estimation_example():
     sec = 350
-    # Example: KCL‑RLWE
     problem.STATISTICAL_SEC = sec
-    n = 2**10; q = 12289; m = 2*1024; stddev = sqrt(8) # TODO
+    n = 2**15; q = 12289; m = 2*1024; stddev = sqrt(8**(-3)) # TODO
     err_dis = distributions.GaussianSigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
-    config = algorithms.Configuration(algorithms=[algorithms.MITM])
+    config = algorithms.Configuration(algorithms=[algorithms.MITM, algorithms.LATTICE_REDUCTION])
     lwe = problem.RLWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis)
     
     # estimates
     print("---------------------------------")
     print("LWE Estimates")
     print("---------------------------------")
-    result = problem.estimate(parameter_problem=[lwe], config=config, sec=250)
-    print("Result: is_secure=" + str(result.is_secure) + ", cost=" + str(result.cost) + ", info=" + str(result.info))
+    result = problem.estimate(parameter_problems=[lwe], config=config, sec=250)
+    import json
+    print("Result: " + str(result))
+    print(json.dumps(result.to_dict(), indent=4))
     # result = param_search.is_secure(parameter_problem=[lwe], sec=350, config=config)
     # print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
-    print()
-    print()
-    print()
-    print()
-    print()
+
 
     # # Example: SIS
     print("---------------------------------")
@@ -192,8 +236,8 @@ def estimation_example():
     beta = err_dis.to_Loo(dimension=n) # componentwise beta bound (convert from Gaussian)
     sis = problem.RSIS(n=n, q=q, m=m, bound=beta)
     # estimates
-    result = problem.estimate(parameter_problem=[sis], config=config)
-    print("Result: is_secure=" + str(result.is_secure) + ", cost=" + str(result.cost) + ", info=" + str(result.info))
+    result = problem.estimate(parameter_problems=[sis], config=config)
+    print("Result: " + json.dumps(result, indent=4))
     # result = param_search.is_secure(parameter_problem=[sis], sec=350, config=config)
     # print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
 
@@ -274,15 +318,17 @@ def two_problem_search_example():
     sec = 128
     sigma = 1
     N = 2**15
-    # p = 2**128
-    p = 11417981541647679048466287755595961091061972992
+    # p = 205688069665150755269371147819668813122841983204197482918576128
+    p = 2**128
+    # TODO: try coded-bkw and mitm for the parameters
     q = p
     l = 1
     d1 = 1
     d2 = 1
     h = 2**155
     kappa = 10
-    config = algorithms.Configuration(conservative=True, algorithms=[algorithms.USVP, algorithms.LATTICE_REDUCTION], parallel=False)
+    lattice_parameter_estimation.Logging.set_estimation_debug_logging_level(logging.INFO)
+    config = algorithms.Configuration(conservative=True, algorithms=algorithms.ALL, parallel=True, security_strategy=algorithms.SOME_SECURE)
     
     def rejection_sample(dimension, modulus, bound, rho=100/99):
         assert dimension >= sec
@@ -335,15 +381,20 @@ def two_problem_search_example():
 
     res = param_search.generic_search(sec, (q, d1, d2), next_parameters, parameter_cost, parameter_problem, config)
 
-    print("---------------------------------")
+    res_params = res.parameters
+    res_alg_results : problem.AggregateEstimationResult = res.results
+    print(res_alg_results.get_algorithm_result_dict(sort_by_rop=True))
+
+
+    print(algorithms.SEPARATOR)
     print("Search successful")
-    print(f"Parameters: {res['parameters']}")
-    print(f"Estimate results: {str(res['result'])}")
+
 
 if __name__ == "__main__":
     # SIS_example()
     # Regev_example()
     # two_problem_search_example()
-    two_problem_search_example()
+    # runtime_and_cost_analysis()
     # import sage.misc.trace
     # sage.misc.trace.trace("runtime_analysis()")
+    fire.Fire()
