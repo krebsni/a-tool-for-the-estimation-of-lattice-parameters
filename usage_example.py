@@ -5,6 +5,8 @@ import fire
 import sys
 import os
 import logging
+
+from matplotlib.pyplot import ylabel
 from lattice_parameter_estimation import algorithms
 from lattice_parameter_estimation import param_search
 from lattice_parameter_estimation import distributions
@@ -30,16 +32,15 @@ lattice_parameter_estimation.Logging.set_level(logging.DEBUG)
 
 RUNTIME = "Runtime [s]"
 COST = r"Bit security [$\log_2($rop$)$]"
-def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult, mode=RUNTIME):
+def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult):
 
     logging.getLogger("matplotlib").setLevel(logging.INFO)
     import matplotlib.pyplot as plt
-    from matplotlib import gridspec
     import math
 
     res_dict = alg_results.get_algorithm_result_dict()
-    n = len(res_dict)
-    cols = min(1, n)
+    n = 2 * len(res_dict)
+    cols = 2
     rows = int(math.ceil(n / cols))
     fig, axs = plt.subplots(rows, cols, sharex=True, sharey=False)
     try:
@@ -50,40 +51,41 @@ def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult, 
     i = 0 # position in plot
     for inst in res_dict:
         # plot for each instance
-        try:
-            ax = axs[i]
-        except:
-            ax = axs
         res_list = sorted(res_dict[inst], key=lambda x: x.params["n"])
-        alg_names = {algn for algn in (x.alg_name for x in res_list)}        
-
+        algn_list = sorted(list({algn for algn in (x.alg_name for x in res_list)}))      
+        algn_color = {}
         colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-        # styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
         j = 0
-        for algn in alg_names:
+        for algn in algn_list:
+            algn_color[algn] = colors[j]
+            j += 1
+
+        # styles = ['-', '--', '-.', ':', '.', ',', 'o', 'v', '^', '<', '>', 's', 'p', '*']    
+        for algn in algn_color:
             label = algn # + ["", f" (Cost model: {cname})"][cname != "-"]
+            color = algn_color[algn]
             x = sorted(list(set([x.params["n"] for x in res_list if x.alg_name == algn])))
             y = []
-            
-            if mode == RUNTIME:
-                for n in x:
-                    y.append(min([r.runtime for r in res_list 
-                                if r.alg_name == algn and r.params["n"] == n]))
-            elif mode == COST:
-                for n in x:
-                    y.append(min([log(abs(r.cost["rop"]),2).n() for r in res_list 
-                                if r.alg_name == algn and r.params["n"] == n]))
-            ax.plot(x, y, colors[j] + '-', label=label)
-            j += 1
+            z = []
+   
+            for n in x:
+                y.append(min([r.runtime for r in res_list 
+                            if r.alg_name == algn and r.params["n"] == n]))
+                z.append(min([log(abs(r.cost["rop"]),2).n() for r in res_list 
+                            if r.alg_name == algn and r.params["n"] == n]))
+            style = '-.' if algn == "lattice-reduction-rs" else '-'
+            axs[i].plot(x, y, color + style, label=label)
+            axs[i+1].plot(x, z, color + style, label=label)
+        axs[i].set(ylabel=RUNTIME)
+        axs[i+1].set(ylabel=COST)
+        i += 2
+    
+    for ax in axs.flat:
         ax.legend()
         ax.grid()
-        i += 1
+        ax.set(xlabel=r'Dimension $n$')
     
-    try:
-        for ax in axs.flat:
-            ax.set(xlabel=r'Dimension $n$', ylabel=mode)
-    except:
-        ax.set(xlabel=r'Dimension $n$', ylabel=mode)
+    plt.tight_layout()
     plt.savefig(title)
     plt.show()
 
@@ -129,43 +131,62 @@ def compare_to_literature_examples():
     pass
 
 def runtime_and_cost_analysis():
-    print("---------------------------------")
-    print("Runtime Analysis")
-    print("---------------------------------")
+    LWE = False
+    SIS = True
     import time
-    problem_instances = []
-    for i in range(7, 14):
-        n = 2**i
-        q = param_search.make_prime(2**(i+1), lbound=2**i)
-        alpha = est.alphaf(est.sigmaf(sqrt(8)), q)
-        m = est.PlusInfinity()
-        err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
-        sec_dis = err_dis
-        problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
+    if LWE:
+        print("---------------------------------")
+        print("Runtime Analysis LWE")
+        print("---------------------------------")
+        std_dev = sqrt(8**(-2))
+        problem_instances = []
+        for i in range(7, 14):
+            n = 2**i
+            q = param_search.make_prime(2**(i+1), lbound=2**i)
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            m = est.PlusInfinity()
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
+            sec_dis = err_dis
+            problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
 
-    start = time.time()
-    start1 = time.time()
-    config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[x for x in algorithms.ALL if x not in [algorithms.PRIMAL_DECODE, algorithms.CODED_BKW, algorithms.ARORA_GB]], timeout=200)
-    result1 = problem.estimate(parameter_problems=problem_instances, config=config)
-    total_runtime = str(round(time.time() - start1))
-    print("---------------------------------")
-    print(f"Estimates complete (took {total_runtime}s)")
-    alg_results_plotter(title=f"runtime_stddev8_{total_runtime}s_", alg_results=result1, mode=RUNTIME)
+        start = time.time()
+        config = algorithms.Configuration(conservative=True, parallel=True, algorithms=algorithms.ALL, timeout=200)
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        total_runtime = str(round(time.time() - start))
+        print("---------------------------------")
+        print(f"Estimates complete (took {total_runtime}s)")
+        alg_results_plotter(title=(f"LWE_stddev={std_dev:.3f}_plots_{total_runtime}s").replace('.', ','), alg_results=result)
+        result.save_as_JSON((f"LWE_stddev={std_dev:.3f}_results_{total_runtime}s").replace('.', ','))
 
-    start2 = time.time()
-    config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[algorithms.PRIMAL_DECODE, algorithms.CODED_BKW, algorithms.ARORA_GB], timeout=280)  
-    result2 = problem.estimate(parameter_problems=problem_instances, config=config)
-    total_runtime = str(round(time.time() - start2))
-    print("---------------------------------")
-    print(f"Estimates complete (took {total_runtime}s)")
-    alg_results_plotter(title=f"runtime_stddev8_{total_runtime}s_", alg_results=result2, mode=RUNTIME)
+        print()
+        print()
+        print()
+    
+    if SIS:
+        print("---------------------------------")
+        print("Runtime Analysis SIS")
+        print("---------------------------------")
+        import time
+        std_dev = sqrt(8)
+        problem_instances = []
+        for i in range(7, 14):
+            n = 2**i
+            q = param_search.make_prime(2**(2*i + 1), lbound=2**(2*i))
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            m = n**2
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q, sec=128, dimension=n)
+            beta = err_dis.to_Loo() # componentwise beta bound (convert from Gaussian)
+            problem_instances.append(problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS"))
 
-    result1.add_aggragate_result(result2)
-    total_runtime = str(round(time.time() - start1))
-    alg_results_plotter(title=f"cost_stddev8_{total_runtime}s", alg_results=result1, mode=COST)
-
-    result1.save_as_JSON("results_stddev8")
-    return
+        start = time.time()
+        config = algorithms.Configuration(conservative=True, parallel=True, algorithms=algorithms.ALL, timeout=200)
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        total_runtime = str(round(time.time() - start))
+        print("---------------------------------")
+        print(f"Estimates complete (took {total_runtime}s)")
+        alg_results_plotter(title=(f"SIS_stddev={float(std_dev):.3f}_plots_{total_runtime}s").replace('.', ','), alg_results=result)
+        result.save_as_JSON((f"SIS_stddev={float(std_dev):.3f}_results_{total_runtime}s").replace('.', ','))
+        return
 
     schemes = [s for s in LWE_SCHEMES if s["name"] == "Lizard"]
     scheme = schemes[0]
@@ -208,7 +229,6 @@ def runtime_and_cost_analysis():
 
 def estimation_example():
     sec = 350
-    problem.STATISTICAL_SEC = sec
     n = 2**15; q = 12289; m = 2*1024; stddev = sqrt(8**(-3)) # TODO
     err_dis = distributions.GaussianSigma(sigma=stddev, q=q, componentwise=True, sec=sec)
     sec_dis = err_dis # "normal"
@@ -243,7 +263,7 @@ def estimation_example():
 
 
 def Regev_example():
-    config = algorithms.Configuration()
+    config = algorithms.Configuration(algorithms=[algorithms.DUAL])
     sec = 128
     def next_parameters(n, q=None, m=None, alpha=None):
         n, alpha, q = Param.Regev(n*2)
@@ -266,7 +286,7 @@ def SIS_example():
     print("---------------------------------")
     print("SIS")
     print("---------------------------------")
-    config = algorithms.Configuration(algorithms=[algorithms.COMBINATORIAL, algorithms.LATTICE_REDUCTION])
+    config = algorithms.Configuration(algorithms=[algorithms.COMBINATORIAL, algorithms.LATTICE_REDUCTION], parallel=False)
     sec = 128
     def next_parameters(n, q=None, m=None, beta=None):
         n, alpha, q = Param.Regev(n*2)
@@ -275,7 +295,7 @@ def SIS_example():
         yield n, q, m, beta
     
     def parameter_problem(n, q, m, beta):
-        yield problem.SIS(n=n, q=q, m=m, bound=beta)
+        yield problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS-Regev")
     
     res = param_search.generic_search(sec, next(next_parameters(2**5)), next_parameters, param_search.unit_cost, parameter_problem, config)
 

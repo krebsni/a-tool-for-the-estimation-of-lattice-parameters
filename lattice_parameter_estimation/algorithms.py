@@ -98,8 +98,6 @@ class Configuration():
         
         If ``sieving=False`` or ``enumeration=False``, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_models <cost-models>`.
 
-        .. _cost-model:
-
         To add custom cost models parameter ``custom_cost_models`` must be a list of dicts as in the following example::
 
             cost_models = [
@@ -122,7 +120,7 @@ class Configuration():
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
         :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``COMBINATORIAL``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
-        :param custom_cost_models: list of reduction cost models (see :ref:`cost-model`)
+        :param custom_cost_models: list of reduction cost models (see above)
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
         :param timeout: timeout for algorithm execution
@@ -246,7 +244,7 @@ class SIS():
             # Calculate optimal dimension for delta-HSVP solver
             m_optimal = ceil(2 * n * log(q, 2) / log(beta, 2)) 
             if m > m_optimal:
-                m = m_optimal          
+                m = m_optimal
 
             # Calculate approximation factor for delta-HSVP solver
             delta_0 = RR((beta / (q ** (n / m))) ** (1 / m))
@@ -265,9 +263,6 @@ class SIS():
 
         else: # not a hard problem, trivial solution exists
             raise TrivialSolution("beta > q") 
-
-
-    lattice_reduction_rs = est.partial(est.rinse_and_repeat, _lattice_reduction_rs, repeat_select={"m": False})
 
 
     def _lattice_reduction(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
@@ -342,6 +337,7 @@ class SIS():
     
 
     lattice_reduction = est.partial(est.rinse_and_repeat, _lattice_reduction, repeat_select={"m": False})
+    lattice_reduction_rs = est.partial(est.rinse_and_repeat, _lattice_reduction_rs, repeat_select={"m": False})
 
 
     def combinatorial(q, n, m, bound, reduction_cost_model=None):
@@ -368,7 +364,7 @@ class SIS():
             raise IntractableSolution("beta < 1")
         elif beta < q:
             # find optimal k
-            k = 1
+            k = closest_k = 1
             difference = oo
             failed, max_failures = 0, 10
             while failed < max_failures:

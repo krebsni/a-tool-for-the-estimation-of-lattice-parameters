@@ -37,7 +37,6 @@ alg_logger = logging.getLogger(logger.name + ".estimation_logging")
 alg_exception_logger = logging.getLogger(logger.name + ".estimation_exception_logging")
 
 ## Configuration ##
-STATISTICAL_SEC = 128 #: for statistical security # TODO
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
 
 
@@ -54,17 +53,20 @@ class BaseProblem():
 ## Helper class
 class AlgorithmResult():
     """
-    Return value encupsulation for algorithm estimates.
-
-    :param runtime: runtime [s]
-    :param alg_name: name of algorithm
-    :param c_name: name of cost model
-    :param cost: cost dict (:py:mod:`lattice_parameter_estimation.estimator.estimator.Cost` from lwe-estimator)
-    :param is_successful: ``True`` if algorithm was successful
-    :param error: string with error description
-    :param is_insecure: ``True`` if found estimate violates security requirement
+    Encapsulates algorithm estimates.
     """
     def __init__(self, runtime, problem_instance, params, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):    
+        """ 
+        :param runtime: runtime [s]
+        :param problem_instance: label of problem instance
+        :param params: list of input parameters for algorithm
+        :param alg_name: name of algorithm
+        :param c_name: name of cost model
+        :param cost: cost dict (:py:mod:`lattice_parameter_estimation.estimator.estimator.Cost` from lwe-estimator)
+        :param is_successful: ``True`` if algorithm was successful
+        :param error: string with error description
+        :param is_insecure: must be ``True`` if found cost estimate violates security requirement
+        """
         self.runtime = runtime
         self.problem_instance = problem_instance
         self.params = params
@@ -76,6 +78,9 @@ class AlgorithmResult():
         self.is_insecure = is_insecure
     
     def to_dict(self):
+        """ 
+        :returns: JSON-serializable dict
+        """
         return {
             "inst": self.problem_instance,
             "alg_name": self.alg_name,
@@ -99,25 +104,35 @@ class AlgorithmResult():
         return ret
     
     def str_no_err(self) -> str:
+        """ 
+        :returns: string without error message.
+        """
         if not self.is_successful:
             detail = f"insuccessful (took {str(self.runtime)}s): params={str(self.params)}"
         else:
             sec = max(0, float(log(abs(self.cost["rop"]), 2).n()))
             detail = f'{["secure", "insecure"][self.is_insecure]} (took {self.runtime:.1f}s): sec={str(sec)}, params={str(self.params)}'
-        return f'Estimate for "{self.alg_name}"{["", " " + self.c_name][self.c_name != ""]} - {self.problem_instance}' + detail
-
+        return f'Estimate for "{self.alg_name}"{["", " " + self.c_name][self.c_name != ""]} - {self.problem_instance} ' + detail
 
 
 class AggregateEstimationResult():
     """
-    Type of return value needed for overloaded lt-operator :class:`BaseProblem` instances.
+    Encapsulates aggregation of estimate results and automates is_secure check according to specified security strategy in config.
     
-    TODO
-    :problem_instances: list of all problem instances (e.g. instance of :class:`MLWE`) for which estimates are run
-    :param error: set to ``"all_failed"`` if no algorithm passes, can also be ``"timeout"`` and ``"early_termination"``
-    :param runtime: list of runtime of algorithms run during estimation
+    TODO: Type of return value needed for overloaded lt-operator :class:`BaseProblem` instances.
     """
     def __init__(self, config : algorithms.Configuration, error="all_failed", runtime=0, problem_instances : List[BaseProblem] = []):
+        """
+        :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+        :param error: set to ``"all_failed"`` if no algorithm passes, can also be ``"timeout"`` and ``"early_termination"``
+        :param runtime: list of runtime of algorithms run during estimation     
+        :param problem_instances: pre-defined list of all problem instances (e.g. instance of :class:`MLWE`) for which estimates are run (used to check if result is secure, if not specified the list is dynamically created when results are added)
+
+        :ivar error: error message
+        :ivar is_insecure: ``True`` if aggregate result is insecure
+        :ivar lowest_sec: lowest found security estimate
+        :ivar runtime: total runtime
+        """
         self.error = error
         self.is_insecure = False
         self.lowest_sec = oo
@@ -129,6 +144,11 @@ class AggregateEstimationResult():
         self._contains_res = False
 
     def add_algorithm_result(self, algorithm_result : AlgorithmResult):
+        """ 
+        Adds algorithm result and automatically updates ``is_insecure``, ``error``, and ``cost`` instance variables. 
+
+        :param algorithm_result: instance of :class:`AlgorithmResult`
+        """
         self._contains_res = True
         if algorithm_result.is_insecure:
             self.is_insecure = True
@@ -144,6 +164,11 @@ class AggregateEstimationResult():
         self.alg_res_dict[algorithm_result.problem_instance].append(algorithm_result)
     
     def add_aggragate_result(self, aggregate_result):
+        """ 
+        Adds aggregate result and automatically updates ``is_insecure``, ``error``, and ``cost`` instance variables. 
+
+        :param algorithm_result: instance of :class:`AggregateEstimationResult`
+        """
         if not aggregate_result.is_secure():
             self.is_insecure = True
         if aggregate_result.error != "all_failed": # => error is "early_termination" or
@@ -230,7 +255,7 @@ class AggregateEstimationResult():
             "alg_results": alg_result_dict,
             "error": self.error,
             "is_insecure": self.is_insecure,
-            "lowest_sec": float(self.lowest_sec), # TODO warning
+            "lowest_sec": max(0, float(self.lowest_sec)),
             "runtime": self.runtime,
         }
         return res
@@ -305,6 +330,7 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
     early_termination = False
     timeout = False
     for alg_tuple in algs:
+        # for not parallel
         if time.time() - start > config.timeout: # won't prevent algorithm from looping infinitively
             timeout = True
             break 
@@ -372,13 +398,17 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
         else:
             alg_logger.info(str(alg_res))
 
-        results.append(alg_res)
         if is_insecure or (config.security_strategy == algorithms.ALL_SECURE \
                 and is_successful == False): 
             # early termination
             early_termination = True 
             break
 
+        if res_queue is None:
+            results.append(alg_res)
+        else:
+            res_queue.put(alg_res)
+        
     if res_queue is None:
         # no multiprocessing
         total_runtime = time.time() - start
@@ -391,8 +421,6 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
         if timeout:
             agg_result.error = "timeout"
         return agg_result
-    else:
-        res_queue.put(results)
         
 
 def estimate(parameter_problems : Iterator[BaseProblem], 
@@ -461,13 +489,11 @@ def estimate(parameter_problems : Iterator[BaseProblem],
                         result_queue.close()
                         terminated = True
                     break
-                
 
                 # Try to get result
-                res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
+                alg_res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
                 # TODO perhaps fine tune, check that wait here is not busy waiting... check if all cores are 100% or not...
-                for alg_res in res:
-                    results.add_algorithm_result(alg_res)
+                results.add_algorithm_result(alg_res)
 
                 # results.add_aggragate_result(res) # TODO
                 if sec and results.is_insecure: # is_secure may not be right as tests not complete
@@ -558,33 +584,42 @@ class LWE(BaseProblem):
         .. list-table:: Algorithm Priorities
             :header-rows: 1
 
-             - Algorithm
-             - Priority
-             - Comment
+            * - Algorithm
+              - Priority
+              - Comment
+            * - mitm
+              - 5
+              - fastest, high cost estimate, as prefilter
+            * - primal-usvp
+              - 10
+              - fast, low cost estimates
+            * - dual
+              - 20
+              - fast, estimates may be slightly higher than primal-usvp
+            * - dual-no-lll
+              - 30
+              - fast, estimates may be slightly higher than dual
+            * - bkw-coded
+              - 90
+              - slow, somtimes very low cost estimate (for small stddev), does not always yield results
+            * - primal-decode
+              - 100
+              - slow, estimates often higher than faster algorithms
+            * - arora-gb
+              - 200
+              - extremely slow, often higher estimates, does not always yield results
 
-           * - mitm
-             - 5
-             - fastest, high cost estimate, as prefilter
-           * - primal-usvp
-             - 10
-             - fast, low cost estimates
-           * - dual
-             - 20
-             - fast, estimates may be slightly higher than primal-usvp
-           * - dual-no-lll
-             - 30
-             - fast, estimates may be slightly higher than dual
-           * - bkw-coded
-             - 90
-             - slow, somtimes very low cost estimate, does not always yield results
-           * - primal-decode
-             - 100
-             - slow, estimates often higher than faster algorithms
-           * - arora-gb
-             - 200
-             - extremely slow, often higher estimates, does not always yield results
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=0,125_plots_201s.png
+            :align: center
+            :figclass: align-center
 
-        TODO: add plots
+            LWE instance with stddev=0.125
+
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=8_100s.png
+            :align: center
+            :figclass: align-center
+
+            LWE instance with stddev=2.828
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
@@ -1176,19 +1211,24 @@ class SIS(BaseProblem):
         .. list-table:: Algorithm Priorities TODO
             :header-rows: 1
 
-             - Algorithm
-             - Priority
-             - Comment
+            * - Algorithm
+              - Priority
+              - Comment
+            * - lattice-reduction
+              - 5
+              - fastest, low cost estimates
+            * - lattice-reduction-rs
+              - 7
+              - same results as lattice-reduction, does not always work
+            * - combinatorial
+              - 10
+              - fast, often slightly higher cost results
 
-           * - lattice-reduction
-             - 5
-             - fastest, high cost estimate, as prefilter
-           * - combinatorial
-             - 10
-             - fast, low cost estimates
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/SIS_stddev=2,828_plots_1s.png
+            :align: center
+            :figclass: align-center
 
-
-        TODO: add plots
+            SIS instance with stddev=2.828
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
@@ -1200,54 +1240,51 @@ class SIS(BaseProblem):
             cost_model = reduction_cost_model["cost_model"]
             cname = reduction_cost_model["name"]
 
-            if "reduction-rs" in config.algorithms:
-                algs.append({"algname": "lattice-reduction", 
-                                        "cname": cname, 
-                                        "algf": partial(algorithms.SIS.lattice_reduction, 
-                                                        n=self.n, q=self.q, m=self.m, 
-                                                        bound=self.bound.to_L2(self.n).value, 
-                                                        reduction_cost_model=cost_model),
-                                        "prio": 1,
-                                        "cprio": reduction_cost_model["prio"],
-                                        "inst": self.variant})
+            # if "reduction-rs" in config.algorithms:
+            #     algs.append({"algname": "lattice-reduction", 
+            #                             "cname": cname, 
+            #                             "algf": partial(algorithms.SIS.lattice_reduction, 
+            #                                             self.n, self.bound.to_L2(self.n).value, 
+            #                                             self.q,reduction_cost_model["success_probability"],  
+            #                                             self.m, reduction_cost_model=cost_model),
+            #                             "prio": 1,
+            #                             "cprio": reduction_cost_model["prio"],
+            #                             "inst": self.variant})
             if "reduction" in config.algorithms:
                 # TODO: implement drop_and_solve and scale variants
                 algs.append({"algname": "lattice-reduction-rs", 
                                         "cname": cname, 
                                         "algf": partial(algorithms.SIS._lattice_reduction_rs, 
-                                                        self.n, self.bound.to_L2(self.n).value, self.q,
-                                                        reduction_cost_model["success_probability"], 
-                                                        self.m, reduction_cost_model=cost_model),
+                                                        n=self.n, beta=self.bound.to_L2(self.n).value, q=self.q, success_probability=reduction_cost_model["success_probability"], 
+                                                        m=self.m, reduction_cost_model=cost_model),
                                         "prio": 1,
                                         "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
-                algs.append({"algname": "lattice-reduction-rs-rinse", 
-                                        "cname": cname, 
-                                        "algf": partial(algorithms.SIS.lattice_reduction,
-                                                        self.n, self.bound.to_L2(self.n).value, self.q,
-                                                        reduction_cost_model["success_probability"], 
-                                                        self.m, reduction_cost_model=cost_model),
-                                        "prio": 1,
-                                        "cprio": reduction_cost_model["prio"],
-                                        "inst": self.variant})
+                # algs.append({"algname": "lattice-reduction-rs-rinse", 
+                #                         "cname": cname, 
+                #                         "algf": partial(algorithms.SIS.lattice_reduction_rs,
+                #                                         self.n, self.bound.to_L2(self.n).value, self.q, reduction_cost_model["success_probability"], 
+                #                                         self.m, reduction_cost_model=cost_model),
+                #                         "prio": 1,
+                #                         "cprio": reduction_cost_model["prio"],
+                #                         "inst": self.variant})
                 algs.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
                                         "algf": partial(algorithms.SIS._lattice_reduction, 
-                                                        self.n, self.bound.to_L2(self.n).value, self.q,
-                                                        reduction_cost_model["success_probability"], 
-                                                        self.m, reduction_cost_model=cost_model),
-                                        "prio": 1,
+                                                        n=self.n, beta=self.bound.to_L2(self.n).value, q=self.q, success_probability=reduction_cost_model["success_probability"], 
+                                                        m=self.m, reduction_cost_model=cost_model),
+                                        "prio": 2,
                                         "cprio": reduction_cost_model["prio"],
                                         "inst": self.variant})
-                algs.append({"algname": "lattice-reduction-rinse", 
-                                        "cname": cname, 
-                                        "algf": partial(algorithms.SIS.lattice_reduction,
-                                                        self.n, self.bound.to_L2(self.n).value, self.q,
-                                                        reduction_cost_model["success_probability"], 
-                                                        self.m, reduction_cost_model=cost_model),
-                                        "prio": 1,
-                                        "cprio": reduction_cost_model["prio"],
-                                        "inst": self.variant})
+                # algs.append({"algname": "lattice-reduction-rinse", 
+                #                         "cname": cname, 
+                #                         "algf": partial(algorithms.SIS.lattice_reduction,
+                #                                         self.n, self.bound.to_L2(self.n).value, self.q,
+                #                                         reduction_cost_model["success_probability"], 
+                #                                         self.m, reduction_cost_model=cost_model),
+                #                         "prio": 2,
+                #                         "cprio": reduction_cost_model["prio"],
+                #                         "inst": self.variant})
                 # TODO: can drop_and_solve or scale be used here?
 
         if "combinatorial" in config.algorithms:

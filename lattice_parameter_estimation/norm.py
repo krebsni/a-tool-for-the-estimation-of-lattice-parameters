@@ -54,13 +54,12 @@ class BaseNorm(ABC):
 
 
 class Lp(BaseNorm):
-    # TODO: inform user about how to use norm on vector in ring/module? I.e. multiply dimension with degree
     
     def __init__(self, value, p, dimension):
         """
         :param value: value of :math:`L_p`-norm of a vector
         :param p: specifies :math:`L_p`-norm, only values 1, 2, oo are supported
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
         self.p = p
         self.value = value
@@ -72,7 +71,7 @@ class Lp(BaseNorm):
         r"""
         From :math:`\ref{norm1}`, it follows that :math:`\| f \|_1 \leq \sqrt{n} \| f \|_2` and from :math:`\ref{norm2}`, :math:`\| f \|_1 \leq n \| f \|_\infty`.
             
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_1`-norm of the vector
         """
         if dimension is None:
@@ -93,7 +92,7 @@ class Lp(BaseNorm):
         r"""
         From :math:`\ref{norm3}` and :math:`\ref{norm4}`, it follows that :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_1` and from :math:`\ref{norm3}`, :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_\infty`.
 
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
         if dimension is None:
@@ -114,7 +113,7 @@ class Lp(BaseNorm):
         r"""
         From :math:`\ref{norm4}`, it follows that :math:`\| f \|_\infty \leq  \| f \|_1` and from :math:`\ref{norm1}` and :math:`\ref{norm4}`, :math:`\| f \|_\infty \leq \sqrt{n}  \| f \|_2`.
 
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
         if dimension is None:
@@ -135,7 +134,7 @@ class Lp(BaseNorm):
         r"""
         From :math:`\ref{norm6}`, it follows that :math:`\| \sigma(f) \|_\infty \leq  \| f \|_1`, from :math:`\ref{norm1}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2`, and from :math:`\ref{norm2}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq n  \| f \|_\infty`.
 
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """
         if dimension is None:
@@ -152,9 +151,9 @@ class Lp(BaseNorm):
         else:
             raise ValueError(f"L{self.p}-norm not supported")
     
-    def __add__(self, other):
+    def __add__(self, other : BaseNorm):
         """
-        TODO
+        Addition of two norm instances by converting ``other`` to norm of ``self``.
         """
         if not isinstance(other, BaseNorm):
             TypeError(f"Cannot add {type(self)} to {type(other)}")
@@ -164,13 +163,12 @@ class Lp(BaseNorm):
         if self.p == other.p:
             return Lp(value=self.value + other.value, p=self.p, dimension=self.dimension)
         else:
-            
             if self.p == 1:
-                val = other.to_L1().value # TODO
+                val = other.to_L1().value
             if self.p == 2:
-                val = other.to_L2().value # TODO
+                val = other.to_L2().value
             if self.p == oo:
-                val = other.to_Loo().value # TODO
+                val = other.to_Loo().value
             return Lp(value=self.value + val, p=self.p, dimension=self.dimension)
 
     def __mul__(self, other):
@@ -231,7 +229,7 @@ class Coo(BaseNorm):
     def __init__(self, value, dimension):
         r"""
         :param value: value of :math:`C_\infty`-norm of a vector
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
         if dimension is None:
             raise ValueError("Dimension must be specified.")
@@ -242,7 +240,7 @@ class Coo(BaseNorm):
         r"""
         From :math:`\ref{norm2}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_1 \leq  n \| \sigma(f) \|_\infty`.
             
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_1`-norm of the vector
         """
         if dimension is None:
@@ -256,7 +254,7 @@ class Coo(BaseNorm):
         r"""
         From :math:`\ref{norm3}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty`.
         
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
         if dimension is None:
@@ -270,7 +268,7 @@ class Coo(BaseNorm):
         r"""
         From :math:`\ref{norm5}`, it follows that :math:`\| f \|_\infty \leq  \| \sigma(f) \|_\infty`.
 
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
         if dimension is None:
@@ -282,7 +280,7 @@ class Coo(BaseNorm):
     
     def to_Coo(self, dimension):
         r"""
-        :param dimension: dimension of the vector
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """
         return self

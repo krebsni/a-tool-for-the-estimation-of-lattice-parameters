@@ -15,8 +15,7 @@ NOTATION:
 
 The value for key ``prio`` is derived from the folling plots of the various cost models. The scale is ordinal, not cardinal. To compare and assign suitable priority values for custom cost models the function ``cost_model_plotter()`` in ``tests_for_optimization/runtime_analysis.py`` can be used. If your own custom cost model should be evaluated first during the the cost estimation, set ``prio`` to ``0``.
 
-.. figure:: ../tests_for_optimization/cost_models.png
-   :width: 600
+.. figure:: ../tests_for_optimization/cost_models/cost_models.png
    :align: center
    :figclass: align-center
 
@@ -24,8 +23,7 @@ The value for key ``prio`` is derived from the folling plots of the various cost
 
 
 
-.. figure:: ../tests_for_optimization/cost_models_d_2d.png
-   :width: 500
+.. figure:: ../tests_for_optimization/cost_models/cost_models_d_2d.png
    :align: center
    :figclass: align-center
 
