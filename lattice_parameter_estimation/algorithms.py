@@ -40,11 +40,13 @@ BKW = "coded-bkw"
 
 # SIS
 LATTICE_REDUCTION = "reduction"
+LATTICE_REDUCTION_RS = "reduction-rs"
 REDUCTION = "reduction"
+REDUCTION_RS = "reduction-rs"
 COMBINATORIAL = "combinatorial"
 
 # All
-ALL = ["usvp", "decode", "dual", "dual-without-lll", "arora-gb", "mitm", "coded-bkw", "reduction", "combinatorial"]
+ALL = ["usvp", "decode", "dual", "dual-without-lll", "arora-gb", "mitm", "coded-bkw", "reduction", "reduction-rs", "combinatorial"]
 
 
 ## Solution passing strategy ##
@@ -119,11 +121,11 @@ class Configuration():
         :param quantum: use quantum quantum, ``True`` by default 
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
-        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``COMBINATORIAL``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
+        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``LATTICE_REDUCTION_RS`` (or ``REDUCTION_RS``), ``COMBINATORIAL``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
         :param custom_cost_models: list of reduction cost models (see above)
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
-        :param timeout: timeout for algorithm execution
+        :param timeout: timeout of cost estimation for one parameter set
         """
         if not algorithms:
             ValueError("algorithms empty. Please choose algorithms to run the estimates.")
@@ -186,7 +188,6 @@ class Configuration():
 
 
 class SIS():
-
     """
     Namespace for SIS algorithms
     """

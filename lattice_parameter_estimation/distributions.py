@@ -30,7 +30,9 @@ def alpha_to_stddevf(alpha, q):
 
 
 class Distribution():
-    pass
+    
+    def get_alpha(self, q=None, n=None):
+        pass
 
 
 class Uniform(norm.BaseNorm, Distribution):
@@ -159,7 +161,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
     def __init__(self):
         pass
 
-    def get_alpha(self):
+    def get_alpha(self, q=None, n=None):
         r"""
         :returns: noise rate :math:`\alpha = s / q`
         """

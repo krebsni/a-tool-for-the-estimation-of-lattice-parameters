@@ -31,8 +31,8 @@ lattice_parameter_estimation.Logging.set_level(logging.DEBUG)
 # TODO: put in config file or so? param_search needs to be imported for logging level to be set (?)
 
 RUNTIME = "Runtime [s]"
-COST = r"Bit security [$\log_2($rop$)$]"
-def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult):
+COST = r"Bit security $\log_2($rop$)$"
+def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult, runtime=True):
 
     logging.getLogger("matplotlib").setLevel(logging.INFO)
     import matplotlib.pyplot as plt
@@ -40,7 +40,8 @@ def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult):
 
     res_dict = alg_results.get_algorithm_result_dict()
     n = 2 * len(res_dict)
-    cols = 2
+    cols = 2 if runtime else 1
+
     rows = int(math.ceil(n / cols))
     fig, axs = plt.subplots(rows, cols, sharex=True, sharey=False)
     try:
@@ -74,72 +75,52 @@ def alg_results_plotter(title, alg_results : problem.AggregateEstimationResult):
                 z.append(min([log(abs(r.cost["rop"]),2).n() for r in res_list 
                             if r.alg_name == algn and r.params["n"] == n]))
             style = '-.' if algn == "lattice-reduction-rs" else '-'
-            axs[i].plot(x, y, color + style, label=label)
-            axs[i+1].plot(x, z, color + style, label=label)
-        axs[i].set(ylabel=RUNTIME)
-        axs[i+1].set(ylabel=COST)
+            if runtime:
+                axs[i].plot(x, y, color + style, label=label)
+                axs[i+1].plot(x, z, color + style, label=label)
+            else:
+                try:
+                    ax = axs[i]
+                except:
+                    ax = axs
+                ax.plot(x, z, color + style, label=label)
+
+        if runtime:
+            axs[i].set(ylabel=RUNTIME)
+            axs[i+1].set(ylabel=COST)
+        else:
+            try:
+                ax = axs[i]
+            except:
+                ax = axs
+            ax.plot(x, z, color + style, label=label)
         i += 2
     
-    for ax in axs.flat:
-        ax.legend()
-        ax.grid()
-        ax.set(xlabel=r'Dimension $n$')
-    
+    try:
+        for ax in axs.flat:
+            ax.legend()
+            ax.grid()
+            ax.set(xlabel=r'Dimension $n$')
+    except:
+        axs.legend()
+        axs.grid()
+        axs.set(xlabel=r'Dimension $n$')
     plt.tight_layout()
     plt.savefig(title)
     plt.show()
 
 
-    # # Mean of different cost models
-    # from statistics import mean
-    # algs = set([algn for algn in (x["algname"] for x in runtime)])
-    # n_set = sorted(set([x["parameters"]["n"] for x in runtime]))
-    # algs_res = {}
-    # for algn in algs:
-    #     cmodels = {x["cname"] for x in runtime if x["algname"] == algn}
-    #     algs_res[algn] = {}
-        
-    #     mean_runtime = []
-    #     for n in n_set:
-    #         mean_runtime.append(mean([x for x in runtime if (x["algname"] == algn and x["parameters"]["n"] == n)]))
-    #     mean_runtime = sorted(mean_runtime, key=lambda k : k["parameters"]["n"])
-
-    # fig1, ax1 = plt.subplots(1,1)
-    # colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-    # i = 0
-    # for algn in algs_res:
-    #     label = algn + ["", f" (Cost model: {cname})"][cname != "-"]
-    #     ax1.plot([x["parameters"]["n"] for x in algs_res[algn][cname]], [x["runtime"] for x in algs_res[algn][cname]], colors[i] + '-', label=label)
-    #     i += 1
-    # ax1.set_xlabel(r'Secret dimension $n$')
-    # ax1.set_ylabel('Runtime [s]')
-    # ax1.set_title(title)
-    # ax1.legend()
-    # plt.grid()
-    # plt.savefig(output_file_name + "_mean")
-    # plt.show()
-
-def alg_runtime_analysis():
-    # TODO also write tests for parallel on/off
-    pass
-
-def alg_cost_analysis():
-    # TODO perhaps combine with alg_runtime_analysis
-    pass
-
-def compare_to_literature_examples():
-    pass
-
-def runtime_and_cost_analysis():
-    LWE = False
-    SIS = True
+def alg_tests(test_lwe = True, test_sis = True):
+    problem.REDUCE_PROBLEMS = False
     import time
-    if LWE:
+    config = algorithms.Configuration(conservative=True, parallel=True, algorithms=algorithms.ALL, timeout=200)
+
+    if test_lwe:
         print("---------------------------------")
         print("Runtime Analysis LWE")
         print("---------------------------------")
-        std_dev = sqrt(8**(-2))
         problem_instances = []
+        std_dev = sqrt(8)
         for i in range(7, 14):
             n = 2**i
             q = param_search.make_prime(2**(i+1), lbound=2**i)
@@ -150,23 +131,21 @@ def runtime_and_cost_analysis():
             problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
 
         start = time.time()
-        config = algorithms.Configuration(conservative=True, parallel=True, algorithms=algorithms.ALL, timeout=200)
         result = problem.estimate(parameter_problems=problem_instances, config=config)
         total_runtime = str(round(time.time() - start))
         print("---------------------------------")
         print(f"Estimates complete (took {total_runtime}s)")
-        alg_results_plotter(title=(f"LWE_stddev={std_dev:.3f}_plots_{total_runtime}s").replace('.', ','), alg_results=result)
-        result.save_as_JSON((f"LWE_stddev={std_dev:.3f}_results_{total_runtime}s").replace('.', ','))
+        alg_results_plotter(title=(f"LWE_stddev={float(std_dev):.3f}_plots_{total_runtime}s").replace('.', ','), alg_results=result)
+        result.save_as_JSON((f"LWE_stddev={float(std_dev):.3f}_results_{total_runtime}s").replace('.', ','))
 
         print()
         print()
         print()
-    
-    if SIS:
+
+    if test_sis:
         print("---------------------------------")
         print("Runtime Analysis SIS")
         print("---------------------------------")
-        import time
         std_dev = sqrt(8)
         problem_instances = []
         for i in range(7, 14):
@@ -179,15 +158,164 @@ def runtime_and_cost_analysis():
             problem_instances.append(problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS"))
 
         start = time.time()
-        config = algorithms.Configuration(conservative=True, parallel=True, algorithms=algorithms.ALL, timeout=200)
         result = problem.estimate(parameter_problems=problem_instances, config=config)
         total_runtime = str(round(time.time() - start))
         print("---------------------------------")
         print(f"Estimates complete (took {total_runtime}s)")
         alg_results_plotter(title=(f"SIS_stddev={float(std_dev):.3f}_plots_{total_runtime}s").replace('.', ','), alg_results=result)
         result.save_as_JSON((f"SIS_stddev={float(std_dev):.3f}_results_{total_runtime}s").replace('.', ','))
-        return
 
+        print()
+        print()
+        print()
+
+def hardness_tests():
+    HARDNESS_LWE = False
+    HARDNESS_SIS = True
+    import time    
+
+    if HARDNESS_LWE:
+        # parameter q
+        print("---------------------------------")
+        print("Hardness Analysis for q in LWE")
+        print("---------------------------------")
+        problem_instances = []
+        config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[algorithms.USVP])
+        n = 2**12
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(8)
+        m = est.PlusInfinity()
+        for i in range(20):
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
+            sec_dis = err_dis
+            problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
+            lbound *= 2
+            q = param_search.make_prime(lbound * 2, lbound=lbound)
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="LWE_hardness_q", alg_results=result, runtime=False)
+        result.save_as_JSON("LWE_hardness_q")
+
+        # parameter alpha
+        print("---------------------------------")
+        print("Hardness Analysis for alpha in LWE")
+        print("---------------------------------")
+        problem_instances = []
+        n = 2**12
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(1/16)
+        alpha = est.alphaf(est.sigmaf(std_dev), q)
+        m = est.PlusInfinity()
+        for i in range(30):
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
+            sec_dis = err_dis
+            problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
+            alpha *= 2
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="LWE_hardness_std_dev", alg_results=result, runtime=False)
+        result.save_as_JSON("LWE_hardness_std_dev")
+
+        # parameter m
+        print("---------------------------------")
+        print("Hardness Analysis for m in LWE")
+        print("---------------------------------")
+        problem_instances = []
+        n = 2**12
+        m = n/2
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(1/16)
+        for i in range(30):
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q)
+            sec_dis = err_dis
+            problem_instances.append(problem.LWE(n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis, label="Regev-LWE"))
+            m *= 2
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="LWE_hardness_m", alg_results=result, runtime=False)
+        result.save_as_JSON("LWE_hardness_m")
+
+    if HARDNESS_SIS:
+        config = algorithms.Configuration(conservative=True, parallel=False, algorithms=[algorithms.LATTICE_REDUCTION])
+
+        # parameter q
+        print("---------------------------------")
+        print("Hardness Analysis for q in SIS")
+        print("---------------------------------")
+        problem_instances = []
+        n = 2**12
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(8)
+        m = est.PlusInfinity()
+        for i in range(20):
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q, dimension=n)
+            problem_instances.append(problem.SIS(n=n, q=q, m=m, bound=err_dis.to_Lp(sec=128), label="SIS"))
+            lbound *= 2
+            q = param_search.make_prime(lbound * 2, lbound=lbound)
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="SIS_hardness_q", alg_results=result, runtime=False)
+        result.save_as_JSON("SIS_hardness_q")
+
+        # parameter bound
+        print("---------------------------------")
+        print("Hardness Analysis for bound in SIS")
+        print("---------------------------------")
+        problem_instances = []
+        n = 2**12
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(1/16)
+        m = est.PlusInfinity()
+        for i in range(30):
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q, dimension=n)
+            problem_instances.append(problem.SIS(n=n, q=q, m=m, bound=err_dis.to_Lp(sec=128), label="SIS"))
+            std_dev *= 2
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="SIS_hardness_bound", alg_results=result, runtime=False)
+        result.save_as_JSON("SIS_hardness_bound")
+
+        # parameter m
+        print("---------------------------------")
+        print("Hardness Analysis for m in SIS")
+        print("---------------------------------")
+        problem_instances = []
+        n = 2**12
+        m = n/2
+        lbound = n
+        q = param_search.make_prime(lbound * 2, lbound=lbound)
+        std_dev = sqrt(8)
+        for i in range(30):
+            alpha = est.alphaf(est.sigmaf(std_dev), q)
+            err_dis = distributions.GaussianAlpha(alpha=alpha, q=q, dimension=n)
+            problem_instances.append(problem.SIS(n=n, q=q, m=m, bound=err_dis.to_Lp(sec=128), label="SIS"))
+            m *= 2
+
+        result = problem.estimate(parameter_problems=problem_instances, config=config)
+        alg_results_plotter(title="SIS_hardness_m", alg_results=result, runtime=False)
+        result.save_as_JSON("SIS_hardness_m")
+
+
+def alg_runtime_analysis():
+    # TODO also write tests for parallel on/off
+    pass
+
+def alg_cost_analysis():
+    # TODO perhaps combine with alg_runtime_analysis
+    pass
+
+def compare_to_literature_examples():
+    # TODO
+    config = algorithms.Configuration()
     schemes = [s for s in LWE_SCHEMES if s["name"] == "Lizard"]
     scheme = schemes[0]
     runtime = []
@@ -226,6 +354,7 @@ def runtime_and_cost_analysis():
     import json
     with open('runtime_Lizard.json', 'w') as fout:
         json.dump(runtime, fout)
+
 
 def estimation_example():
     sec = 350
@@ -334,7 +463,6 @@ def two_problem_search_example():
     # kappa: maximum L1-norm of any element in challenge space
     # sigma: stddev used in zero-knowledge proof => sigma = 11*kappa*beta*sqrt(k*N)
     # m: width of commitment matrix A_2' => m = k - n - l
-    problem.RUNTIME_ANALYSIS = False
     sec = 128
     sigma = 1
     N = 2**15
@@ -401,13 +529,17 @@ def two_problem_search_example():
 
     res = param_search.generic_search(sec, (q, d1, d2), next_parameters, parameter_cost, parameter_problem, config)
 
-    res_params = res.parameters
-    res_alg_results : problem.AggregateEstimationResult = res.results
+    res_params = res["parameters"]
+    res_alg_results : problem.AggregateEstimationResult = res["result"]
     print(res_alg_results.get_algorithm_result_dict(sort_by_rop=True))
 
 
     print(algorithms.SEPARATOR)
     print("Search successful")
+
+
+def test_reduction():
+    pass
 
 
 if __name__ == "__main__":

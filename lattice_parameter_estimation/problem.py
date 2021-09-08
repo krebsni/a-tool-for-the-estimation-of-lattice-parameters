@@ -8,7 +8,7 @@ from . import algorithms
 from . import norm
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Generator, Iterator, List
+from typing import Generator, Iterable, List
 import time
 import sys
 import os
@@ -38,7 +38,7 @@ alg_exception_logger = logging.getLogger(logger.name + ".estimation_exception_lo
 
 ## Configuration ##
 ERROR_HANDLING_ON = True # if True try to deal with errors and not raise exceptions
-
+REDUCE_PROBLEMS = True
 
 ## Helper Classes ##
 class EmptyProblem(Exception):
@@ -55,7 +55,7 @@ class AlgorithmResult():
     """
     Encapsulates algorithm estimates.
     """
-    def __init__(self, runtime, problem_instance, params, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):    
+    def __init__(self, runtime, problem_instance, params, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):
         """ 
         :param runtime: runtime [s]
         :param problem_instance: label of problem instance
@@ -108,11 +108,11 @@ class AlgorithmResult():
         :returns: string without error message.
         """
         if not self.is_successful:
-            detail = f"insuccessful (took {str(self.runtime)}s): params={str(self.params)}"
+            detail = f"insuccessful (took {str(self.runtime)}s) \n\tparams: {str(self.params)}"
         else:
             sec = max(0, float(log(abs(self.cost["rop"]), 2).n()))
-            detail = f'{["secure", "insecure"][self.is_insecure]} (took {self.runtime:.1f}s): sec={str(sec)}, params={str(self.params)}'
-        return f'Estimate for "{self.alg_name}"{["", " " + self.c_name][self.c_name != ""]} - {self.problem_instance} ' + detail
+            detail = f'{["secure", "insecure"][self.is_insecure]} (took {self.runtime:.1f}s): \n\tsec: {str(sec)}\n\tparams: {str(self.params)}'
+        return f'\n\tEstimate for "{self.alg_name}"{["", " " + self.c_name][self.c_name != ""]} - {self.problem_instance} ' + detail
 
 
 class AggregateEstimationResult():
@@ -152,6 +152,7 @@ class AggregateEstimationResult():
         self._contains_res = True
         if algorithm_result.is_insecure:
             self.is_insecure = True
+            self.error = algorithm_result.error # "early_termination" or "timeout"
         if algorithm_result.is_successful:
             self.error = None
 
@@ -171,7 +172,7 @@ class AggregateEstimationResult():
         """
         if not aggregate_result.is_secure():
             self.is_insecure = True
-        if aggregate_result.error != "all_failed": # => error is "early_termination" or
+        if aggregate_result.error != "all_failed": # => error is "early_termination" or "timeout"
             self.error = aggregate_result.error
 
         if aggregate_result.lowest_sec < self.lowest_sec:
@@ -315,22 +316,95 @@ class BaseProblem(ABC):
         pass
 
 
+def reduce_parameter_problems(parameter_problems : Iterable[BaseProblem], config : algorithms.Configuration) -> List[BaseProblem]:
+        """ 
+        Reduce iterable of parameter problems to easiest versions of SIS and LWE respectively according to the following hardness rules:
+
+        For LWE, 
+        * the larger n, the harder 
+        * the larger q, the easier
+        * the larger alpha, the harder 
+        * the larger m, the easier (more samples)
+
+        For SIS, 
+        * the larger n, the harder
+        * the larger q, the harder
+        * the larger bound, the easier
+        * the larger m, the easier
+
+        Two problem instances might not be comparable with the above rules, hence the reduction is incomplete.
+
+        :param parameter_problems: iterable over instances of :class:`BaseProblem`
+        """
+        parameter_problems = list(parameter_problems)
+        if not REDUCE_PROBLEMS:
+            return parameter_problems
+        lwe_problems = [prob.to_LWE() for prob in parameter_problems if isinstance(prob, LWE)]
+        sis_problems = [prob.to_SIS() for prob in parameter_problems if isinstance(prob, SIS)]
+
+        def _easier_lwe(a : LWE, b : LWE) -> bool:
+            if a.n <= b.n and a.q >= b.q \
+                and a.error_distribution.get_alpha(q=a.q, n=a.n) <= b.error_distribution.get_alpha(q=b.q, n=b.n) \
+                and a.m >= b.m:
+                return True
+            return False # does not mean that it is harder, maybe instances cannot be compared
+
+        def _easier_sis(a : SIS, b : SIS) -> bool:
+            # compare norms needed for algorithms
+            test_L2 = algorithms.REDUCTION or algorithms.REDUCTION_RS in config.algorithms
+            test_Loo = algorithms.COMBINATORIAL in config.algorithms
+            if test_L2:
+                is_larger_bound = a.bound.to_L2(a.n).value >= b.bound.to_L2(b.n).value
+            if test_Loo:
+                is_larger_bound_Loo = a.bound.to_Loo(a.n).value >= b.bound.to_Loo(b.n).value
+                if test_L2:
+                    is_larger_bound = is_larger_bound and is_larger_bound_Loo
+                else:
+                    is_larger_bound = is_larger_bound_Loo
+            
+            if a.n <= b.n and a.q <= b.q \
+                and is_larger_bound \
+                and a.m >= b.m:
+                return True
+            return False # does not mean that it is harder, maybe instances cannot be compared
+
+        lwe_set = set()
+        for prob in lwe_problems:
+            # determine easiest problem relative to prob (there may be different problems that can't be compared)
+            easiest_prob = prob 
+            for cmp_prob in lwe_problems:
+                if _easier_lwe(cmp_prob, easiest_prob):
+                    easiest_prob = cmp_prob
+            lwe_set.add(easiest_prob)
+        sis_set = set()
+        for prob in sis_problems:
+            # determine easiest problem relative to prob (there may be different problems that can't be compared)
+            easiest_prob = prob 
+            for cmp_prob in sis_problems:
+                if _easier_sis(cmp_prob, easiest_prob):
+                    easiest_prob = cmp_prob
+            sis_set.add(easiest_prob)
+        return list(lwe_set | sis_set)
+
+
 ## Estmation ##
-def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=None):
-    """TODO
+def algorithms_executor(algs, config : algorithms.Configuration, sec=None, res_queue=None):
+    """Executes list of estimate algorithms in ``algs``. Results are written in ``res_queue`` as instances of :class:`AlgorithmResult` if set (in parallel execution).
 
     :param algs: list of tuples as ``[(problem_instance, alg)]``, where alg is dict as ``{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}`` (item in list returned from :meth:`BaseProblem.get_estimate_algorithms`)
     :param sec: bit security parameter
     :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
     :param res_queue: for multiprocessing support, instance of :py:mod:`multiprocessing.Queue`
+
+    :returns: ``None`` if res_queue is set, else an instance of :class:`AggregateEstimationResult`
     """
     start = time.time()
-    # results = AggregateEstimationResult(config=config)
+    results = AggregateEstimationResult(config=config)
     results = []
     early_termination = False
     timeout = False
     for alg_tuple in algs:
-        # for not parallel
+        # for not parallel TODO
         if time.time() - start > config.timeout: # won't prevent algorithm from looping infinitively
             timeout = True
             break 
@@ -339,7 +413,6 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
         inst = alg_tuple[0]
         alg = alg_tuple[1]
         algf = alg["algf"]
-        # TODO: maybe delete params in AlgRes, as params in problem_instance (not transformed though) additional memory overhead should be small though...
         params = dict([(k, algf.keywords[k]) for k in ["secret_distribution"] if k in set(algf.keywords)]
                         + [(k, int(algf.keywords[k])) for k in ["n", "q"] if k in set(algf.keywords)]
                         + [(k, float(algf.keywords[k])) for k in ["alpha"] if k in set(algf.keywords)] 
@@ -398,16 +471,15 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
         else:
             alg_logger.info(str(alg_res))
 
-        if is_insecure or (config.security_strategy == algorithms.ALL_SECURE \
-                and is_successful == False): 
-            # early termination
-            early_termination = True 
-            break
-
-        if res_queue is None:
+        if res_queue is None: 
             results.append(alg_res)
         else:
             res_queue.put(alg_res)
+        if is_insecure or (config.security_strategy == algorithms.ALL_SECURE \
+                and is_successful == False): 
+            # early termination
+            break
+
         
     if res_queue is None:
         # no multiprocessing
@@ -421,14 +493,31 @@ def algorithms_executor(algs, sec, config : algorithms.Configuration, res_queue=
         if timeout:
             agg_result.error = "timeout"
         return agg_result
-        
 
-def estimate(parameter_problems : Iterator[BaseProblem], 
-                config : algorithms.Configuration, 
-                sec=None):
+    return True # TODO try without
+
+
+def estimate(
+        parameter_problems : Iterable[BaseProblem], 
+        config : algorithms.Configuration, sec=None
+    ) -> AggregateEstimationResult:
+    """ 
+    Runs estiamtes for problem instances in ``parameter_problems``.
+
+    First, the list of problem instances is reduced to the simplest version of LWE and SIS respectively. Then, a list algorithm instances are created and executed sequentially or concurrently by :meth:`algorithms_executor` according to the configuration in ``config``. 
+
+    Estimate logging can be configured in in :py:mod:`lattice_parameter_estimation.Logging`.
+
+    :param parameter_problems: iterable over instances of :class:`BaseProblem`. If empty or no algorithms can be created :class:`EmptyProblem` is raised.
+    :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
+    :param sec: optional bit security parameter. If set, early termination is supported once insecure estimate is found. 
+
+    :returns: instance of :class:`AggregateEstimationResult`
+    """
     # Create algorithm list of tuples (problem_instance, alg)
     algs = [] 
-    parameter_problems = list(parameter_problems)
+    parameter_problems = reduce_parameter_problems(parameter_problems, config)
+    
     for problem_instance in parameter_problems:
         try:
             inst_algs = problem_instance.get_estimate_algorithms(config=config)
@@ -438,106 +527,107 @@ def estimate(parameter_problems : Iterator[BaseProblem],
             else:
                 raise e
         if not inst_algs:
-            raise EmptyProblem(f"No algorithm for instance {str(problem_instance)}")
+            raise EmptyProblem(f"No algorithm for instance {str(problem_instance)}. Perhaps algorithm in Configuration was not set properly.")
         for alg in inst_algs:
             algs.append((problem_instance.label, alg)) # TODO maybe find better description for inst or change __str__
     if not algs: # no instance
         raise EmptyProblem("Could not find any algorithms for given input parameters.")
+
     # sort first by algorithm priority, then by cost model priority
     algs = sorted(algs, key=lambda a: (a[1]["prio"], a[1]["cprio"])) 
 
     start = time.time()
-    if config.parallel:
-        if config.num_cpus is None:
-            num_procs = min(mp.cpu_count(), len(algs))
-        else:
-            num_procs = config.num_cpus
+    if not config.parallel:
+        num_procs = 1 # needed to terminate infinite loops
+    elif config.num_cpus is None:
+        num_procs = min(mp.cpu_count(), len(algs))
+    else:
+        num_procs = config.num_cpus
 
-        tp = ThreadPoolExecutor(num_procs)
+    # evenly distribute algorithms according to sorting among #NUM_CPUS lists
+    split_list = num_procs * [None]
+    for j in range(num_procs):
+        split_list[j] = []
+    for i in range(len(algs)):
+        split_list[i % num_procs].append(algs[i])
 
-        # evenly distribute algorithms according to sorting among #NUM_CPUS lists
-        split_list = num_procs * [None]
-        for j in range(num_procs):
-            split_list[j] = []
-        for i in range(len(algs)):
-            split_list[i % num_procs].append(algs[i])
+    alg_logger.debug(f"Starting {num_procs} processes for {len(algs)} algorithms...")
+    alg_logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
+    p = [None]*len(split_list)
+    results = AggregateEstimationResult(config=config, 
+                                        problem_instances=[x.label for x in parameter_problems])
+    result_queue = mp.Queue()
+    async_res = []
+    for i in range(len(split_list)):
+        # TODO NEW VERSION - not working
+        # pool = mp.Pool(processes=len(split_list)) # TODO outsource in global var
+        # async_res.append(
+        #     pool.apply_async(
+        #         func=algorithms_executor, 
+        #         args=(split_list[i], config, sec, result_queue)
+        #     )
+        # )
+        # map_async could also work
 
-        alg_logger.debug(f"Starting {num_procs} processes for {len(algs)} algorithms...")
-        alg_logger.debug("Running estimates " + ["without", "with"][bool(sec)] + " early termination...") # TODO
-        p = [None]*len(split_list)
-        results = AggregateEstimationResult(config=config, 
-                                            problem_instances=[x.label for x in parameter_problems])
-        result_queue = mp.Queue()
-        for i in range(len(split_list)):
-            p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], sec, config, result_queue))
-            p[i].start()
-            alg_logger.debug(str(p[i].pid) + " started...")
-        
-        terminated = False
-        while not terminated:
-            try:
-                # Check if all processes finished their calculation
-                all_done = True
-                for i in range(len(split_list)):
-                    if p[i].is_alive():
-                        all_done = False
-                        break
-                if all_done:
-                    terminated = True
-                    for i in range(len(split_list)):
-                        p[i].join()
-                        result_queue.close()
-                        terminated = True
-                    break
-
-                # Try to get result
-                alg_res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
-                # TODO perhaps fine tune, check that wait here is not busy waiting... check if all cores are 100% or not...
-                results.add_algorithm_result(alg_res)
-
-                # results.add_aggragate_result(res) # TODO
-                if sec and results.is_insecure: # is_secure may not be right as tests not complete
-                    alg_logger.debug("Received insecure result. Terminate all other processes.")
-                    # insecure result obtained => terminate all other processes
-                    for i in range(len(split_list)):
-                        p[i].terminate() # TODO: could it happen that exception is cast when a process is already terminated
-                        p[i].join()
-                        # data put into queue during terminate may become corrupted => just close it
-                        result_queue.close()
-                        terminated = True
-            except Empty: # result not yet available
-                if time.time() - start > config.timeout:
-                    # Computation too long, result not expected anymore
-                    for i in range(len(split_list)):
-                        p[i].terminate() 
-                        p[i].join()
-                        result_queue.close()
-                    terminated = True
-                    
-                    if sec and results.is_secure():
-                        if config.security_strategy == algorithms.ALL_SECURE:
-                            # since at least one is not successful => All_SECURE = FALSE 
-                            results.is_insecure = True
-                        
-                    results.error = "timeout"
-                    message = f"Timeout during estimation after {config.timeout}s. Try to specify longer timeout in config. If no result is obtained, one of the algorithms might not terminate for the given parameter set."
-                    if not results.is_secure():
-                        raise TimeoutError(message)
-
-                    # TODO: Problem: if timeout all processes still running are terminated and valid results lost => write back into queue right after result is obtained???
-                    
-                    if ERROR_HANDLING_ON: # TODO
-                        logger.error(message)
-                    else:
-                        raise RuntimeError(message)
-
-    else: # not parallel
-        results = algorithms_executor(algs, sec, config) 
+        # TODO OLD VERSION
+        p[i] = mp.Process(target=algorithms_executor, args=(split_list[i], config, sec, result_queue))
+        p[i].start()
+        alg_logger.debug(str(p[i].pid) + " started...")
     
+    terminated = False
+    while not terminated:
+        try:
+            # Check if all processes finished their calculation
+            
+            # TODO OLD VERSION
+            all_done = True
+            for i in range(len(split_list)):
+                if p[i].is_alive():
+                    all_done = False
+                    break
+            if all_done:
+                terminated = True
+                for i in range(len(split_list)):
+                    p[i].join()
+                    result_queue.close()
+                    terminated = True
+                break
+
+            # Try to get result
+            alg_res = result_queue.get(block=True, timeout=0.5) # timeout necessary as process that wrote result in queue may still be alive in the above check 
+            results.add_algorithm_result(alg_res)
+
+            if sec and results.is_insecure: # is_secure may not be right as tests not complete
+                alg_logger.debug("Received insecure result. Terminate all other processes.")
+                # insecure result obtained => terminate all other processes
+                results.error = "early_termination"
+                for i in range(len(split_list)):
+                    p[i].terminate()
+                    p[i].join()
+                    # data put into queue during terminate may become corrupted => just close it
+                    result_queue.close()
+                    terminated = True
+        except Empty: # result not yet available
+            if time.time() - start > config.timeout:
+                # Computation too long, result not expected anymore
+                for i in range(len(split_list)):
+                    p[i].terminate() 
+                    p[i].join()
+                    result_queue.close()
+                terminated = True
+                
+                if sec and results.is_secure():
+                    if config.security_strategy == algorithms.ALL_SECURE:
+                        # since at least one is not successful => All_SECURE = FALSE 
+                        results.is_insecure = True
+                    
+                results.error = "timeout"
+                message = f"Timeout during estimation after {config.timeout}s. Try to specify longer timeout in config. If no result is obtained, one of the algorithms might not terminate for the given parameter set."
+                if not results.is_secure():
+                    raise TimeoutError(message)
+                        
     if results.error == "all_failed": # TODO: don't raise exception 
         raise AllFailedError("All estimate algorithms failed")
-    if results.error == "early_termination":
-        pass # TODO do anything? Maybe debug message?    
 
     runtime = time.time() - start
     results.runtime = runtime
@@ -547,7 +637,9 @@ def estimate(parameter_problems : Iterator[BaseProblem],
 
 ## LWE and its variants ##
 class LWE(BaseProblem):
-    # TODO: docstring (also other variants)
+    """ 
+    Learning with Errors (LWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    """
     _counter = 1
 
     def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="LWE", label=None): 
@@ -576,8 +668,8 @@ class LWE(BaseProblem):
         self.error_distribution = error_distribution
 
     def get_estimate_algorithms(self, config : algorithms.Configuration):
-        """
-        Compute list of estimate functions from the lwe-estimator on the LWE instance according to the attack configuration.
+        r"""
+        Compute list of estimate functions from the lwe-estimator :cite:`APS15` on the LWE instance according to the attack configuration.
 
         The priorities are assigned as follows:
 
@@ -609,24 +701,24 @@ class LWE(BaseProblem):
               - 200
               - extremely slow, often higher estimates, does not always yield results
 
-        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=0,125_plots_201s.png
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=0,125_plots_200s.png
             :align: center
             :figclass: align-center
 
-            LWE instance with stddev=0.125
+            LWE instance with :math:`\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}`
 
-        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=8_100s.png
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=2,828_plots_200s.png
             :align: center
             :figclass: align-center
 
-            LWE instance with stddev=2.828
+            LWE instance with :math:`\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}`
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """         
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
-        alpha = RR(self.error_distribution.get_alpha())
+        alpha = RR(self.error_distribution.get_alpha(q=self.q, n=self.n))
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
         if secret_distribution == "normal" and self.secret_distribution.get_alpha() != alpha:
             raise NotImplementedError("If secret distribution is Gaussian it must follow the error distribution. Differing Gaussians not supported by lwe-estimator at the moment.") # TODO: perhaps change
@@ -817,17 +909,20 @@ class LWE(BaseProblem):
                                 "prio": 200, 
                                 "cprio": 0,
                                 "inst": self.variant})
-        # TODO: if empty raise exception, also for SIS
         return algs
+
+    def to_LWE(self):
+        return self
 
     def __str__(self):
         # TODO
-        return "LWE [n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m) + \
-            ", sec_dis=" + str(self.secret_distribution._convert_for_lwe_estimator())  + ", err_dis=" + str(self.error_distribution._convert_for_lwe_estimator()) + "]"
+        return f"LWE [n={str(self.n)}, q={str(self.q)}, m={str(self.m)}, sec_dis={str(self.secret_distribution._convert_for_lwe_estimator())}, err_dis={str(float(self.error_distribution.get_alpha(q=self.q, n=self.n)))}]"
 
 
-class MLWE(BaseProblem):
-    
+class MLWE(LWE):
+    """ 
+    Module Learning with Errors (MLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    """
     _counter = 1
     
     def __init__(self, n, d, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, label=None, variant="MLWE"):
@@ -892,8 +987,15 @@ class MLWE(BaseProblem):
             
         else:
             lwe = LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
-                        error_distribution=self.error_distribution, variant="MLWE")
+                        error_distribution=self.error_distribution, variant="MLWE", label=self.label)
             return lwe.get_estimate_algorithms(config=config)
+
+    def to_LWE(self):
+        """
+        :returns: LWE instance with parameters :math:`n=n \cdot d` and :math:`m=m \cdot n`
+        """
+        return LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
+                    error_distribution=self.error_distribution, variant="MLWE", label=self.label)
 
     def __str__(self):
         # TODO
@@ -902,8 +1004,10 @@ class MLWE(BaseProblem):
             + ", error_distribution=" + str(self.error_distribution._convert_for_lwe_estimator()) + ")"
 
 
-class RLWE(BaseProblem):
-
+class RLWE(LWE):
+    """ 
+    Ring Learning with Errors (RLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    """
     _counter = 1
 
     def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="RLWE", label=None):
@@ -942,8 +1046,15 @@ class RLWE(BaseProblem):
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
         lwe = LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
-                    error_distribution=self.error_distribution, variant="RLWE")
+                    error_distribution=self.error_distribution, variant="RLWE", label=self.label)
         return lwe.get_estimate_algorithms(config=config)
+
+    def to_LWE(self):
+        """
+        :returns: LWE instance with parameters :math:`n=n` and :math:`m=m \cdot n`
+        """
+        return LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
+                    error_distribution=self.error_distribution, variant="RLWE", label=self.label)
 
     def __str__(self):
         # TODO
@@ -1177,7 +1288,9 @@ class StatisticalUniformRLWE(StatisticalUniformMLWE):
 
 ## SIS and its variants ##
 class SIS(BaseProblem):
-    
+    """ 
+    Short Integer Solution (SIS) problem class used to create a list of algorithms from for cost estimation.
+    """
     _counter = 1
 
     def __init__(self, n, q, m, bound : norm.BaseNorm, variant="SIS", label=None):
@@ -1203,7 +1316,7 @@ class SIS(BaseProblem):
         self.bound = bound
     
     def get_estimate_algorithms(self, config : algorithms.Configuration):
-        """
+        r"""
         Compute list of estimate functions on the SIS instance according to the attack configuration.
         
         The priorities are assigned as follows:
@@ -1228,7 +1341,7 @@ class SIS(BaseProblem):
             :align: center
             :figclass: align-center
 
-            SIS instance with stddev=2.828
+            SIS instance with :math:`\sigma=2.828,\; m=n^2, \; 2^{2n} < q < 2^{2n+1}`
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
@@ -1250,7 +1363,7 @@ class SIS(BaseProblem):
             #                             "prio": 1,
             #                             "cprio": reduction_cost_model["prio"],
             #                             "inst": self.variant})
-            if "reduction" in config.algorithms:
+            if "reduction-rs" in config.algorithms:
                 # TODO: implement drop_and_solve and scale variants
                 algs.append({"algname": "lattice-reduction-rs", 
                                         "cname": cname, 
@@ -1268,6 +1381,7 @@ class SIS(BaseProblem):
                 #                         "prio": 1,
                 #                         "cprio": reduction_cost_model["prio"],
                 #                         "inst": self.variant})
+            if "reduction" in config.algorithms:
                 algs.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
                                         "algf": partial(algorithms.SIS._lattice_reduction, 
@@ -1297,13 +1411,18 @@ class SIS(BaseProblem):
                                         "inst": self.variant})
         # TODO: add more algorithms?
         return algs
+
+    def to_SIS(self):
+        return self
         
     def __str__(self):
-        return "SIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound.value)  + ")"
+        return f"SIS [n={str(self.n)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
-class MSIS(BaseProblem):
-
+class MSIS(SIS):
+    """ 
+    Module Short Integer Solution (MSIS) problem class used to create a list of algorithms from for cost estimation.
+    """
     _counter = 1
 
     def __init__(self, n, d, q, m, bound : norm.BaseNorm, variant="MSIS", label=None):
@@ -1334,7 +1453,7 @@ class MSIS(BaseProblem):
         r"""
         Compute list of estimate functions on the MSIS instance according to the attack configuration.
 
-        TODO: If use_reduction is `False`, the algorithms take an SIS instance with dimension :math:`n=n \cdot d` as input. Else, the MSIS instance will be reduced to RSIS according to :cite:`KNK20b` as follows:
+        TODO: If use_reduction is `False`, the algorithms take an SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n` as input. Else, the MSIS instance will be reduced to RSIS according to :cite:`KNK20b` as follows:
 
         Corollary (:cite:`KNK20b` Corollary 2):
 
@@ -1370,15 +1489,23 @@ class MSIS(BaseProblem):
                                         use_reduction=use_reduction) # TODO: use_reduction makes sense?
 
         else:
-            sis = SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS")
+            sis = SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS", label=self.label)
             return sis.get_estimate_algorithms(config=config)
+    
+    def to_SIS(self):
+        """
+        :returns: SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n`
+        """
+        return SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS", label=self.label)
 
     def __str__(self):
-        return "MSIS instance with parameters (n=" + str(self.n) + ", d=" + str(self.d) + ", q=" + str(self.q) + ", m=" + str(self.m) + ", bound=" + str(self.bound.value)  + ")"
+        return f"MSIS [n={str(self.n)}, d={str(self.d)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
-class RSIS(BaseProblem):
-
+class RSIS(SIS):
+    """ 
+    Ring Short Integer Solution (RSIS) problem class used to create a list of algorithms from for cost estimation.
+    """
     _counter = 1
 
     def __init__(self, n, q, m, bound : norm.BaseNorm, variant="RSIS", label=None):
@@ -1412,12 +1539,17 @@ class RSIS(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        sis = SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS")
+        sis = SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS", label=self.label)
         return sis.get_estimate_algorithms(config=config)
+    
+    def to_SIS(self):
+        """
+        :returns: SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n`
+        """
+        return SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS", label=self.label)
 
     def __str__(self):
-        # TODO
-        return "RSIS instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) + ", m=" + str(self.m.n()) + ", bound=" + str(self.bound.value)  + ")"
+        return f"RSIS [n={str(self.n)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
 class StatisticalMSIS():

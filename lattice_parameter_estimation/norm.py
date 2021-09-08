@@ -12,7 +12,7 @@ From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`B
     \end{align}
 
 
-And from :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1`):
+And from :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number and :math:`\sigma` denote the canonical embedding as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1`):
 
 .. math::
     \begin{align}
@@ -30,7 +30,6 @@ import sage.all
 from sage.functions.other import sqrt
 import estimator as est
 oo = est.PlusInfinity()
-
 
 class BaseNorm(ABC):
     """
@@ -150,6 +149,24 @@ class Lp(BaseNorm):
             return Coo(value=self.value * dimension, dimension=dimension)
         else:
             raise ValueError(f"L{self.p}-norm not supported")
+
+    def to(self, target_norm : BaseNorm):
+        """ 
+        Transform norm instance into same norm as ``target_norm``.
+        
+        :param target_norm: instance with target norm of norm transformation
+        """
+        if isinstance(target_norm, Lp):
+            if target_norm.p == 1:
+                return self.to_L1(self.dimension)
+            if target_norm.p == 2:
+                return self.to_L2(self.dimension)
+            if target_norm.p == oo:
+                return self.to_Loo(self.dimension)
+        elif isinstance(target_norm, Coo):
+            return self.to_Coo(self.dimension)
+        else:
+            ValueError("target_norm could not be identified (not Lp or Coo).")
     
     def __add__(self, other : BaseNorm):
         """
@@ -173,7 +190,7 @@ class Lp(BaseNorm):
 
     def __mul__(self, other):
         r""" 
-        Multiply :math:`L_p`-norm with ``other`` by converting other norm to :math:`C_\infty`-norm or with a scalar.
+        Multiply :math:`L_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`. 
 
         From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f, g \in \mathcal{R}_q`
 
@@ -225,7 +242,6 @@ class Coo(BaseNorm):
     """
     Infinity norm of canonical embedding.
     """
-
     def __init__(self, value, dimension):
         r"""
         :param value: value of :math:`C_\infty`-norm of a vector
@@ -278,6 +294,25 @@ class Coo(BaseNorm):
                 
         return Lp(value=self.value, p=oo, dimension=dimension)
     
+    def to(self, target_norm : BaseNorm):
+        """ 
+        Transform norm instance into same norm as ``target_norm``.
+        
+        :param target_norm: instance with target norm of norm transformation
+        """
+        if isinstance(target_norm, Lp):
+            if target_norm.p == 1:
+                return self.to_L1(self.dimension)
+            if target_norm.p == 2:
+                return self.to_L2(self.dimension)
+            if target_norm.p == oo:
+                return self.to_Loo(self.dimension)
+        elif isinstance(target_norm, Coo):
+            return self.to_Coo(self.dimension)
+        else:
+            ValueError("target_norm could not be identified (not Lp or Coo).")
+            
+
     def to_Coo(self, dimension):
         r"""
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
@@ -296,12 +331,12 @@ class Coo(BaseNorm):
 
     def __mul__(self, other):
         r""" 
-        Multiply :math:`C_\infty`-norm norm with ``other`` by converting other norm to :math:`C_\infty`-norm or with a scalar.
+        Multiply :math:`C_\infty`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`. In the latter case ``other``is transformed to :math:`C_\infty`-norm.
 
-        From :cite:`DPSZ12`: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number and :math:`\sigma` denote the canonical embedding as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds that
+        From :cite:`DPSZ12`: For :math:`x, y \in \mathcal{O}_K` it holds that
 
         .. math::
-            \| \sigma(x \cdot y) \|_\infty \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty
+            \| \sigma(x \cdot y) \|_\infty \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
 
         """
         if not isinstance(other, BaseNorm):
@@ -313,7 +348,7 @@ class Coo(BaseNorm):
             raise ValueError("Vectors must have the same dimension for addition.")
         
         return Coo(value=self.value * other.to_Coo().value, dimension=self.dimension)
-    
+
     def __rmul__(self, other):
         return self * other
 

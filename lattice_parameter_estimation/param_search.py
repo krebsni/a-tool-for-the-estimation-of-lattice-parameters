@@ -24,7 +24,7 @@ from . import problem
 from . import algorithms
 from . import problem
 import logging
-from typing import Generator, Iterator
+from typing import Generator, Iterable
 import os
 import sys
 import traceback
@@ -85,13 +85,15 @@ class ParameterSet():
 
 # is_secure and estimate functions are not really needed anymore... Functionality is provided by problem.estimate_cost
 # TODO write new
-def is_secure(parameter_problems : Iterator[problem.BaseProblem], sec, config : algorithms.Configuration):
+def is_secure(parameter_problems : Iterable[problem.BaseProblem], sec, config : algorithms.Configuration):
     return problem.estimate(parameter_problems=parameter_problems, config=config, sec=sec)
 
 def generic_search(sec, initial_parameters, next_parameters, parameter_cost, parameter_problem, 
         config : algorithms.Configuration = algorithms.Configuration(), scalar_parameters=False):
     """TODO: summary
     The search terminates after the best cost (``log(rop, 2)``) of some parameter set exceeds ``sec``. TODO: if (*parameter_set) > parameter_cost(next(next_parameters(*parameter_set))) not satisfied the solution may not be ideal...
+
+    Note: in case config.parallel = False TODO: note algorithms that could go into endless loop => could cause problems
 
     :param sec: required security level in bits
     :param initial_parameters: initial parameter set of search. Must be tuple or scalar. If it is a scalar, set ``scalar_parameters`` to ``True``. 
@@ -157,9 +159,8 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
                 print(SEPARATOR)
                 input("All algorithms failed. Press Enter to ignore (from now on) and continue...")
             ignore_all_failed = True
-            
         except ValueError as e:
-            # TODO can happen in StatisticalUniformMLWE if d cannot be calculated => user can 
+            # TODO can happen in StatisticalUniformMLWE if d cannot be calculated 
             raise e
         
         if scalar_parameters:
