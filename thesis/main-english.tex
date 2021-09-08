@@ -207,31 +207,50 @@
 \chapter{Introduction}
 
 - rise of quantum computing (short history)
+
   * conceptual
+
   * reality
 
+
 - problem: some hard classical problems no longer hard
+
   * Shor's Algorithm (Peter Shor, 1994) %Sho97
     => quantum computers can solve the factoring and the discrete logarithm problem in polynomial time
+
   * application to encryption
+
   * overview of current encryption methods that will become insecure
 
+
 - one solution (among hash-based, code-based, isogeny-based, and multivariate): lattice crypto
+
   * overview over history and capability of lattice crypto
+
   * advantages: good (quasilinear) asymptotic key sized, good concrete runtimes and key sizes, worst-case secure instantiations, advanced cryptographic primitives previously infeasible
+
   * including intro to LWE/SIS and applications to build crypto systems
+
     . SIS: signature schemes, hash functions
+
     . LWE: ``cryptomania'' applications (PKE, ...), signature schemes, lines:
+
       - cryptographic applications
+
       - establishing theoretical and asymptotic hardness \cite{Reg05} % ? Check
         \cite{BLPRS13, MP13} 
       - concrete hardness of LWE: attacks, runtime estimates, 
+
   * briefly outline concept and benefits of hard-case to average-case reductions
 
+
 - purpose of this thesis
+
   * building schemes: need realistic hardness estimates of schemes for given parameter settings
+
   * lack in the past: no unified/easy to use tool => thesis aims to solve this problem
     tool we call \textit{Lattice Parameter Estimation} 
+
 
 - overview of chapters/how to read
 
@@ -299,55 +318,80 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
 
 \subsection{lattice}
-- background and history % TODO: from lecture -> change!!!
+- background and history: example from lecture -> change % TODO: from lecture -> change!!!
+
   * Birhoff [Bir40]
+
   * cryptoanalysis [LLL82]
+
   * cryptosystems [Atj96, HPS98]
+
   * [MR04]
+
   * LWE, assumption: worst-case lattice problems are hard [Reg05]
+
   * fully homomorphic [Gen09]
+
   * BGV scheme [BV11, BGV12]
+
   * tools [LPR10, LPR13] ideal latties, RLWE
 
+
 - math % TODO: rewrite or \cite{Gop16}
+
   * lattice $\Lambda$ % TODO: check all n/m's
+
     - discrete additive subgroup of $\mathbb{R}^m$ % define discrete and additive subgroup?
+
     - Let $\textbf{b}_1, ..., \textbf{b}_n \in \mathbb{R}^m$ be a set of linearly independent basis vectors and $\textbf{B} = \left[\textbf{b}_1, ..., \textbf{b}_n\right] \in \mathbb{R}^{m\times n}$ be the corresponding basis with column vectors $\textbf{b}_i$
+
     - $n$ is the dimension of the Lattice
+
     - $\Lambda(\textbf{B})$ defined by all integer combinations of elements of $\textbf{B}$:
     \begin{equation}
       \Lambda(\textbf{B}) = \left\{ x \in \mathbb{R}^m \mid \exists \alpha_1, ..., \alpha_n \in \mathbb{Z} : \textbf{x} = \sum_{i=1}^n \alpha_i \textbf{b}_i \right\}
     \end{equation} 
-    % TODO: show example plot
+    - show example plot % TODO
+
     - full-ranked lattice: dimension is maximal, $m$
+
     - basis $\textbf{B}$ is not unique -> let $\textbf{U}\in \mathbb{Z}^{n\times n}$ be a modular matrix (determinant is $\pm1$), then $\textbf{B}\cdot \textbf{U}$ is also a basis of the $\Lambda$ ($\textbf{U} \cdot \mathbb{Z}^{n} = \mathbb{Z}^{n}$) -> different basis for the same lattice $\Lambda$
+
     - lattice coset:
       quotient group $\mathbb{R}^n/\Lambda$ of cosets
       \begin{equation*}
         \textbf{c} + \Lambda = {\textbf{c} + \textbf{v} \mid v \in \Lambda}
       \end{equation*}
       with $\textbf{c} \in \mathbb{R}^n$ % TODO: maybe add plot
+
     - fundamental domain: subset of $\mathbb{R}^m$ containing exactly one representative of every coset
+
     - fundamental parallelipiped: $\textbf{B} \cdot [ - 1/2, 1/2)^n$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
     % TODO: maybe add plot
+
     - determinant of a full-ranked lattice $\Lambda(\textbf{B})$
     \begin{equation}
       \det(\Lambda(\textbf{B})) = \mid \det(\textbf{B})\mid
     \end{equation}
       is well-defined (independent from basis) => volume of fundamental domain % TODO define
       can be generalized to not full-ranked => $\det(\Lambda(\textbf{A})) = \sqrt{\det(\textbf{A}^\perp \textbf{A})}$
+
   * minimum distance of $\lambda_1(\Lambda)$ of a lattice is the length of its shortest nonzero vector, i.e. $\lambda_1(\Lambda) \min_{v \in \Lambda \setminus \{0\}}$
   * $i$th successive minimum $\lambda_i(\Lambda)$
+
     - smallest radius $r$ such that $\Lambda$ has $i$ linearly independent lattice vectors of norm at most $r$
+
     - in general hard to calculate $\lambda_i(\Lambda(\textbf{B}))$ for a given basis  
   % * Gaussian heuristic: 
   %   - estimate length of shortest lattice vactor in $n$-dimensional lattice $Lambda$, i.e. estimate $\lambda_1(\Lambda)$ given $\det{\Lambda}$
   %   \begin{equation}
   %     \lambda_1{\Lambda} \approx \frac{\Gamma(1 + n/2)^{1/n}}{\sqrt{\pi}} \det(\Lambda)^{1/n}
   %   \end{equation}
-  * 
+  
   * modular integer (or $q$-ary) lattices % \cite{MR09}
+
     - full-ranked lattice $\Lambda$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}$
+
     - can be specified in two ways by matrix $\textbf{A} \in \mathbb{Z}_q^{m\times n}$:
     \begin{equation}
       \Lambda_q(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid \exists y \mathbb{Z}^n : \textbf{x} = \textbf{A}\textbf{y} \mod q \right\}
@@ -356,37 +400,57 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
     \begin{equation}
       \Lambda_q^\perp(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid  \textbf{A}\textbf{x} = 0 \mod q \right\}
     \end{equation}
+
     - finding a short vector in $\Lambda_q(\textbf{A})$ corresponds to LWE % TODO check
+
     - finding short vectors in $\Lambda_q^\perp(\textbf{A})$ corresponds to SIS % TODO check \cite{Reg10}
+
     - easy to find basis of $\Lambda_q(\textbf{A})$ \cite{AFG13}
+
     - with high probability determinant of $q$-ary lattice is $\det(\Lambda_q(\textbf{A}))=q^{m-n}$ if $\textbf{A} \in \mathbb{Z}_q^{m\times n}$
 
+
   * Gram-Schmidt basis
+
     - set of column vectors $\textbf{B} \in \mathbb{Z}_q^{m\times n}$, $\pi_{\text{span}(\textbf{B})}(\textbf{t})$ for projection of vector $\textbf{t}$ unto span of vectors of $\textbf{B}$
+
     - $\pi_{\text{span}(\textbf{B})}(\textbf{t}) = \textbf{B}(\textbf{B}^\perp \textbf{B})^{-1}\textbf{B}^T \cdot \textbf{t}$
+
     - Gram-Schmidt orthogonalization $\tilde{\textbf{B}} = \left\{\tilde{\textbf{b}}_1, ..., \tilde{\textbf{b}}_n\right\}$ of basis $\textbf{B}$: $\tilde{\textbf{b}}_i = \textbf{b}_i - \pi_{\text{span}(\textbf{b}_1, ..., \textbf{b}_{i-1})}(\textbf{b}_i)$ for $i \in \{1, ..., n\}$ 
-    % Alternative:
+
+    Alternative:
     Let $\textbf{B} = \left[\textbf{b}_1, ..., \textbf{b}_n\right], \textbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\textbf{b}}_i$ as follows: $\tilde{\textbf{b}}_1 = \textbf{b}_1$. For $i \in \{2, ..., n\}$ let $\tilde{\textbf{b}}_i$ be the projection of $\textbf{b}_i$ to the vector that is orthogonal to the span of $\{\textbf{b}_1, ..., \textbf{b}_{i-1}\}$. Then,  $\tilde{\textbf{B}} = \left[\tilde{\textbf{b}}_1, ..., \tilde{\textbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\textbf{B}$ where $\| \tilde{\textbf{b}}_i\| \leq \| \textbf{b}_i\|$. 
 
   
   * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \textbf{w} \mid \langle \textbf{w}, \Lambda \rangle \subset \mathbb{Z}\}$
     
-    
   * smoothing lemma
     
 
 - Lattice problems
+
   * Minkowski theorem: Let $\Lambda$ be a lattice of dimension $n$, then $\lambda_1 \leq \sqrt{n} \cdot (\det \Lambda)^{\frac{1}{n}}$
-  * Lattice reduction: find short basis compared to $\lambda_1(\Lambda)$ and 
+
+  * Lattice reduction: find short basis compared to $\lambda_1(\Lambda)$... 
+
   * SVP: given a basis $\textbf{B}$ of lattice $\Lambda$ find shortest nonzero lattice vector =>  $v\in \Lambda$ s.t. $\| v \| = \lambda_1(\Lambda)$
+
   * SVP$_\gamma$: given a basis $\textbf{B}$ of lattice $\Lambda$ find  $v\in \Lambda$ s.t. $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$
+
   * $\alpha$-Approximate SVP: vector of length $\alpha \lambda_1$
+
   * \textsc{GapSVP}$_\gamma$ (decision version of \textsc{SVP}): "given basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$ with either $\lambda_1{\Lambda} \leq 1$ or $\lambda_1{\Lambda} \geq \gamma(n)$, decide which is the case" %\cite{Pei16}
+
   * CVP$_\gamma$: given  basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\textbf{t}\in\mathbb{R}^n$ find point in lattice that is close to $\textbf{t}$ => find  $\textbf{v} \in \mathbb{R}^n$ with $\|\textbf{t} - \textbf{v}\| < \gamma \min_{\textbf{v}' \in \Lambda} \|\textbf{v}' - \textbf{v}\|$
+
   * \textsc{SIVP} (shortest independent vector problem): given  basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\textbf{v}_1, ..., \textbf{v}_n \in \Lambda(\textbf{B})$ such that $\max_i \|\textbf{v}_i\|$ for $i \in \{1, ..., n\}$ is minimal
+
   * BDD$_\gamma$: given basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\textbf{t}\in\mathbb{R}^n$ with $\text{dist}(\textbf{t}, \Lambda) < d ) \lambda_1(\Lambda)/(2\gamma(n))$, find unique lattice vector $\textbf{v} \in \Lambda$ such that $\|\textbf{t} - \textbf{v} \| < d$ %\cite{Pei16}
+
   * ideal lattice (do I need that?)
+
   * ...?
+
   * eher die Sachen für LWE/SIS als die Sachen für Algorithmen (analog Vorlesung), evtl. 
   
   Intuition für die anderen Sachen...
@@ -400,11 +464,13 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 \subsection{distributions}
 
   - Gaussian, def, component-wise, trafo to bound % TODO: GPV08, or LS15
-    * definition
+
+    * definition:
       discrete Gaussian distribution over $q$-ary lattice $\Lambda$ with Gaussian width parameter $s > 0$ and center $\textbf{c}$, denoted by $D_{\Lambda, s, \textbf{c}}$: probability of sampling a vector $\textbf{x}\in \Lambda$ is proportional to $e^{-\pi \|\textbf{x} - \textbf{c}\|^2/s^2}$ % \cite{Reg10, GPV08} or "probability distribution that assigns mass proportional to ... to each point $\textbf{x}\in \Lambda$"
       In order to avoid confusion, throughout this work and in the \textit{Lattice Parameter Estimation} we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$, and define $\alpha := \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$. 
-    * %TODO better definition in GPV08 => different definition needed for LWE???
-    * %TODO how to do this? => variant of Babai's ``nearest-plane'' algorithm, see GPV08
+
+    * better definition in GPV08 => different definition needed for LWE??? % TODO
+    * how to do this? => variant of Babai's ``nearest-plane'' algorithm, see \cite{GPV08} % TODO
 
     * component-wise
     
@@ -425,9 +491,9 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
       \beta  &\approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}
     \end{align*}
 
-    
-    
-    * smoothing factor? 
+
+    * smoothing factor here?
+
     * Uniform (stuff I use in tool)
 
 
@@ -447,6 +513,7 @@ Origin: work of Ajtai and Dwork \cite{AD97}, first public-key cryptosystem based
 Early work: hardness based on unique-SVP, Peikert \cite{Pei09} and Lyubashevsky and Micciancio \cite{LM09} show that unique-SVP is essentially equivalent to \textsc{GapSVP}.
 
 - ´cryptomania´ applications: public-key encryption schemes under chosen-plaintext attacks \cite{Reg05, KTX07, PVW08}, and chosen-ciphertext attacks \cite{PW08, Pei09}, oblivious transfer protocoles \cite{PVW08}, identity-based encryption (IBE) schemes \cite{GPV08, CHKP10, ABB10}, leakage-resilient encryption \cite{AGV09, ACPS09, DGKPV10, GKPV10}, and more % TODO change or \cite{Reg10}
+
 - most important: fully homomorphic encryption schemes \cite{Gen09a, BV11, Bra12, GSW13} % TODO 
 
 Intuition: "recover $\textbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approximate´ random linear equations on $\textbf{s}$" 
@@ -486,6 +553,7 @@ Search to decision reduction => distiguishing is LWE samples from uniform sample
 The dual problem to LWE is the \textit{Short Integer Solution problem} (SIS).
 
 - principle: given a set of set of uniformly random vectors $\textbf{a}_1, ..., \textbf{a}_m \in \mathbb{Z}_q^n$ find a subset of them or combination with small coefficients that sums to zero (modulo $q$). % TODO change or \cite{Reg10}
+
 - introduced in \cite{MR04}, origins in \cite{Atj96}, used for ´minicrypt´ primitives: one-way functions \cite{Atj96}, collision resistant hash functions \cite{GGH96}, digital signature schemes \cite{GPV08, CHKP10}, and identification schemes \cite{MV03, Lyu08, KTX07} % TODO change or \cite{Reg10}
 
 \begin{definition}[SIS Problem (Adapted from [\citealp{LS15}, Definition 3.1])]
@@ -498,9 +566,12 @@ Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SI
 
 \subsection{Ring and Module Variants} 
 - problem key sizes in LWE/SIS in $O(n^2)$ (matrix $\textbf{A} \in \mathbb{Z}_q^{m \times n})$, where $m \in \Omega(n)$)% TODO change or \cite{Reg10}
+
 - idea: introduce some sort of a structure in samples: $n$ power of two, $\textbf{a}$ vectors in groups of size $n$, for each group $\textbf{a}_1 = (a_1, ..., a_n)$, $a_i$ are uniformly random in $\mathbb{Z}_q$, and $\textbf{a}_i = (a_i, ..., a_n, -a_1, ..., -a_{i-1})$. Hence, $n$ vectors only need $O(n)$ memory, also speedups in operations by using FFT % TODO change or \cite{Reg10}
+
 - formally: vectors are elements of the ring $\mathbb{Z}_q\left[x\right] / \left\langle x^n + 1 \right\rangle$ which we call $\mathcal{R}_q$ instead of the group $\mathbb{Z}_q^n$, $n$ power of two ensures that $x^n + 1$ is irreducible over the rationals% TODO change or \cite{Reg10}
-- %TODO add more?
+
+- add more? % TODO
 
 \begin{definition}[Ring-SIS Problem [\citealp{LS15}, Definition 3.3])]
   The problem \text{RSIS}$_{n, q, m, \beta}$ is defined as follows: Given $a_1, ..., a_n \in \mathcal{R}_q$ chosen independently from the uniform distribution, find $s_1, ..., s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0 \mod q$ and $0 < \| \textbf{s}\| \leq \beta$, where $\textbf{s} = (s_1, ..., s_m)^T \in \mathcal{R}^m$.
@@ -540,10 +611,12 @@ while in the standard variant, $n$ denots the dimension of the secret.
 
 \section{Lattice Basis Reduction} % perhaps move to Algorithms
 - measure quality of basis: Hermite factor  % TODO change or \cite{Reg10}
+
   * basis $\textbf{B} = \left\{\textbf{b}_1, ..., \textbf{b}_m\right\}$, $m$-dimensional lattice $\Lambda(\textbf{B})$ has Hermite factor $\delta$ if
   \begin{equation} \label{eq:hermite}
     \| \textbf{b}_1 \| \approx \delta^m \det(\Lambda)^{1/m}
   \end{equation}
+
   * use Geometric Series Assumption (GSA) to obtain estimates for $\textbf{b}_i$: % TODO: necessary?
     \begin{equation} \label{eq:GSA}
       \| \tilde{\textbf{b}}_i \| \approx \alpha^{i-1} \| \textbf{b}_1 \|
@@ -561,9 +634,13 @@ while in the standard variant, $n$ denots the dimension of the secret.
     \begin{equation}
       \| \tilde{\textbf{b}}_i \| \approx \delta^{-2(i-1) + m} \det(\Lambda)^{1/m}
     \end{equation}
+
   * good basis -> first Gram-Schmidt vectors become shorter (latter longer)
+
   * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
+
   * gap between provable and experimental cost estimate to reach some hermite $\delta$ => provable results only give upper bounds, for practical security we need lower bound => combine theoretical results with experimental results
+
   * well-established estimate \cite{LP11}
 
 
@@ -585,19 +662,27 @@ lattice reduction algorithms solve SIS and BDD
 % TODO: based on GSJ15, rephrase
 - algebraic approach Arora and Ge with subexponential complexity when $\sigma \leq \sqrt{n}$, else fully exponential, mainly of asymptotic interest (higher complexity than others)
 
-- combinatorial algorithms: BKW as basis \cite{BKW03}, resembles generalized birthday approach by Wagner % Wagner, D.: A generalized birthday problem. In: Advances in cryptologyCRYPTO 2002, pp. 288304. Springer (2002)
-originally for solving LPN, can be analyzed => explicit complexity for different LWE instances, theoretical analysis and actual performance close
+- combinatorial algorithms: BKW as basis \cite{BKW03}, resembles generalized birthday approach by Wagner, % Wagner, D.: A generalized birthday problem. In: Advances in cryptologyCRYPTO 2002, pp. 288304. Springer (2002)
+originally for solving LPN, can be analyzed => explicit complexity for different LWE instances, theoretical analysis and actual performance close,
 very memory expensive (often same order as time complexity) 
 
 \subsection{Algorithms in Estimator}
 \subsubsection{Coded-BKW [GuoJohSta15]}
 modified BKW step -> coded-BKWE step to cancel out more positions in the $\textbf{a}$ vectors than traditional BKW step
+
 map part of $\textbf{a}$ vector into nearest codeword in lattice code (linear code over $\mathcal{Z}_q$, Euclidean distance)
+
 introduces some noise, can be kept small by appropriate parameters
+
 pair of $\textbf{a}$ vectors map to same codeword => add together to create new sample with part of $\textbf{a}$ vector cancelled
+
 samples are input to next step in BKW procedure
+
 additional steps using discrete FFT
+
 slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^n$) greatly increases performance
+
+
 \subsubsection{Dual Attack [MicReg09]}
 \subsubsection{Decoding Attack [LinPei11]}
 \subsubsection{Primal-uSVP [ADPS16, BaiGal14]}
@@ -613,8 +698,8 @@ slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^
 
 
 \section{Tool}
-class for distributions... from section this modelling, problems, generic search... Überblick, wie verwendbar
-automatische norm umwandlung
+class for distributions... from section this modelling, problems, generic search... Überblick, wie verwendbar,
+automatische norm umwandlung,
 sonstige features
 
 \subsection{Runtime and Cost Comparison}
