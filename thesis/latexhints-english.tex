@@ -143,39 +143,39 @@ Source code is also available in the text \lstinline|<listing />|.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pseudocode}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\Cref{alg:sample} shows a sample algorithm.
-\begin{Algorithmus} %Use the environment only if you want to place the algorithm similar to graphics from TeX
-  \caption{Sample algorithm}
-  \label{alg:sample}
-  \begin{algorithmic}
-\Procedure{Sample}{$a$,$v_e$}
-\State $\mathsf{parentHandled} \gets (a = \mathsf{process}) \lor \mathsf{visited}(a'), (a',c,a) \in \mathsf{HR}$
-\State \Comment $(a',c'a) \in \mathsf{HR}$ denotes that $a'$ is the parent of $a$
-\If{$\mathsf{parentHandled}\,\land(\mathcal{L}_\mathit{in}(a)=\emptyset\,\lor\,\forall l \in \mathcal{L}_\mathit{in}(a): \mathsf{visited}(l))$}
-\State $\mathsf{visited}(a) \gets \text{true}$
-\State $\mathsf{writes}_\circ(a,v_e) \gets
-\begin{cases}
-\mathsf{joinLinks}(a,v_e) & \abs{\mathcal{L}_\mathit{in}(a)} > 0\\
-\mathsf{writes}_\circ(p,v_e)
-& \exists p: (p,c,a) \in \mathsf{HR}\\
-(\emptyset, \emptyset, \emptyset, false) & \text{otherwise}
-\end{cases}
-$
-\If{$a\in\mathcal{A}_\mathit{basic}$}
-  \State \Call{HandleBasicActivity}{$a$,$v_e$}
-\ElsIf{$a\in\mathcal{A}_\mathit{flow}$}
-  \State \Call{HandleFlow}{$a$,$v_e$}
-\ElsIf{$a = \mathsf{process}$} \Comment Directly handle the contained activity
-  \State \Call{HandleActivity}{$a'$,$v_e$}, $(a,\bot,a') \in \mathsf{HR}$
-  \State $\mathsf{writes}_\bullet(a) \gets \mathsf{writes}_\bullet(a')$
-\EndIf
-\ForAll{$l \in \mathcal{L}_\mathit{out}(a)$}
-  \State \Call{HandleLink}{$l$,$v_e$}
-\EndFor
-\EndIf
-\EndProcedure
-  \end{algorithmic}
-\end{Algorithmus}
+% \Cref{alg:sample} shows a sample algorithm.
+% \begin{Algorithmus} %Use the environment only if you want to place the algorithm similar to graphics from TeX
+%   \caption{Sample algorithm}
+%   \label{alg:sample}
+%   \begin{algorithmic}
+% \Procedure{Sample}{$a$,$v_e$}
+% \State $\mathsf{parentHandled} \gets (a = \mathsf{process}) \lor \mathsf{visited}(a'), (a',c,a) \in \mathsf{HR}$
+% \State \Comment $(a',c'a) \in \mathsf{HR}$ denotes that $a'$ is the parent of $a$
+% \If{$\mathsf{parentHandled}\,\land(\mathcal{L}_\mathit{in}(a)=\emptyset\,\lor\,\forall l \in \mathcal{L}_\mathit{in}(a): \mathsf{visited}(l))$}
+% \State $\mathsf{visited}(a) \gets \text{true}$
+% \State $\mathsf{writes}_\circ(a,v_e) \gets
+% \begin{cases}
+% \mathsf{joinLinks}(a,v_e) & \abs{\mathcal{L}_\mathit{in}(a)} > 0\\
+% \mathsf{writes}_\circ(p,v_e)
+% & \exists p: (p,c,a) \in \mathsf{HR}\\
+% (\emptyset, \emptyset, \emptyset, false) & \text{otherwise}
+% \end{cases}
+% $
+% \If{$a\in\mathcal{A}_\mathit{basic}$}
+%   \State \Call{HandleBasicActivity}{$a$,$v_e$}
+% \ElseIf{$a\in\mathcal{A}_\mathit{flow}$}
+%   \State \Call{HandleFlow}{$a$,$v_e$}
+% \ElseIf{$a = \mathsf{process}$} \Comment Directly handle the contained activity
+%   \State \Call{HandleActivity}{$a'$,$v_e$}, $(a,\bot,a') \in \mathsf{HR}$
+%   \State $\mathsf{writes}_\bullet(a) \gets \mathsf{writes}_\bullet(a')$
+% \EndIf
+% \ForAll{$l \in \mathcal{L}_\mathit{out}(a)$}
+%   \State \Call{HandleLink}{$l$,$v_e$}
+% \EndFor
+% \EndIf
+% \EndProcedure
+%   \end{algorithmic}
+% \end{Algorithmus}
 
 \clearpage
 And if you want to write an algorithm that goes over several pages, you can only do this with the following \textbf{dirty} hack:

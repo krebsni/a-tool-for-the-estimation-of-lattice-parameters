@@ -1,0 +1,259 @@
+
+\section{Lattice Basis Reduction} % perhaps move to Algorithms
+- measure quality of basis: Hermite factor  % TODO change or \cite{Reg10}
+
+  * basis $\textbf{B} = \left\{\textbf{b}_1, \ldots, \textbf{b}_m\right\}$, $m$-dimensional lattice $\Lambda(\textbf{B})$ has Hermite factor $\delta$ if
+  \begin{equation} \label{eq:hermite}
+    \| \textbf{b}_1 \| \approx \delta^m \det(\Lambda)^{1/m}
+  \end{equation}
+
+  * use Geometric Series Assumption (GSA) to obtain estimates for $\textbf{b}_i$: % TODO: necessary?
+    \begin{equation} \label{eq:GSA}
+      \| \tilde{\textbf{b}}_i \| \approx \alpha^{i-1} \| \textbf{b}_1 \|
+    \end{equation}
+    for $0 < \alpha < 1$
+    \cref{eq:hermite} into \cref{eq:GSA} -> $\| \tilde{\textbf{b}}_i \| \approx \alpha^{i-1} \delta^m \det(\Lambda)^{1/m}$
+    with $\prod_{i-1}^m \| \tilde{\textbf{b}}_i \| = \det(\Lambda)$ we get 
+    \begin{align*}
+      &\quad& \prod_{i-1}^m \| \tilde{\textbf{b}}_i \| &\approx \prod_{i-1}^m \alpha^{i-1} \delta^m \det(\Lambda)^{1/m} \\
+      \Leftrightarrow&\quad& \det(\Lambda) &\approx \delta^{2m} \det(\Lambda) \prod_{i-1}^m \alpha^{i-1}\\
+      \Leftrightarrow&\quad& \delta^{-m^2}  &\approx \alpha^{\frac{m(m-1)}{2}}\\
+      \Leftrightarrow&\quad& \delta^{-2}  &\approx \alpha^{(m-1)/m}\\
+    \end{align*}
+    Hence, $alpha \approx \delta^{-2}$ and 
+    \begin{equation}
+      \| \tilde{\textbf{b}}_i \| \approx \delta^{-2(i-1) + m} \det(\Lambda)^{1/m}
+    \end{equation}
+
+  * good basis -> first Gram-Schmidt vectors become shorter (latter longer)
+
+  * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
+
+  * gap between provable and experimental cost estimate to reach some hermite $\delta$ => provable results only give upper bounds, for practical security we need lower bound => combine theoretical results with experimental results
+
+  * well-established estimate \cite{LP11}
+
+
+
+
+\subsection{Cost Models for Lattice Reduction}
+Just insert a table and reference somewhere else? Warum notwendig, wie kommt man darauf? ... alg laufen lassen, extrapolieren...
+
+
+\section{LWE}
+\subsection{Approaches}
+% TODO from LP11, change
+Distinguishing attacks (MR09, RS10): distinguish (with noticeable advantage) LWE instance from uniformly random => break semantic security of LWE-based cryptosystem with same advantage (typically), find short nonzero integral vector $\textbf{v}$ s.t. $\textbf{A}^t \textbf{v} = 0 \mod q$ => short vector in (scaled) dual of LWE lattice $\Lambda(\textbf{A})$ % for A mxn matrix else switch t
+then test whether $\langle v, z \rangle$ is close to zero mod q. If uniform test accepts with prob 1/2, if LWE with parameter s, $\langle v, z \rangle = \langle v, e \rangle mod q$, Gaussian mod q with parameter $\| v \| \cdot s$. If that's not much larger than q, advantage for distinguishing very close to $exp(-pi (|v| s/q)^2)$. high confidence needs $\| v \| leq q/(2s)$ 
+advantage an computational effort need to be balanced (often inverse distinguising advantage is in total cost of attack)
+
+\subsubsection{SIS}
+rewrite LWE as the problem of finding short vector in dual lattice => SIS
+\subsubsection{BDD}
+
+lattice reduction algorithms solve SIS and BDD 
+\subsubsection{Direct}
+
+% TODO: based on GSJ15, rephrase
+- algebraic approach Arora and Ge with subexponential complexity when $\sigma \leq \sqrt{n}$, else fully exponential, mainly of asymptotic interest (higher complexity than others)
+
+- combinatorial algorithms: BKW as basis \cite{BKW03}, resembles generalized birthday approach by Wagner, % Wagner, D.: A generalized birthday problem. In: Advances in cryptologyCRYPTO 2002, pp. 288304. Springer (2002)
+originally for solving LPN, can be analyzed => explicit complexity for different LWE instances, theoretical analysis and actual performance close,
+very memory expensive (often same order as time complexity) 
+
+\subsection{Algorithms in Estimator}
+\subsubsection{BKW \cite{BKW03}}
+
+- BKW by Blum, Kalai and Wasserman \cite{BKW03} to solve Learning Parity with Noise problem (LPN), subproblem of LWE
+- applied to LWE in \cite{ACFFP15a} (original paper appeared in 2013)
+- time and space complexity $2^{\mathcal{O}(n)}$ for LWE with prime modulus $q \in \text{poly}(n)$ % TODO check n or m 
+- Various improvements have been suggested since. For example, \cite{AFFP14} and \cite{KF15} use modulus switching for binary-LWE and other small secret variants \cite{AFFP14} and \cite{DTV15} applies multidimensional Furier transformations. % TODO define binary LWE \cite{AFFP14} and find others, what is modulus switching, how do they apply FFT?
+
+modified BKW step -> coded-BKW step to cancel out more positions in the $\textbf{a}$ vectors than traditional BKW step
+
+map part of $\textbf{a}$ vector into nearest codeword in lattice code (linear code over $\mathcal{Z}_q$, Euclidean distance)
+
+introduces some noise, can be kept small by appropriate parameters
+
+pair of $\textbf{a}$ vectors map to same codeword => add together to create new sample with part of $\textbf{a}$ vector cancelled
+
+samples are input to next step in BKW procedure
+
+additional steps using discrete FFT
+
+slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^n$) greatly increases performance
+
+\begin{algorithm2e}
+\SetKwBlock{Begin}{function}{end function}
+\Begin($\text{BKW} {(}\textbf{A},\textbf{z}, t{)}$)
+{
+  $i = 1$\\
+  $\textbf{A}^{(i)} = \textbf{A}$\\
+  $\textbf{z}^{(i)} = \textbf{z}$\\
+  \While{the last $t$ coefficients of the columns of $\textbf{\upshape A}^{(i)}$ are nonzero}{ % TODO
+    // BKW step\\
+    $j = 1$\\
+    $\textbf{T}^{(i)} = []$ \Comment Collision table
+    \For{$k = 1, \ldots, m^{(i)}$}{
+      // $m^{(i)}$ is number of columns in $\textbf{A}^{(i)}$\\
+      \uIf{last $(i\cdot b)$ coefficients of $\textbf{\upshape a}_k^{(i)}$ are zero}{
+        $\textbf{a}_j^{(i+1)} = \textbf{a}_k^{(i)}$\\
+        $z_j^{(i+1)} = z_k$\\
+        $j = j + 1$\\
+      }
+      \uElseIf{no match for $\textbf{\upshape a}_k^{(i)}$ in $\textbf{\upshape T}$}{
+        $\textbf{T} = \textbf{T} + \left[\textbf{a}_k^{(i)}\right]$ \Comment append to collision set
+      }
+      \uElseIf{match $\textbf{\upshape a}_l^{(i)}$ for $\textbf{\upshape a}_k^{(i)}$ is found}{
+        \uIf{$\textbf{\upshape a}_l^{(i)}$ matches $\textbf{\upshape a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
+            $\textbf{a}_j^{(i+1)} = \textbf{a}_k^{(i)} - \textbf{a}_l^{(i)}$; \Comment last $i \cdot b$ coefficients of $\textbf{a}_j^{(i+1)}$ are now zero\\
+            $z_j^{(i+1)} = z_k^{(i)} - z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \textbf{s}, \textbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} - e_l^{(i)}$ \\\label{alg:BKW-z1}
+            $j = j + 1$\\
+        }
+        \uElseIf{the negation of $\textbf{\upshape a}_l^{(i)}$ in $\mathbb{Z}_q^n$ matches $\textbf{a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
+          $\textbf{a}_j^{(i+1)} = \textbf{a}_k^{(i)} + \textbf{a}_l^{(i)}$\\
+          $z_j^{(i+1)} = z_k^{(i)} + z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \textbf{s}, \textbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} + e_l^{(i)}$\\\label{alg:BKW-z2}
+          $j = j + 1$\\
+        } % TODO: maybe put both cases into one step?
+      }
+    }
+    $i = i + 1$\\
+    // Calculate input for next BKW step\\
+    $\textbf{A}^{(i)} = (\textbf{a}_1^{(i)} \cdots \textbf{a}_{j-1}^{(i)})$\\
+    $\textbf{z} = (z_1^{(i)}, \ldots, z_{j-1}^{(i)})$\\
+  }
+}
+\caption{BKW}\label{alg:BKW}
+\end{algorithm2e} % TODO check
+
+In the following, we present an outline of the original BKW algorithm. The steps in \cref{alg:BKW} are inspired by the textual description in \cite{GJS15} with minor adjustments in notation. 
+
+For the algorithm, we use the matrix notation of LWE as in \cref{eq:lwe-decoding}, i.e. $\textbf{z}^\intercal = \textbf{s}^\intercal \textbf{A} + \textbf{e}^\intercal$. BKW consists of a series of BKW steps that iteratively reduce the dimension of input matrix $\textbf{A}$ by finding collisions of its column vectors in the currently examined block of $b$ entries. We start from the last $b$ entries of $\textbf{A}^{(1)} = \textbf{A}$. In every step $i$, we maintain a collision table $T^{(i)}$ and loop over the columns $\textbf{a}_k^{(i)}$ of $\textbf{A}^{(i)}$ and distinguish between the following cases: (1) If $\textbf{a}_k^{(i)}$ only has zero entries in the examined block, pass $\textbf{a}_k^{(i)}$ and $z_k^{(i)}$ to the next step, (2) if no match of $\textbf{a}_k^{(i)}$ or the negation of $\textbf{a}_k^{(i)}$ can be found in the collision table, add $\textbf{a}_k^{(i)}$ to the colission table, and (3) if a match $\textbf{a}_l^{(i)}$ is found, compute $\textbf{a}_l^{(i)} + \textbf{a}_k^{(i)}$ or in the case of a negation match $\textbf{a}_l^{(i)} - \textbf{a}_k^{(i)}$ (in $\mathbb{Z}_q$) such that the last $b$ nonzero entries cancel out. By exploiting the symmetry of $\mathbb{Z}_q$ in this way, in every step we obtain at most $(q^b - 1)/2$ columns with distinct coefficients in the current $b$ entries. We also make note of ``observed symbols'' $z_j^{(i)}$ that represent the combination of two samples given their respective matching columns (see lines \ref{alg:BKW-z1, alg:BKW-z2} for more details).
+
+In each BKW step, the number of columns (and samples) decreases by at least $(q^b - 1)/2$ (size of the colusion set) and the variance of the error distribution $\sigma^2$ increases by a factor of two. Once the number of remaining nonzero rows of $\textbf{A}$ is small enough, the remaining part of the secret vector $\textbf{s}$ is guessed. A hypothesis test ensures that the remaining samples follow a Gaussian with noise $2^t\cdot \sigma^2$, where $t$ is the number of steps. Finally, back substitution is applied to obtain the complete secret vector $\textbf{s}$. % TODO more detail? see DTV15
+
+\subsubsection*{Coded-BKW \cite{GJS15}}
+- change BKW step -> more column entries are removed, but additional noise
+- index set $I$, $\textbf{x}_I$ is part of $\textbf{x}$ with entries indexed by $I$
+- step $i$: $I$ set of $b$ positions to be removed, fix some $q$-ary linear $\left[N_i, b\right]$ code $\mathcal{C}_i$ with $q^b$ codewords, find the closest codeword $\textbf{c}_I \in \mathcal{C}$ for every input vector $\textbf{a}_I$ such that $\textbf{a}_I = \textbf{c}_I + \textbf{e}_I$, where the error part $\textbf{e}_I \in \mathbb{Z}_q^{N_i}$ is minimized by a decoding procedure.
+
+Finally, we subtract two vectors and their correpsonding samples and pass the result to the next BKW step. Consider the inner product$\left\langle \textbf{s}_{I}, \textbf{a}_{I} \right\rangle = \left\langle \textbf{s}_{I}, \textbf{c}_{I} \right\rangle + \left\langle \textbf{s}_{I}, \textbf{e}_{I} \right\rangle$. In the subtraction, only the error part $\left\langle \textbf{s}_{I}, \textbf{e}_{I} \right\rangle$ remains. 
+% TODO
+
+
+
+
+\subsubsection{Dual Attack [MicReg09]}
+"Gama and Nguyen \cite{GN08b}: (in)feasibility of obtaining various Hermite factors
+natural distinguishing attack on LWE by finding one relatively short vector in associated lattice"
+
+\subsubsection{Decoding Attack [LinPei11]}
+
+combines lattice basis reduction followed by an enumeration algorithm (bounded-distance decoding with preprocessing?) => time/success tradeoff
+specifically for LWE, exploits structural properties of LWE
+on search version of LWE problem, approach preferable to distinguishing attack on decision LWE in \cite{MR09, RS10}, same or better advantage than distinguishing attack using lattice vectors of lower quality => runtime is smaller
+post-reduction: simple extension of Babai's ``nearest-plane'' algorithm \cite{Bab85} % TODO describe
+=> trade basis quality against decoding time
+related to Klein's (de)randomized algorithm \cite{Kle00} for bounded-distance decoding
+
+use entire reduced basis, post-reduction part is fully parallelizable
+% prerequisites: babai's nearest plane algorithm (at least describe textually?), fundamental parallelipiped P_1/2
+
+
+% TODO: algorithm LLL reduction
+Properties of a $\delta$-LLL Reduced Basis: % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
+\begin{enumerate}
+  \item $|\mu_{i,j}| \leq \frac{1}{2}$ for $1\leq i \leq n$ and $j < i$
+  \item $\delta \| \tilde{\textbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\textbf{b}}_i + \tilde{\textbf{b}}_{i+1} \|^2$ for $1\leq i < n$
+\end{enumerate}
+
+\begin{algorithm2e}
+\SetKwBlock{Begin}{function}{end function} % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
+\Begin($\delta\text{-LLL} {(}\textbf{B} \in \mathbb{Z}^{n\times n} {)}$) % TODO nxn???
+{
+  Start: compute Gram-Schmidt orthogonalization $\tilde{\textbf{B}}$\\
+  Reduction Step:\\
+  \For{$i=2, \dots, n$}{
+    \For{$j=i-1, \dots, 1$}{
+      $c_{i, j} = \text{round}(\langle \textbf{b}_i, \hat{\textbf{b}}_{j}\rangle /  \langle \hat{\textbf{b}}_j, \hat{\textbf{b}}_j\rangle)$\\
+      $\textbf{b}_i = \textbf{b}_i - c_{i, j} \textbf{b}_j$\\
+    }
+  }
+  Swap Step:\\
+  \If{$\exists i \text{ \upshape such that } \delta \| \tilde{\textbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\textbf{b}}_i + \tilde{\textbf{b}}_{i+1} \|^2$}{
+    tmp = $\textbf{b}_i$\\
+    $\textbf{b}_{i} = \textbf{b}_{i+1}$\\
+    $\textbf{b}_{i+1} = \textbf{b}_{i}$\\
+  }
+}
+\caption{The $\delta$-LLL Algorithm} \label{alg:LLL} 
+\end{algorithm2e}% TODO cite
+
+
+% TODO: algorithm Babai's NearestPlane % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
+LLL reduction to input Lattice, integer combination of basis vectors close to target (like inner loop in reduction step of LLL), seek vector in lattice close to target, finds output that is in fundamental parallelipiped $\mathcal{P}(\textbf{B})$ \cref{eq:fundamental-parallelipiped} => if error vector not in $\mathcal{P}(\textbf{B})$, secret is not restored % TODO
+=> basis quality has to be sufficiently good
+\begin{algorithm2e}
+\SetKwBlock{Begin}{function}{end function}
+\Begin($\text{NearestPlane} {(}\textbf{B} \in \mathbb{R}^{m \times n},\textbf{t}\in \mathbb{R}^{m}{)}$)
+{
+  run $\delta$-LLL on basis $\textbf{B}$ with $\delta=\frac{3}{4}$\\ % TODO put outside of algorithm
+  $\textbf{b} = \textbf{t}$\\
+  \For{$i = n, \dots, 1$}{
+    $c_i = \text{round}(\langle \textbf{b}, \tilde{\textbf{b}}_i\rangle /  \langle \tilde{\textbf{b}}_i, \tilde{\textbf{b}}_i\rangle)$
+    $\textbf{b} = \textbf{b} - c_i \textbf{b}_i$ 
+  }
+  output $\textbf{t} - \textbf{b}$
+}
+\caption{Babai's Nearest Plane Algorithm \cite{Bab85}}\label{alg:babai} % TODO change algorithm to match below or just take intuitive description
+\end{algorithm2e}
+
+Output is a lattice vector $\textbf{v} \in \Lambda(\textbf{B})$ such that $\|\textbf{v} - \textbf{t}\| \leq 2^{n/2} \text{dist}(\textbf{t}, \Lambda(\textbf{B}))$ % define distance to lattice, change 
+Intuition:
+ - project $\textbf{t}$ to $\text{span}(\textbf{B})$
+ - from $i=n, \dots, 1$ find closest hyperplane $c_i \tilde{\textbf{b}}_i + \text{span}(\textbf{b}_1, \dots, \textbf{b}_i)$ to the projection, subtract $c_i \textbf{b}_i$ from the projection and continue % a little more detail
+ - output vector is $\sum_{i=1}^n c_i \textbf{b}_i$
+
+
+Generalized version by \cite{LP11}:
+Problem: in reduced basis last Gram-Schmidt vectors of B short, first long => long and skinny parallelipiped, Gaussian e unlikely to be in it => incorrect answer from NearestPlane
+
+=> generalized version admitting time/success tradeoff
+recurse on some $d_i \geq 1$ distinct planes in ith 
+
+\begin{algorithm2e}
+\SetKwBlock{Begin}{function}{end function}
+  \Begin($\text{GeneralizedNearestPlane} {(} \textbf{B} \in \mathbb{R}^{m \times k},\textbf{t} \in \mathbb{R}^{m}, \textbf{d} \in {(}\mathbb{Z}^+{)}^k {)}$) 
+  { % TODO make sure that basis is always R^n, not Z^n
+    \If{k = 0}{
+      Return $\textbf{0}$\\
+    }
+    \Else{
+      Compute projection $\textbf{v}$ of $\textbf{t}$ onto $\text{span}(\textbf{B})$\\
+      Compute the $d_k$ distinct integers $c_1, \dots, c_{d_k}$ closest to $\langle \textbf{v}, \tilde{\textbf{b}}_k\rangle /  \langle \tilde{\textbf{b}}_k, \tilde{\textbf{b}}_k\rangle)$\\
+      Return $\bigcup_{i \in \{1, \dots, d_k\}} (c_i \cdot \textbf{b}_k + \text{GeneralizedNearestPlane}(\{\textbf{b}_1, \dots, \textbf{b}_{k-1}\}, (d_1, \dots, d_{k-1}), \textbf{v} - c_i \cdot \textbf{b}_k))$\\
+    }
+  }
+\caption{Generalized Nearest Plane Algorithm \cite{LP11}}\label{alg:GeneralizedNearestPlane}
+\end{algorithm2e}
+Instead of choosing only the nearest plane in each iteration step, \cref{alg:GeneralizedNearestPlane} selects a variable amount $d_k$ of distinct planes in each step. As a consequence, the fundamental parallelipiped of the Gram-Schmidt basis is stretched in the direction of $\tilde{\textbf{b}}_k$. The values of $\textbf{d}$ should be chosen such that the covered area is approximately the same in each direction (i.e. by maximizing $\min_i(d_i \cdot \|\tilde{\textbf{b}}_i\|)$). In particular this implies that the $d_k$ are larger for larger $k$ as the Gram-Schmidt vectors have a smaller length. % TODO combine with section above 
+Compared to \cref{alg:babai} the runtime increases by a factor $\prod_{i \in \{1, \dots, d_k\}} d_i$, however, the recursion step can be fully parallelized.
+
+It should be evident that a lower quality of the reduced input basis can be compensated for by increasing the values of $\textbf{d}$. Hence we can adjust the input parameters for the lattice reduction and \cref{alg:GeneralizedNearestPlane} to minimize the runtime given a fixed required success probability. % TODO perhaps reformulate
+% TODO: add exact success probability? 
+
+
+
+
+\subsubsection{Primal-uSVP [ADPS16, BaiGal14]}
+\subsubsection{Meet-in-the-Middle [AlbPlaSco15]}
+\subsubsection{Arora-Ge [AroGe11,ACFP14]}
+
+
+\section{SIS}
+\subsection{Dual Attack}
+\subsubsection{MR variant [MR09]}
+\subsubsection{RS variant [RS10]}
+"concrete estimates of ``symmetric bit security'', concrete runtime estimates for various Hermite factors in random $q$-ary lattices"
+permissive form of distiguishing attack in \cite{MR09}, adversarial advantage is about $2^{-72}$
+\subsection{Combinatorial Attack [MR09]}

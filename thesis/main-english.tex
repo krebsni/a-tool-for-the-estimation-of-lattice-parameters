@@ -259,7 +259,7 @@
 \chapter{Preliminaries} \label{chap:Preliminaries}
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\textbf{v}$ and matrices by bold upper-case letters $\textbf{M}$. Unless specified otherwise, $\| \cdot \|$ is the Euclidean norm. % TODO: anything else?
+In the following, we denote vectors by bold lower-case letters like $\textbf{v}$ and matrices by bold upper-case letters $\textbf{M}$. Unless specified otherwise, $\| \cdot \|$ is the Euclidean norm. We denote % TODO: anything else? Inner product, negation in ring
 
 
 \section{Math} 
@@ -268,9 +268,9 @@ In the following, we denote vectors by bold lower-case letters like $\textbf{v}$
 %TODO: write some prose about why we need that
 Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. We define the following norms \cite{BDLOP18}:
 \begin{align}
-  \mathcal{l}_1 : \| f| \|_1 &= \sum_i |f_i|\\
-  \mathcal{l}_2 : \| f| \|_2 &= \left(\sum_i |f_i|^2\right) ^{\frac{1}{2}}\\
-  \mathcal{l}_\infty : \| f| \|_\infty &= \max_i |f_i|
+  \ell_1 : \| f| \|_1 &= \sum_i |f_i|\\
+  \ell_2 : \| f| \|_2 &= \left(\sum_i |f_i|^2\right) ^{\frac{1}{2}}\\
+  \ell_\infty : \| f| \|_\infty &= \max_i |f_i|
 \end{align}
 
 Then the following inequations hold \cite{BDLOP18}:
@@ -287,19 +287,19 @@ Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\the
   \| \sigma(f) \|_\infty &\leq \| f \|_1 \label{norm6}
 \end{align}
 
-From the above inequations, we obtain the following norm transformations to $\mathcal{l}_p$-norms:
+From the above inequations, we obtain the following norm transformations to $\ell_p$-norms:
 \begin{itemize}
-  \item From \ref{norm1}, it follows that $\| f \|_1 \leq \sqrt{n} \| f \|_2$ and from \ref{norm2}, $\| f \|_1 \leq n \| f \|_\infty$.
-  \item From \ref{norm3} and \ref{norm4}, it follows that $\| f \|_2 \leq \sqrt{n}  \| f \|_1$ and from \ref{norm3}, $\| f \|_2 \leq \sqrt{n}  \| f \|_\infty$.
-  \item From \ref{norm4}, it follows that $\| f \|_\infty \leq  \| f \|_1$ and from \ref{norm1} and \ref{norm4}, $\| f \|_\infty \leq \sqrt{n}  \| f \|_2$.
-  \item From \ref{norm6}, it follows that $\| \sigma(f) \|_\infty \leq  \| f \|_1$, from \ref{norm1} and \ref{norm6}, $\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2$, and from \ref{norm2} and \ref{norm6}, $\| \sigma(f) \|_\infty \leq n  \| f \|_\infty$.
+  \item From \cref{norm1}, it follows that $\| f \|_1 \leq \sqrt{n} \| f \|_2$ and from \cref{norm2}, $\| f \|_1 \leq n \| f \|_\infty$.
+  \item From \cref{norm3} and \cref{norm4}, it follows that $\| f \|_2 \leq \sqrt{n}  \| f \|_1$ and from \cref{norm3}, $\| f \|_2 \leq \sqrt{n}  \| f \|_\infty$.
+  \item From \cref{norm4}, it follows that $\| f \|_\infty \leq  \| f \|_1$ and from \cref{norm1} and \cref{norm4}, $\| f \|_\infty \leq \sqrt{n}  \| f \|_2$.
+  \item From \cref{norm6}, it follows that $\| \sigma(f) \|_\infty \leq  \| f \|_1$, from \cref{norm1} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2$, and from \cref{norm2} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq n  \| f \|_\infty$.
 \end{itemize}
 
 Likewise, we get the following transformations to the $\mathcal{C}_\infty$-norm:
 \begin{itemize}
-  \item From \ref{norm2} and \ref{norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
-  \item From \ref{norm3} and \ref{norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
-  \item From \ref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
+  \item From \cref{norm2} and \cref{norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
+  \item From \cref{norm3} and \cref{norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+  \item From \cref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
 \end{itemize}
 
 Let $f$ be defined as above and let $g \in \mathcal{R}_q$ where $g = \sum_i \overline{g}_i X^i$ where $g_i \in \left[-(q-1)/2, (q-1)/2\right]$ and $\overline{g}_i = g_i \mod q$ as in \cite{BDLOP18}. Then, we can define the following inequations for multiplication according to \cite{BDLOP18}:
@@ -325,6 +325,7 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
   * cryptoanalysis [LLL82]
 
   * cryptosystems [Atj96, HPS98]
+    SIS introduced Ajtai \cite{Ajt96}
 
   * [MR04]
 
@@ -336,20 +337,26 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
   * tools [LPR10, LPR13] ideal latties, RLWE
 
+Other Notes: %TODO
+- PKE \cite{AD97, Reg03, Reg05}, CCA security \cite{PW08, Pei09}, identity-based encryption \cite{GPV08, CHKP10, ABB10}, fully homomorphic \cite{Gen09a}
+- , LWE introduced by \cite{Reg05} "provably as hard as certain lattice problems in worst case, appear to require time exponential in main security parameter to solve"
+- NTRU \cite{HPS98}
+- $q$-ary lattice: modulus $q\geq 2$
 
 - math % TODO: rewrite or \cite{Gop16}
-
   * lattice $\Lambda$ % TODO: check all n/m's
+
+    
 
     - discrete additive subgroup of $\mathbb{R}^m$ % define discrete and additive subgroup?
 
-    - Let $\textbf{b}_1, ..., \textbf{b}_n \in \mathbb{R}^m$ be a set of linearly independent basis vectors and $\textbf{B} = \left[\textbf{b}_1, ..., \textbf{b}_n\right] \in \mathbb{R}^{m\times n}$ be the corresponding basis with column vectors $\textbf{b}_i$
+    - Let $\textbf{b}_1, \ldots, \textbf{b}_n \in \mathbb{R}^m$ be a set of linearly independent basis vectors and $\textbf{B} = \left[\textbf{b}_1, \ldots, \textbf{b}_n\right] \in \mathbb{R}^{m\times n}$ be the corresponding basis with column vectors $\textbf{b}_i$
 
     - $n$ is the dimension of the Lattice
 
     - $\Lambda(\textbf{B})$ defined by all integer combinations of elements of $\textbf{B}$:
     \begin{equation}
-      \Lambda(\textbf{B}) = \left\{ x \in \mathbb{R}^m \mid \exists \alpha_1, ..., \alpha_n \in \mathbb{Z} : \textbf{x} = \sum_{i=1}^n \alpha_i \textbf{b}_i \right\}
+      \Lambda(\textbf{B}) = \left\{ x \in \mathbb{R}^m \mid \exists \alpha_1, \ldots, \alpha_n \in \mathbb{Z} : \textbf{x} = \sum_{i=1}^n \alpha_i \textbf{b}_i \right\}
     \end{equation} 
     - show example plot % TODO
 
@@ -366,7 +373,7 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
     - fundamental domain: subset of $\mathbb{R}^m$ containing exactly one representative of every coset
 
-    - fundamental parallelipiped: $\textbf{B} \cdot [ - 1/2, 1/2)^n$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
+    - fundamental parallelipiped \label{eq:fundamental-parallelipiped}: $\mathcal{P}(\textbf{B}) = \textbf{B} \cdot [ - 1/2, 1/2)^n = \left\{ \textbf{x} \in \mathbb{R}^m \mid \textbf{x} \sum_{i=1}^n \gamma_i \textbf{x}_i, \gamma_i \in  [ - 1/2, 1/2) \right\}$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
     % TODO: maybe add plot
 
     - determinant of a full-ranked lattice $\Lambda(\textbf{B})$
@@ -390,15 +397,16 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
   
   * modular integer (or $q$-ary) lattices % \cite{MR09}
 
-    - full-ranked lattice $\Lambda$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}$
+    - full-ranked lattice $\Lambda$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}$ => if $\textbf{x} \in \mathbb{Z}^m$ in $\Lambda$ then $\textbf{x} \mod q$ also in $\Lambda$. 
 
-    - can be specified in two ways by matrix $\textbf{A} \in \mathbb{Z}_q^{m\times n}$:
+    - can be specified in two ways by matrix $\textbf{A} \in \mathbb{Z}_q^{m\times n}$: % TTODO switch m and n for consistency
     \begin{equation}
-      \Lambda_q(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid \exists y \mathbb{Z}^n : \textbf{x} = \textbf{A}\textbf{y} \mod q \right\}
+      \Lambda_q(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid \exists y \in \mathbb{Z}^n : \textbf{x} = \textbf{A}\textbf{y} \mod q \right\}
     \end{equation}
+    % TODO: corresponds to linear code generated by columns of A (mod q)
     or
     \begin{equation}
-      \Lambda_q^\perp(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid  \textbf{A}\textbf{x} = 0 \mod q \right\}
+      \Lambda_q^\perp(\textbf{A}) = \left\{ x \in \mathbb{Z}^m \mid  \textbf{A}^t\textbf{x} = 0 \mod q \right\}
     \end{equation}
 
     - finding a short vector in $\Lambda_q(\textbf{A})$ corresponds to LWE % TODO check
@@ -414,18 +422,41 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
     - set of column vectors $\textbf{B} \in \mathbb{Z}_q^{m\times n}$, $\pi_{\text{span}(\textbf{B})}(\textbf{t})$ for projection of vector $\textbf{t}$ unto span of vectors of $\textbf{B}$
 
-    - $\pi_{\text{span}(\textbf{B})}(\textbf{t}) = \textbf{B}(\textbf{B}^\perp \textbf{B})^{-1}\textbf{B}^T \cdot \textbf{t}$
+    - $\pi_{\text{span}(\textbf{B})}(\textbf{t}) = \textbf{B}(\textbf{B}^\perp \textbf{B})^{-1}\textbf{B}^t \cdot \textbf{t}$
 
-    - Gram-Schmidt orthogonalization $\tilde{\textbf{B}} = \left\{\tilde{\textbf{b}}_1, ..., \tilde{\textbf{b}}_n\right\}$ of basis $\textbf{B}$: $\tilde{\textbf{b}}_i = \textbf{b}_i - \pi_{\text{span}(\textbf{b}_1, ..., \textbf{b}_{i-1})}(\textbf{b}_i)$ for $i \in \{1, ..., n\}$ 
+    - Gram-Schmidt orthogonalization $\tilde{\textbf{B}} = \left\{\tilde{\textbf{b}}_1, \ldots, \tilde{\textbf{b}}_n\right\}$ of basis $\textbf{B}$: $\tilde{\textbf{b}}_i = \textbf{b}_i - \pi_{\text{span}(\textbf{b}_1, \ldots, \textbf{b}_{i-1})}(\textbf{b}_i)$ for $i \in \{1, \ldots, n\}$ 
 
     Alternative:
-    Let $\textbf{B} = \left[\textbf{b}_1, ..., \textbf{b}_n\right], \textbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\textbf{b}}_i$ as follows: $\tilde{\textbf{b}}_1 = \textbf{b}_1$. For $i \in \{2, ..., n\}$ let $\tilde{\textbf{b}}_i$ be the projection of $\textbf{b}_i$ to the vector that is orthogonal to the span of $\{\textbf{b}_1, ..., \textbf{b}_{i-1}\}$. Then,  $\tilde{\textbf{B}} = \left[\tilde{\textbf{b}}_1, ..., \tilde{\textbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\textbf{B}$ where $\| \tilde{\textbf{b}}_i\| \leq \| \textbf{b}_i\|$. 
+    Let $\textbf{B} = \left[\textbf{b}_1, \ldots, \textbf{b}_n\right], \textbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\textbf{b}}_i$ as follows: $\tilde{\textbf{b}}_1 = \textbf{b}_1$. For $i \in \{2, \ldots, n\}$ let $\tilde{\textbf{b}}_i$ be the component of $\textbf{b}_i$ that is orthogonal to the span of $\{\textbf{b}_1, \ldots, \textbf{b}_{i-1}\}$. Then,  $\tilde{\textbf{B}} = \left[\tilde{\textbf{b}}_1, \ldots, \tilde{\textbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\textbf{B}$ where $\| \tilde{\textbf{b}}_i\| \leq \| \textbf{b}_i\|$. 
 
   
   * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \textbf{w} \mid \langle \textbf{w}, \Lambda \rangle \subset \mathbb{Z}\}$
     
   * smoothing lemma
-    
+
+  * Voronoi region % \cite{GSJ15}
+  The fundamental Voronoi region $\mathcal{V}$ is defined as 
+  \begin{equation}
+    \mathcal{V} = \left\{ \textbf{x} \in \mathbb{R}^n \mid \forall \textbf{y} \in \Lambda : \| \textbf{x} \| \leq \| \textbf{x} - \textbf{y} \| \right\}
+  \end{equation}
+
+  * Linear Code \cite{VanLint12} % TODO maybe move to Coded BKW
+    Let $\mathbb{F}_q^n$ be the $n$-dimensional vector space over the field $\mathbb{F}_q$. A $q$-ary linear code $\mathcal{C}$ or $[n, k]-code$ is a $k$-dimensional linear subspace of $\mathbb{F}_q^n$ such that 
+    \begin{itemize}
+      \item $\textbf{0} \in \mathcal{C}$,
+      \item if $\textbf{x}, \textbf{y} \in \mathcal{C}$, then $\textbf{x} + \textbf{x} \in \mathcal{C}$,
+      \item and if $\textbf{x} \in \mathcal{C}$ and $\gamma \in \mathbb{F}_q$, then $\gamma \textbf{x} \in \mathcal{C}$.
+    \end{itemize}
+    There are $q^k$ different codewords in $\mathcal{C}$.
+
+    Let $\mathcal{C}$ be a $q$-ary linear $[n, k]-code$ code. The lattice over $\mathcal{C}$ is defined as % \cite{GJS15}
+    \begin{equation}
+      \Lambda(\mathcal{C}) = \left\{ \textbf{x} \in \mathbb{R}^n \mid \exists \textbf{y} \in \mathcal{C} : \textbf{x} = \textbf{y} \mod q  \right\}.
+    \end{equation} % TODO check
+    Similarly, for a lattice $\Lambda(\textbf{B})$ a lattice code $\mathcal{C}$ defined by $\Lambda(\textbf{B})$ and a shaping region $\mathcal{V} \subset \mathbb{R}^n$ (e.g. the Voronoi region) is a subspace of $\mathbb{R}^n$ such that all codewords are lattice vectors in $\Lambda(\textbf{B})$ within the region $\mathcal{V}$ \cite{SFS08}:
+    \begin{equation}
+      C' = \left\{ x \in \Lambda(\textbf{B}) \mid x \in \mathcal{V} \right\}.
+    \end{equation} % TODO check
 
 - Lattice problems
 
@@ -443,7 +474,7 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
   * CVP$_\gamma$: given  basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\textbf{t}\in\mathbb{R}^n$ find point in lattice that is close to $\textbf{t}$ => find  $\textbf{v} \in \mathbb{R}^n$ with $\|\textbf{t} - \textbf{v}\| < \gamma \min_{\textbf{v}' \in \Lambda} \|\textbf{v}' - \textbf{v}\|$
 
-  * \textsc{SIVP} (shortest independent vector problem): given  basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\textbf{v}_1, ..., \textbf{v}_n \in \Lambda(\textbf{B})$ such that $\max_i \|\textbf{v}_i\|$ for $i \in \{1, ..., n\}$ is minimal
+  * \textsc{SIVP} (shortest independent vector problem): given  basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\textbf{v}_1, \ldots, \textbf{v}_n \in \Lambda(\textbf{B})$ such that $\max_i \|\textbf{v}_i\|$ for $i \in \{1, \ldots, n\}$ is minimal
 
   * BDD$_\gamma$: given basis $\textbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\textbf{t}\in\mathbb{R}^n$ with $\text{dist}(\textbf{t}, \Lambda) < d ) \lambda_1(\Lambda)/(2\gamma(n))$, find unique lattice vector $\textbf{v} \in \Lambda$ such that $\|\textbf{t} - \textbf{v} \| < d$ %\cite{Pei16}
 
@@ -520,26 +551,40 @@ Intuition: "recover $\textbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approxim
 
 Formal Definition: 
 \begin{definition}[LWE Distribution \cite{Reg10}] %TODO
-  For $n \geq 1$, modulus $q \geq 2$, error distribution $\chi$ on $\mathbb{Z}_q$, and a fixed secret vector $\textbf{s}$, let $\mathcal{A}_{\textbf{s}, \chi}$ be the probability distribution over $\mathbb{Z}_q^n \times \mathbb{Z}_q$ by choosing a vector $\textbf{a} \in \mathbb{Z}_q^n$ uniformly at random, $e \in \mathbb{Z}_q$ according to $\chi$ and returning pairs of $(\textbf{a}, \langle \textbf{a}, \textbf{s} \rangle + e)$.
+  For $n \geq 1$, modulus $q \geq 2$, error distribution $\chi$ on $\mathbb{Z}_q$, and a fixed secret vector $\textbf{s}$, let $\mathcal{A}_{\textbf{s}, \chi}$ be the probability distribution over $\mathbb{Z}_q^n \times \mathbb{Z}_q$ by choosing a vector $\textbf{a}_i \in \mathbb{Z}_q^n$ uniformly at random, $e_i \in \mathbb{Z}_q$ according to $\chi$ and returning pairs of $(\textbf{a}_i, \langle \textbf{a}_i, \textbf{s} \rangle + e_i \mod q) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$.
 \end{definition}
 
-For $m$ samples, we obtain the output $(\textbf{A}, \textbf{s}^\perp \textbf{A} + e^\perp)$. Additions are performed in $\mathbb{Z}_q$. We say that an algorithm solves LWE with modulus $q$ and error distribution $\chi$ if, for any $\textbf{s} \in \mathbb{Z}_q^n$, given an arbitrary number of independent samples from $\mathcal{A}_{\textbf{s}, \chi}$ it outputs $\textbf{s}$ (with high probability). For $q=2$ corresponds to \textit{learning parity with noise} (LPN) problem.
+Additions are performed in $\mathbb{Z}_q$. We say that an algorithm solves LWE with modulus $q$ and error distribution $\chi$ if, for any $\textbf{s} \in \mathbb{Z}_q^n$, given an arbitrary number of independent samples from $\mathcal{A}_{\textbf{s}, \chi}$ it outputs $\textbf{s}$ (with high probability). For $q=2$ corresponds to \textit{learning parity with noise} (LPN) problem. % TODO still needed with Search-LWE\ldots???
 
 % TODO matrix Schreibweise vs nicht matrix schreibweise
 % TODO Define Search/Decision LWE? 
-\begin{definition}[Search-LWE$_{n, q, m, \chi}$]
-  Search-LWE$_{n, q, m, \chi}$ asks for the recovery of the secret vector $\textbf{s}$ given $m$ samples % TODO
+\begin{definition}[Search-LWE$_{n, q, m, \chi}$] % \cite{LP11}
+  Search-LWE$_{n, q, m, \chi}$ asks for the recovery of the secret vector $\textbf{s}$ given $m$ independent samples $(\textbf{a}_i, z_i) \leftarrow \mathcal{A}_{\textbf{s}, \chi}$ % TODO matrix
 \end{definition}
 
 \begin{definition}[Decision-LWE$_{n, q, m, \chi}$]
   Given $m$ samples, Search-LWE$_{n, q, m, \chi}$ asks to distinguish whether the samples were drawn from  $\mathcal{A}_{\textbf{s}, \chi}$ or from a uniform distribution on $\mathbb{Z}_q^n \times \mathbb{Z}_q$.
 \end{definition}
 
+% TODO: show more about decoding problem?
+% TODO: Einheitsmatrix in notation
+% TODO: notation \textbf{x} = (x_1, \ldots, x_n) is column vector and  \textbf{x}^t its corresponding tranpose
+% TODO: add somewhere we assume that m > n
+\subsubsection{LWE as a Decoding Problem}
+We request $m$ samples $(\textbf{a}_1, z_1), \ldots, (\textbf{a}_m, z_m)$ where $z_i = \langle \textbf{a}_i, \textbf{s} \rangle + e_i \in \mathbb{Z}_q$. Let $A = \left[ \textbf{a}_1 \cdots \textbf{a}_m\right]$, $\textbf{z} = (z_1, \ldots, z_m)$ and $e = (e_1, \ldots, e_n)$. Hence, we can reformulate LWE as a decoding problem as in \cite{GJS15}:
+\begin{equation} \label{eq:lwe-decoding}
+  \textbf{z}^t = \textbf{s}^t \textbf{A} + \textbf{e}^t
+\end{equation}
+with generator matrix $\textbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\textbf{z}$ as the received word. Finding the secret vector $\textbf{z}$ is equivalent to finding the codeword $\textbf{y}^t = \textbf{s}^t \textbf{A}$ with minimum distance $\| \textbf{y} - \textbf{z} \|$. 
+
+An LWE$_{n, q, m, \chi}$ instance with a secret vector $\textbf{s}$ chosen according to a uniform distribution can be transformed into an LWE$_{n, q, m-n, \chi}$ instance with a secret vector $\hat{\textbf{s}}$ chosen according to the error distribution $\chi$ at a loss of $n$ samples as follows: Let $\textbf{A}_0 = \left[ \textbf{a}_1 \cdots \textbf{a}_n\right]$ where $\textbf{a}_1, \ldots, \textbf{a}_n$ are the first $n$ columns of $\textbf{A}$. We introduce new variables $\hat{\textbf{s}}^t = \textbf{s}^t \textbf{A}_0 - \left(z_1, \ldots, z_n\right)^t = \left(e_0, \ldots, e_n\right)^t$ and $\hat{\textbf{A}} = \textbf{A}_0^{-1} \textbf{A} = \left[\textbf{I} \; \hat{\textbf{a}}_{n+1} \cdots \hat{\textbf{a}}_{m}\right]$ and compute $\hat{\textbf{z}}^t = \textbf{z}^t -  \left(z_1, \ldots, z_n\right)^t \hat{\textbf{A}} = \left(\textbf{0}, \hat{z}_{n+1} \cdots \hat{z}_{m} \right)$. 
+
 % TODO parameter choice: often prime q \in poly(n), \chi has mean zero and \sigma = \alpha \cdot q for some small \alpha, e.g. Regev: q \approx n^2, \alpha = 1/(\sqrt{2\pi n} \cdot \log_2^2 n)
 
+\subsubsection{LWE as a BDD Problem} % \cite{LP11}
+Solving LWE also corresponds to solving the \textit{Bounded Distance Decoding problem} (BDD) in the lattice $\Lambda(\textbf{A}) = \{ \textbf{x} \in \mathbb{Z}_q^m \mid \textbf{x}^t = \textbf{s}^^t \cdot \textbf{A} \mod q \text{for some} \textbf{s} \in \mathbb{Z}_q^n\}$, where the $m$ columns of $\textbf{A}$ correspond to the vectors $\text{a}_i \in \mathbb{Z}_q^n$ of $m$ independent LWE samples $(\textbf{a}_i, z_i) \leftarrow \mathcal{A}_{\textbf{s}, \chi}$ and the components $z_i$ correspond to a perturbed lattice point in $\Lambda(\textbf{A})$. 
 
 
-Solving LWE corresponds to solving the \textit{Bounded Distance Decoding problem} (BDD) in the lattice $\Lambda(\textbf{A}) = \{ \textbf{s}^{T} \cdot A \mid \textbf{s} \in \mathbb{Z}_q^n\} + q \mathbb{Z}^m$, where the $m$ columns of $\textbf{A}$ are randomly uniform vectors $\textbf{a}_i \in \mathbb{Z}_q^n$. %TODO: from https://www.youtube.com/watch?v=LlPXfy6bKIY
 
 Best algorithm to solve LWE: Blum, Kalai, and Wasserman \cite{BKW03} with $2^{O(n)}$ samples and time. % TODO Sketch BKW?
 
@@ -552,7 +597,7 @@ Search to decision reduction => distiguishing is LWE samples from uniform sample
 \subsection{Short Integer Solution (SIS)}
 The dual problem to LWE is the \textit{Short Integer Solution problem} (SIS).
 
-- principle: given a set of set of uniformly random vectors $\textbf{a}_1, ..., \textbf{a}_m \in \mathbb{Z}_q^n$ find a subset of them or combination with small coefficients that sums to zero (modulo $q$). % TODO change or \cite{Reg10}
+- principle: given a set of set of uniformly random vectors $\textbf{a}_1, \ldots, \textbf{a}_m \in \mathbb{Z}_q^n$ find a subset of them or combination with small coefficients that sums to zero (modulo $q$). % TODO change or \cite{Reg10}
 
 - introduced in \cite{MR04}, origins in \cite{Atj96}, used for ´minicrypt´ primitives: one-way functions \cite{Atj96}, collision resistant hash functions \cite{GGH96}, digital signature schemes \cite{GPV08, CHKP10}, and identification schemes \cite{MV03, Lyu08, KTX07} % TODO change or \cite{Reg10}
 
@@ -567,19 +612,19 @@ Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SI
 \subsection{Ring and Module Variants} 
 - problem key sizes in LWE/SIS in $O(n^2)$ (matrix $\textbf{A} \in \mathbb{Z}_q^{m \times n})$, where $m \in \Omega(n)$)% TODO change or \cite{Reg10}
 
-- idea: introduce some sort of a structure in samples: $n$ power of two, $\textbf{a}$ vectors in groups of size $n$, for each group $\textbf{a}_1 = (a_1, ..., a_n)$, $a_i$ are uniformly random in $\mathbb{Z}_q$, and $\textbf{a}_i = (a_i, ..., a_n, -a_1, ..., -a_{i-1})$. Hence, $n$ vectors only need $O(n)$ memory, also speedups in operations by using FFT % TODO change or \cite{Reg10}
+- idea: introduce some sort of a structure in samples: $n$ power of two, $\textbf{a}$ vectors in groups of size $n$, for each group $\textbf{a}_1 = (a_1, \ldots, a_n)$, $a_i$ are uniformly random in $\mathbb{Z}_q$, and $\textbf{a}_i = (a_i, \ldots, a_n, -a_1, \ldots, -a_{i-1})$. Hence, $n$ vectors only need $O(n)$ memory, also speedups in operations by using FFT % TODO change or \cite{Reg10}
 
 - formally: vectors are elements of the ring $\mathbb{Z}_q\left[x\right] / \left\langle x^n + 1 \right\rangle$ which we call $\mathcal{R}_q$ instead of the group $\mathbb{Z}_q^n$, $n$ power of two ensures that $x^n + 1$ is irreducible over the rationals% TODO change or \cite{Reg10}
 
 - add more? % TODO
 
 \begin{definition}[Ring-SIS Problem [\citealp{LS15}, Definition 3.3])]
-  The problem \text{RSIS}$_{n, q, m, \beta}$ is defined as follows: Given $a_1, ..., a_n \in \mathcal{R}_q$ chosen independently from the uniform distribution, find $s_1, ..., s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0 \mod q$ and $0 < \| \textbf{s}\| \leq \beta$, where $\textbf{s} = (s_1, ..., s_m)^T \in \mathcal{R}^m$.
+  The problem \text{RSIS}$_{n, q, m, \beta}$ is defined as follows: Given $a_1, \ldots, a_n \in \mathcal{R}_q$ chosen independently from the uniform distribution, find $s_1, \ldots, s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0 \mod q$ and $0 < \| \textbf{s}\| \leq \beta$, where $\textbf{s} = (s_1, \ldots, s_m)^t \in \mathcal{R}^m$.
 \end{definition} % TODO: need n? say sth more about n power of 2?
 % TODO: matrix version?
 
 \begin{definition}[Module-SIS Problem [\citealp{LS15}, Definition 3.3])]
-  The problem \text{MSIS}$_{n, d, q, m, \beta}$ is defined as follows: Given $a_1, ..., a_n \in \mathcal{R}_q^d$ chosen independently from the uniform distribution, find $s_1, ..., s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0\mod q$ and $0 < \| \textbf{s}\| \leq \beta$, where $\textbf{s} = (s_1, ..., s_m)^T \in \mathcal{R}^m$.
+  The problem \text{MSIS}$_{n, d, q, m, \beta}$ is defined as follows: Given $a_1, \ldots, a_n \in \mathcal{R}_q^d$ chosen independently from the uniform distribution, find $s_1, \ldots, s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0\mod q$ and $0 < \| \textbf{s}\| \leq \beta$, where $\textbf{s} = (s_1, \ldots, s_m)^t \in \mathcal{R}^m$.
 \end{definition} % TODO: need n? say sth more about n power of 2?
 % TODO: matrix version?
 
@@ -594,8 +639,8 @@ We thus reduce Ring and Module instances as follows:
   \item RSIS$_{n, q, m, \beta} \longrightarrow$ SIS$_{n, q, m \cdot n, \beta}$
   \item MSIS$_{n, d, q, m, \beta} \longrightarrow$ SIS$_{n \cdot d, q, m \cdot n, \beta}$
 \end{itemize}
-Note that in the Ring and Module variants $n$ denots the degree of the polnomial of the underlying Ring, %TODO: correct?
-while in the standard variant, $n$ denots the dimension of the secret. 
+Note that in the Ring and Module variants $n$ denotes the degree of the polnomial of the underlying Ring, %TODO: correct?
+while in the standard variant, $n$ denotes the dimension of the secret. 
   
   
 
@@ -607,94 +652,7 @@ while in the standard variant, $n$ denots the dimension of the secret.
 
 % TODO: replace "hardness" with "complexity of solving"?
 \chapter{Algorithms and Estimates}
-
-
-\section{Lattice Basis Reduction} % perhaps move to Algorithms
-- measure quality of basis: Hermite factor  % TODO change or \cite{Reg10}
-
-  * basis $\textbf{B} = \left\{\textbf{b}_1, ..., \textbf{b}_m\right\}$, $m$-dimensional lattice $\Lambda(\textbf{B})$ has Hermite factor $\delta$ if
-  \begin{equation} \label{eq:hermite}
-    \| \textbf{b}_1 \| \approx \delta^m \det(\Lambda)^{1/m}
-  \end{equation}
-
-  * use Geometric Series Assumption (GSA) to obtain estimates for $\textbf{b}_i$: % TODO: necessary?
-    \begin{equation} \label{eq:GSA}
-      \| \tilde{\textbf{b}}_i \| \approx \alpha^{i-1} \| \textbf{b}_1 \|
-    \end{equation}
-    for $0 < \alpha < 1$
-    \ref{eq:hermite} into \ref{eq:GSA} -> $\| \tilde{\textbf{b}}_i \| \approx \alpha^{i-1} \delta^m \det(\Lambda)^{1/m}$
-    with $\prod_{i-1}^m \| \tilde{\textbf{b}}_i \| = \det(\Lambda)$ we get 
-    \begin{align*}
-      &\quad& \prod_{i-1}^m \| \tilde{\textbf{b}}_i \| &\approx \prod_{i-1}^m \alpha^{i-1} \delta^m \det(\Lambda)^{1/m} \\
-      \Leftrightarrow&\quad& \det(\Lambda) &\approx \delta^{2m} \det(\Lambda) \prod_{i-1}^m \alpha^{i-1}\\
-      \Leftrightarrow&\quad& \delta^{-m^2}  &\approx \alpha^{\frac{m(m-1)}{2}}\\
-      \Leftrightarrow&\quad& \delta^{-2}  &\approx \alpha^{(m-1)/m}\\
-    \end{align*}
-    Hence, $alpha \approx \delta^{-2}$ and 
-    \begin{equation}
-      \| \tilde{\textbf{b}}_i \| \approx \delta^{-2(i-1) + m} \det(\Lambda)^{1/m}
-    \end{equation}
-
-  * good basis -> first Gram-Schmidt vectors become shorter (latter longer)
-
-  * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
-
-  * gap between provable and experimental cost estimate to reach some hermite $\delta$ => provable results only give upper bounds, for practical security we need lower bound => combine theoretical results with experimental results
-
-  * well-established estimate \cite{LP11}
-
-
-
-
-\subsection{Cost Models for Lattice Reduction}
-Just insert a table and reference somewhere else? Warum notwendig, wie kommt man darauf? ... alg laufen lassen, extrapolieren...
-
-
-\section{LWE}
-\subsection{Approaches}
-\subsubsection{SIS}
-rewrite LWE as the problem of finding short vector in dual lattice => SIS
-\subsubsection{BDD}
-
-lattice reduction algorithms solve SIS and BDD 
-\subsubsection{Direct}
-
-% TODO: based on GSJ15, rephrase
-- algebraic approach Arora and Ge with subexponential complexity when $\sigma \leq \sqrt{n}$, else fully exponential, mainly of asymptotic interest (higher complexity than others)
-
-- combinatorial algorithms: BKW as basis \cite{BKW03}, resembles generalized birthday approach by Wagner, % Wagner, D.: A generalized birthday problem. In: Advances in cryptologyCRYPTO 2002, pp. 288304. Springer (2002)
-originally for solving LPN, can be analyzed => explicit complexity for different LWE instances, theoretical analysis and actual performance close,
-very memory expensive (often same order as time complexity) 
-
-\subsection{Algorithms in Estimator}
-\subsubsection{Coded-BKW [GuoJohSta15]}
-modified BKW step -> coded-BKWE step to cancel out more positions in the $\textbf{a}$ vectors than traditional BKW step
-
-map part of $\textbf{a}$ vector into nearest codeword in lattice code (linear code over $\mathcal{Z}_q$, Euclidean distance)
-
-introduces some noise, can be kept small by appropriate parameters
-
-pair of $\textbf{a}$ vectors map to same codeword => add together to create new sample with part of $\textbf{a}$ vector cancelled
-
-samples are input to next step in BKW procedure
-
-additional steps using discrete FFT
-
-slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^n$) greatly increases performance
-
-
-\subsubsection{Dual Attack [MicReg09]}
-\subsubsection{Decoding Attack [LinPei11]}
-\subsubsection{Primal-uSVP [ADPS16, BaiGal14]}
-\subsubsection{Meet-in-the-Middle [AlbPlaSco15]}
-\subsubsection{Arora-Ge [AroGe11,ACFP14]}
-
-
-\section{SIS}
-\subsection{Dual Attack}
-\subsubsection{MR variant [MR09]}
-\subsubsection{RS variant [RS10]}
-\subsection{Combinatorial Attack [MR09]}
+\input{algorithms-estimates.tex}
 
 
 \section{Tool}
