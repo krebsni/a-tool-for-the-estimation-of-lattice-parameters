@@ -250,6 +250,7 @@
 
   * lack in the past: no unified/easy to use tool => thesis aims to solve this problem
     tool we call \textit{Lattice Parameter Estimation} 
+    LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{Estimator}.
 
 
 - overview of chapters/how to read
@@ -259,11 +260,13 @@
 \chapter{Preliminaries} \label{chap:Preliminaries}
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. Unless specified otherwise, $\| \cdot \|$ is the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.
+In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. Unless specified otherwise, $\| \cdot \|$ is the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$. With a slight abuse of notation, we interchangably use matrices and sets of column vectors, i.e. $\mathbf{M} = \left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. 
 % TODO: anything else? Inner product, negation in ring
 
 
 \section{Math} 
+% TODO: check out MG02 for more details for this section!!!
+
 % TODO: some algebraic background?
 \subsection{Norms and Bounds} % TODO: check
 %TODO: write some prose about why we need that
@@ -374,10 +377,12 @@ Other Notes: %TODO
 
     - fundamental domain: subset of $\mathbb{R}^m$ containing exactly one representative of every coset
 
-    - fundamental parallelipiped \label{eq:fundamental-parallelipiped}: $\mathcal{P}(\mathbf{B}) = \mathbf{B} \cdot [ - 1/2, 1/2)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \mid \mathbf{x} \sum_{i=1}^n \gamma_i \mathbf{x}_i, \gamma_i \in  [ - 1/2, 1/2) \right\}$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
+    - (shifted) fundamental parallelipiped \label{eq:fundamental-parallelipiped}: $\mathcal{P}(\mathbf{B}) = \mathbf{B} \cdot [ - 1/2, 1/2)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \mid \mathbf{x} \sum_{i=1}^n \gamma_i \mathbf{x}_i, \gamma_i \in  [ - 1/2, 1/2) \right\}$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
+    % TODO: first define [0, 1)
+    % intuition: collection of all points that can be written as By where y in [0, 1)^n
     % TODO: maybe add plot
 
-    - determinant of a full-ranked lattice $\Lambda(\mathbf{B})$
+    - determinant of lattice $\Lambda(\mathbf{B})$: $\sqrt{\text{det}\left(\mathbf{B}^\intercal \mathbf{B}\right)}$. For a full-ranked lattice the determinant is 
     \begin{equation}
       \det(\Lambda(\mathbf{B})) = |\det(\mathbf{B})|
     \end{equation}
@@ -386,8 +391,9 @@ Other Notes: %TODO
 
   * minimum distance of $\lambda_1(\Lambda)$ of a lattice is the length of its shortest nonzero vector, i.e. $\lambda_1(\Lambda) \min_{v \in \Lambda \setminus \{0\}}$
   * $i$th successive minimum $\lambda_i(\Lambda)$
+    - Let $r\in \mathbb{R}$ and $\mathbf{c} \in \mathbb{R}^m$, then we define $\mathcal{B}(\mathbf{c}, r)$ as the ball of radius $r$ with center $\mathbf{c}$. 
 
-    - smallest radius $r$ such that $\Lambda$ has $i$ linearly independent lattice vectors of norm at most $r$
+    - smallest radius $r$ such that the ball $\mathcal{B}(\mathbf{0}, r)$ centered at the origin of $\Lambda$ contains $i$ linearly independent lattice vectors. 
 
     - in general hard to calculate $\lambda_i(\Lambda(\mathbf{B}))$ for a given basis  
   % * Gaussian heuristic: 
@@ -427,11 +433,16 @@ Other Notes: %TODO
 
     - Gram-Schmidt orthogonalization $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ of basis $\mathbf{B}$: $\tilde{\mathbf{b}}_i = \mathbf{b}_i - \pi_{\text{span}(\mathbf{b}_1, \ldots, \mathbf{b}_{i-1})}(\mathbf{b}_i)$ for $i \in \{1, \ldots, n\}$ 
 
+    - Gram-schmidt coefficients $\mu_{i, j} = \frac{\left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle}{\left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle}$ %Pla18
+
     Alternative:
     Let $\mathbf{B} = \left[\mathbf{b}_1 \cdots \mathbf{b}_n\right], \mathbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\mathbf{b}}_i$ as follows: $\tilde{\mathbf{b}}_1 = \mathbf{b}_1$. For $i \in \{2, \ldots, n\}$ let $\tilde{\mathbf{b}}_i$ be the component of $\mathbf{b}_i$ that is orthogonal to the span of $\left\{\mathbf{b}_1, \ldots, \mathbf{b}_{i-1}\right\}$. Then,  $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\mathbf{B}$ where $\| \tilde{\mathbf{b}}_i\| \leq \| \mathbf{b}_i\|$. 
+    % TODO Also check out algorithm from AGVW17
 
   
-  * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \mathbf{w} \mid \langle \mathbf{w}, \Lambda \rangle \subset \mathbb{Z}\}$
+  * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \mathbf{y} \in \mathbb{R}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle \in \mathbb{Z}\}$
+    % TODO: show examples
+    scaled-by-$q$ dual lattice:  $\{ \mathbf{y} \in \mathbb{Z}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle = 0 \mod q\}$ % not sure if needed
     
   * smoothing lemma
 
@@ -462,10 +473,12 @@ Other Notes: %TODO
 
 % TODO: where to put
 
-    We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$ where $\Lambda(\mathbf{B})) \subset \mathbb{R}^m$ as the distance of some vector $\mathbf{t} \in \mathbb{R}^m$ to the closest lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$, i.e. 
+    We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$ where $\Lambda(\mathbf{B}) \subset \mathbb{R}^m$ as the distance of a vector $\mathbf{t} \in \mathbb{R}^m$ to the closest lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$, i.e. 
     \begin{equation}\label{eq:dist}
       \text{dist}(\mathbf{t}, \Lambda(\mathbf{B})) = \min_{\mathbf{v} \in \Lambda(\mathbf{B})}\|\mathbf{t} -  \mathbf{v}\|.
     \end{equation}
+
+    
     
 
 - Lattice problems
@@ -476,17 +489,31 @@ Other Notes: %TODO
 
   * SVP: given a basis $\mathbf{B}$ of lattice $\Lambda$ find shortest nonzero lattice vector =>  $v\in \Lambda$ s.t. $\| v \| = \lambda_1(\Lambda)$
 
-  * SVP$_\gamma$: given a basis $\mathbf{B}$ of lattice $\Lambda$ find  $v\in \Lambda$ s.t. $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$
+\begin{definition}[$\gamma$-approximate Shortest Vector Problem (SVP$_\gamma$)] \label{def:gammaSVP} % TODO find source
+  Given a basis $\mathbf{B}$ of lattice $\Lambda$, find a short lattice vector $v\in \Lambda$ such that $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$
+\end{definition}
 
-  * $\alpha$-Approximate SVP: vector of length $\alpha \lambda_1$
+\begin{definition}[$\kappa$-approximate Hermite Shortest Vector Problem (HSVP$_\kappa$)] \label{def:kappaHSVP} % TODO find source
+  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, find a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \kappa \cdot \text{det}(\Lambda)^{\frac{1}{n}}$. 
+\end{definition}
 
   * \textsc{GapSVP}$_\gamma$ (decision version of \textsc{SVP}): "given basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ with either $\lambda_1{\Lambda} \leq 1$ or $\lambda_1{\Lambda} \geq \gamma(n)$, decide which is the case" %\cite{Pei16}
+    NP hard for any constant $\gamma$ % Kho04, HR07 see LM09
+    fastest algorithm for $1\leq \gamma \leq \text{poly}(n)$ has runtime complexity of $2^{O(n)}$
+  
+  * $\gamma$-unique Shortest Vector Problem (uSVP$_\gamma$) \cite{LM09}: given lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, find shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$
+    % or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
+    %NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
 
   * CVP$_\gamma$: given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\mathbf{t}\in\mathbb{R}^n$ find point in lattice that is close to $\mathbf{t}$ => find  $\mathbf{v} \in \mathbb{R}^n$ with $\|\mathbf{t} - \mathbf{v}\| < \gamma \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{v}\|$
 
   * \textsc{SIVP} (shortest independent vector problem): given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\mathbf{v}_1, \ldots, \mathbf{v}_n \in \Lambda(\mathbf{B})$ such that $\max_i \|\mathbf{v}_i\|$ for $i \in \{1, \ldots, n\}$ is minimal
 
-  * BDD$_\gamma$: given basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\mathbf{t}\in\mathbb{R}^n$ with $\text{dist}(\mathbf{t}, \Lambda) < d ) \lambda_1(\Lambda)/(2\gamma(n))$, find unique lattice vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{t} - \mathbf{v} \| < d$ %\cite{Pei16}
+  * $\gamma$-Bounded Distance Decoding (BDD$_\gamma$): Given a lattice $\Lambda$ and a target vector $\mathbf{t}$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, find the closest lattice vector $\mathbf{v} \in \Lambda$, i.e. find $\mathbf{v} = \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$ minimal \cite{LM09}
+    % or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
+    % alternate NP hard for $\gamma > 1/\sqrt{2}$ \cite{LLM06}
+
+  % TODO: add some kind of discussion, e.g. see 1.2 in LM09 or better overview from bootcamp
 
   * ideal lattice (do I need that?)
 
@@ -557,7 +584,11 @@ Early work: hardness based on unique-SVP, Peikert \cite{Pei09} and Lyubashevsky 
 
 - most important: fully homomorphic encryption schemes \cite{Gen09a, BV11, Bra12, GSW13} % TODO 
 
-Intuition: "recover $\mathbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approximate´ random linear equations on $\mathbf{s}$" 
+Intuition: 
+- "recover $\mathbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approximate´ random linear equations on $\mathbf{s}$" 
+- public matrix  $\mathcal{A} \in \mathbb{Z}^{n \times m}$, secret vector $\mathcal{s}\in \mathbb{Z}^n$, given $\mathcal{z} = \mathcal{A}^\intercal \mathcal{s}$ we can find $\mathbf{s}$ by linear algebra
+when we add a small error vector $\mathbf{e} \in \mathbb{Z}^m$, solving $\mathcal{z}' = \mathcal{A}^\intercal \mathcal{s} + \mathbf{e}$ for $\mathbf{s}$ or distinguishing $\mathbf{z}'$ from uniform becomes hard
+
 
 Formal Definition: 
 \begin{definition}[LWE Distribution \cite{Reg10}] %TODO
