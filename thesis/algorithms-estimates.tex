@@ -16,7 +16,7 @@ Problem: usually ugly basis (long vectors...), we want a better basis with short
     \| \mathbf{b}_1 \| \approx \delta^m \det(\Lambda)^{1/m}
   \end{equation}
 
-  * use Geometric Series Assumption (GSA) to obtain estimates for $\mathbf{b}_i$: % TODO: necessary?
+  * use Geometric Series Assumption (GSA) \cite{Sch03} to obtain estimates for $\mathbf{b}_i$: % TODO: necessary? 
     \begin{equation} \label{eq:GSA}
       \| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \| \mathbf{b}_1 \|
     \end{equation}
@@ -140,6 +140,78 @@ It is difficult to find hard runtime bounds for BKZ. The upper bound on the numb
 % TODO: include? \cite{LP11} runtime according Linder-Peikert model, GSA: suggest $t_{\text{BKZ}}=1.8/\log_2{\delta} - 110$
 
 
+% TODO perhaps look into: General Sieve Kernel implementation \cite{ADHKPS19} beats BKZ + pruned enum 
+
+
+
+\subsection{Cost Models for Lattice Reduction} \label{sec:costmodels}
+% TODO. write little introduction
+In this section, we will look at various high level ideas to realize an SVP oracle, i.e. to solve SVP, and present up-to-date cost models from the literature. 
+
+SVP is NP-complete % TODO formulate, find source
+
+
+% nice overview in https://cseweb.ucsd.edu/~daniele/LatticeLinks/Enum.html
+\subsubsection{Enumeration}
+enumerating all lattice vectors within a bounded region % TODO how? maybe check out ABKFSW20 2.2
+low memory cost (linear in $n$), perform good in moderately low dimensions
+provide asymtotically fastest algorithms in PSPACE both in theory and practice % TODO check
+most efficient: Kannan's algorithm \cite{Kan83}, worst-case $2^{\mathcal{O}(n \log n)}$ => BKZ$_k$ outputs vector of length $\approx (k^{1/(2k)})^n\cdot \text{Vol}(\Lambda)^{1/n}$, for $n$-dimensional lattice \cite{{HS07, ABFKSW20} % TODO check if n or m
+
+\cite{Che13}: $2^{1/(2e) k \log k + - 0.995 k + 16.25}$ => root Hermite factor of $\left(\frac{k}{2\pi e} \cdot (\pi k)^{1/k}\right)^{\frac{1}{2(k-1)}}$ 
+
+\cite{ABFKSW20}: % TODO add to BKZ variants!!! => extended preprocessing and relaxing of search radius, 
+% also add G6K (General Sieve Kernel) from ADHKPS19 (see more in sieving), running time of 2^Theta(k) but also 2^Theta(k) memory
+achieve root Hermite factor $k^{\frac{1}{2k}(1 + o(1))}$ in $k^{k/8 + o(k)}$ time and polynomial memory, quantumly accelerated to $k^{k/16 + o(k)}$. Simulation data fit => $2^{0.125k \log k - 0.050k + 56}$
+main idea - ``extended preprocessing'':  in preprocessing projected lattice of higher dimension $\lceil (1+c)\cdot k\rceil$ than rank $k$ is reduced => first Gram-Schmidt norms satisfy GSA, enumeration is faster on that part of the basis than on typical preprocessed BKZ block % TODO rewrite
+
+\cite{ABLR21} 
+- ``relaxing'' of the search radius with extreme pruning \cite{LN20} => exponential speed-up and ``extended preprocessing''  \cite{ABFKSW20}
+- dual-hash technique for finding pairs for combination in enumeration
+
+% TODO: for table
+FastEnum & \cite{ABFKSW20} & $2^{0.125k \log k}$ => root Hermite factor of $k^(1/(2k))$
+FastEnum + O(1)& \cite{ABFKSW20} & $2^{0.125k \log k - 0.050k + 56}$ => root Hermite factor of $k^(1/(2k))$
+Q-FastEnum & \cite{ABFKSW20} & $2^{0.0625 k \log k}$ 
+
+
+\subsubsection{Sieving} 
+single exponential time algorithms $2^{cn}$, $c \in \mathcal{O}(1)$ % TODO change
+use randomization and exponential spaces
+
+The general idea of sieving is as follows. Initially, we create a long list of randomly selected lattice points. The points in the list are then combined in some way to find points of smaller length. One way to achieve this is by finding a minimimal sublist of ``center'' points in the initial list such that spheres centered at these points cover all points list points. Subtracting the center points yields short lattice points. ListSieve \cite{MV10} uses a smaller initial list to divide the space into two half-spaces, one closer to the center and one closer to the respective point. The list is then used to reduce the length of newly sampled points as much as possible by subtracting each list vectors such that the result is located in the half-space closer to the center respectively. Once two points with a distance less than the target distance are found, they are subtracted and the result is returned. 
+
+% nice overview and explanation in \cite{ADHKPS19}
+List Sieve \cite{MV10}: $2^{0.3199n + o(n)}$ time and $2^{0.1325 + o(n)}$ space
+Nguyen-Vidick sieve \cite{NV08, ADHKPS19}: $2^{0.415n + o(n)}$ time, find pairs of vectors in list such that combination (add/subtract) is smaller than longest vector in list, replace longest vector by combination, size of list, fixed before to $2^{0.2075n + o(n)}$
+Gauss sieve \cite{MV10}: divide list into two parts (list and queue), list first t vectors, both sorted, shortness of each pair in list (combination as above) has been checked, then check pairs of one vector from list, one from queue, replace longer vector from pair when reduction is found (if list vector is replaced put replacement in queue), else restart compairing the list vector with all list vectors, move vectors from queue to list if no reduction with list vector found
+Becker-Gama-Joux sieve \cite{BGJ15}: $2^{0.311n + o(n)}$ time and $2^{0.2075n + o(n)}$ memory, uses coding theory to find nearest neighbor to speed up the search for reduction candidates
+3-sieve (BLS16, HK17): $2^{0.396n + o(n)}$ time and $2^{0.1788n + o(n)}$ memory, uses triples of vectors instead of pairs for combination and thus needs shorter list
+
+fastest SVP solver for sieve: $2^{0.292n + o(n)}$ \cite{BDGL16}
+
+recent progress: % from DSW21
+- theoretical: Laa15, BGJ15, BDGL16, HKL1
+  techniques: 
+    Nearest Neighbor Search (Laa15)
+    Progressive Sieving (LM18)
+    Dimensions for Free (Duc18): lift many short vectors in sieving dimension to recover short vector in larger dimensions
+- practical performance: FBB+14, Duc18, LM18, ADHKPS19
+
+
+\cite{ADHKPS19}, \cite{AGPS20}
+% TODO also check out LM18, Duc18, ADHKPS19
+
+\subsubsection{Others and Comparison}
+
+% TODO change: tkane from ABKFSW20
+- sieving algorithms asymptotically outperform enumeration algorithms
+- sieving require exponential memory, currently no problem, impact in future unclear
+- quantum algorithms can speed-up enumeration quadradically, less impact on sieving 
+LM18, Duc18, ADHKPS19 apply lessons learned from enumeration to sieving, more hybrids possible
+
+
+%of length smaller than some bound $r$. Then, we choose some center points $\mathbf{v}'_i, i \in [l]$ for some $l \ll 2^{cn}$ of the list such that all points $\mathbf{v}_i$ of the initial list are covered by spheres of a radius $r' < r$ centered at these center points $\mathbf{v}'_i$. Finally, we compute short vectors by subtracting the centers. % TODO
 
 
 - CN11, APS15, ADPS16
@@ -151,51 +223,64 @@ cost models (tabular overview) \cite{ACCD+19}
 - lattice rule of thumbs: achievable root hermite factor $\delta_0 = k^{\frac{1}{2k}} $ % [Stehlé12 An introduction to lattice reduction] or 2^1/k [Stehlé13/16  An overview of lattice reduction algorithms] (oversimplification)
 
 
-\subsection{Cost Models for Lattice Reduction} \label{sec:costmodels}
-% TODO. write little introduction
-In this section, we will look at various high level ideas to realize an SVP oracle, i.e. to solve SVP, and present up-to-date cost models from the literature. 
-
-SVP is NP-complete % TODO formulate, find source
-
-% nice overview in https://cseweb.ucsd.edu/~daniele/LatticeLinks/Enum.html
-- enumeration => \cite{ABFKSW20}, \cite{ABLR21}
-enumerating all lattice vectors within a bounded region % TODO how?
-low memory cost (linear in $n$), perform good in moderately low dimensions
-provide asymtotically fastest algorithms in PSPACE both in theory and practice % TODO check
-worst-case $2^{\mathcal{O}(n \log n)}$
 
 
-- sieving => \cite{ADHKPS19}, \cite{AGPS20}
-  \cite{ABFKSW20}: achieve root Hermite factor $k^{1/(2k)}$ in $k^{k/8 + o(k)}$ time and polynomial memory
-  single exponential time algorithms $2^{cn}$, $c \in \mathcal{O}(1)$ % TODO change
-  use randomization and exponential spaces
-    
-  We start by sampling a list of $2^{cn}$ lattice points $\mathbf{v}_i, i \in [2^{cn}]$ of length smaller than some bound $r$. Then, we choose some center points $\mathbf{v}'_i, i \in [l]$ for some $l \ll 2^{cn}$ of the list such that all points $\mathbf{v}_i$ of the initial list are covered by spheres of a radius $r' < r$ centered at these center points $\mathbf{v}'_i$. Finally, we compute short vectors by subtracting the centers. 
 
-  primarily studied for SVP in euclidean norm
-  two main types: 
-  Classic Sieve \cite{AKS01}: create a long list of lattice vectors, then find shorter lattice vectors and discard longer
-  List Sieve \cite{MV10}: start from empty list, find shorter vectors and append them to list
+primarily studied for SVP in euclidean norm
+two main types: 
+Classic Sieve \cite{AKS01}: create a long list of lattice vectors, then find shorter lattice vectors and discard longer
+List Sieve \cite{MV10}: start from empty list, find shorter vectors and append them to list
 
-  best provable: $2^{n + o(n)}$ (sieving by averages)
-  heuristic state of the art: $(3/2)^{n/2 + o(n)} \approx 2^{0.29n}$ 
-  
-  combinarial: create list of short random (possibly non-lattice) vectors, try to combine vectors in list to produce short lattice vectors
-  provable versions not very useful (exponential space, random perturbations) but basis of heuristic variants used in practice 
+best provable: $2^{n + o(n)}$ (sieving by averages)
+heuristic state of the art: $(3/2)^{n/2 + o(n)} \approx 2^{0.29n}$ 
 
-  % add timeline?
-  \begin{chronology}[5]{2000}{2021}{3ex}[\textwidth]
-    \event{2001}{$2^{\mathcal{O(n)}}$ time and space \cite{AKS01}}
-    \event{2004}{$2^{16n}$ time and $2^{8n}$ space \cite{Reg}}
-    \event{2004}{$2^{16n}$ time and $2^{8n}$ space}
-    \event{\decimaldate{25}{12}{2001}}{three}
-  \end{chronology}
+combinarial: create list of short random (possibly non-lattice) vectors, try to combine vectors in list to produce short lattice vectors
+provable versions not very useful (exponential space, random perturbations) but basis of heuristic variants used in practice 
 
-
-- Micciancio-Voulgaris Algorithm uses voronoi cell \cite{MV10} in $4^{n + o(n)}$ time and $2^{n+o(n)}$ space
 
 - discrete Gaussian sampling \cite{ADRS15}
 % TODO insert a table and reference somewhere else? Warum notwendig, wie kommt man darauf? ... alg laufen lassen, extrapolieren...
+
+
+- Micciancio-Voulgaris Algorithm - Voronoi-cell algorithm \cite{MV13} in $4^{n + o(n)}$ time and $2^{n+o(n)}$ space
+
+\begin{figure}
+  \begin{chronology}[5]{2000}{2021}{3ex}[\textwidth]
+    \event{2001}{AKS sieve $2^{\mathcal{O(n)}}$ time and space \cite{AKS01}}
+    \event{2010}{List sieve in $2^{3.2n}$ time and $2^{1.33n}$ space \cite{MV10}}
+    \event{2013}{Voronoi cell $2^{2n}$ time and $2^{n}$ space \cite{MV13}}
+    \event{2014}{Gaussian sampling $2^{n}$ time and space \cite{ADRS14}}
+  \end{chronology}
+  \caption{Provable Algorithms for SVP}
+\end{figure}
+
+\begin{table}
+  \centering
+  \begin{tabular}{ccc}
+    \toprule
+    Name & Reference & Cost model \\\hline
+    Q-Core-Sieve & \cite{Laa15,ADPS16} & $2^{0.265n}$\\
+    Q-Core-Sieve + O(1) & \cite{SAL+17} & $2^{0.265n + 16}$\\
+    Q-Core-Sieve (min space) & \cite{SHRS17} & $2^{0.2975n}$\\
+    Q-$\beta$-Sieve & \cite{NAB+17} & $n \cdot 2^{0.265n}$\\
+    Q-$8d$-Sieve & \cite{BAA+17} & $8d \cdot 2^{0.265n + 16.4}$\\
+    Core-Sieve & \cite{BDGL16,ADPS16} & $2^{0.292n}$\\
+    Core-Sieve + O(1) & \cite{SAL+17} & $2^{0.292n + 16}$\\
+    Core-Sieve (min space) & \cite{SHRS17} & $2^{0.368n}$\\
+    $\beta$-Sieve & \cite{NAB+17} & $n \cdot 2^{0.292n}$\\
+    $8d$-Sieve & \cite{DTGW17} & $8d \cdot 2^{0.292n + 16.4}$\\
+    Q-Core-Enum + O(1)& \cite{SHRS17, APS15, Chen13,ACDDPPVW18} & $2^{(0.18728n \log n - 1.0192 n + 16.1)/2}$\\
+    Lotus (Enum)& \cite{PHAM17, ACDDPPVW18} & $2^{0.125n \log n - 0.755 n + 2.254}$\\
+    Core-Enum + O(1)& \cite{SHRS17, APS15, Chen13,ACDDPPVW18} & $2^{0.18728n \log n - 1.0192 n + 16.1}$\\
+    $8d$-Enum (quadratic fit) + O(1) & \cite{BC0V17} & $8d \cdot 2^{0.000784 n^2 + 0.366 n + 0.875}$\\
+    FastEnum & \cite{ABFKSW20} & $2^{0.125k \log k}$\\
+    FastEnum + O(1)& \cite{ABFKSW20} & $2^{0.125k \log k - 0.050k + 56}$ \\
+    Q-FastEnum & \cite{ABFKSW20} & $2^{0.0625 k \log k}$ 
+    \bottomrule
+  \end{tabular}
+  \caption{Cost Models Overview} % TODO: cite? from estimate all the?
+  \label{tab:Ergebnisse}
+\end{table}
 
 
 
