@@ -260,7 +260,7 @@
 \chapter{Preliminaries} \label{chap:Preliminaries}
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. Unless specified otherwise, $\| \cdot \|$ is the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$. With a slight abuse of notation, we interchangably use matrices and sets of column vectors, i.e. $\mathbf{M} = \left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. 
+In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.  
 % TODO: anything else? Inner product, negation in ring
 
 
@@ -321,7 +321,7 @@ Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the followi
 
 
 
-\subsection{lattice}
+\subsection{Lattices}
 - background and history: example from lecture -> change % TODO: from lecture -> change!!!
 
   * Birhoff [Bir40]
@@ -522,14 +522,10 @@ Other Notes: %TODO
   * eher die Sachen für LWE/SIS als die Sachen für Algorithmen (analog Vorlesung), evtl. 
   
   Intuition für die anderen Sachen...
-  Solving SVP with approximation factors: % where to put???
-        - 1 => NP-hard \cite{Ajt98}
-        - $\tilde{O}(n)$ => OWF \cite{Ajt96, MR04}
-        - $2^{n \log \log n / \log n}$ and $2^{n/2}$ in Poly-time \cite{LLL82}
-        => best known $2^k$-approx in $2^{\tilde{O}(n/k)}$ time (even quantum!)
 
 
-\subsection{distributions}
+
+\subsection{Distributions}
 
   - Gaussian, def, component-wise, trafo to bound % TODO: GPV08, or LS15
 
@@ -570,10 +566,10 @@ Other Notes: %TODO
 
 
 
-\section{LWE and SIS}
+\section{Two Important Problems}
 Applications: SIS can be used for one-way functions and collision-resistant hasing. LWE can be used to build pseudo-random number generators, public-key encryption schemes and oblivious transfer and secure MPC. Lattice Trapdoors (trapdoor functions, digital signatures)? Punctured Trapdoors (identity-based encryption, attribute-based encryption, predicate encryption)? % TODO: from https://www.youtube.com/watch?v=LlPXfy6bKIY see below for more detail
 
-\subsection{LWE}
+\subsection{Learning with Errors (LWE)}
 Following based on \cite{Reg10}:% TODO: change or quote 
 
 Introduced by Regev in \cite{Reg09}
