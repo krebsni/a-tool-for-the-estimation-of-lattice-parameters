@@ -11,7 +11,7 @@ Problem: usually ugly basis (long vectors...), we want a better basis with short
 % TODO possibly put Gram-Schmidt orthogonalization here? => Size reduction algorithm and HKZ reduction, see 2.4.1 in Chen13, not sure if needed
 - measure quality of basis: Hermite factor  % TODO change or \cite{Reg10}
 
-  * basis $\mathbf{B} = \left\{\mathbf{b}_1, \ldots, \mathbf{b}_m\right\}$, $m$-dimensional lattice $\Lambda(\mathbf{B})$ has Hermite factor $\delta$ if
+  * basis $\mathbf{B} = \left\{\mathbf{b}_1, \ldots, \mathbf{b}_m\right\}$, $m$-dimensional lattice $\Lambda(\mathbf{B})$ has root Hermite factor $\delta$ if
   \begin{equation} \label{eq:hermite}
     \| \mathbf{b}_1 \| \approx \delta^m \det(\Lambda)^{1/m}
   \end{equation}
@@ -25,9 +25,9 @@ Problem: usually ugly basis (long vectors...), we want a better basis with short
     with $\prod_{i-1}^m \| \tilde{\mathbf{b}}_i \| = \det(\Lambda)$ we get 
     \begin{align*}
       &\quad& \prod_{i-1}^m \| \tilde{\mathbf{b}}_i \| &\approx \prod_{i-1}^m \alpha^{i-1} \delta^m \det(\Lambda)^{1/m} \\
-      \Leftrightarrow&\quad& \det(\Lambda) &\approx \delta^{2m} \det(\Lambda) \prod_{i-1}^m \alpha^{i-1}\\
-      \Leftrightarrow&\quad& \delta^{-m^2}  &\approx \alpha^{\frac{m(m-1)}{2}}\\
-      \Leftrightarrow&\quad& \delta^{-2}  &\approx \alpha^{(m-1)/m}\\
+      \iff&\quad& \det(\Lambda) &\approx \delta^{2m} \det(\Lambda) \prod_{i-1}^m \alpha^{i-1}\\
+      \iff&\quad& \delta^{-m^2}  &\approx \alpha^{\frac{m(m-1)}{2}}\\
+      \iff&\quad& \delta^{-2}  &\approx \alpha^{(m-1)/m}\\
     \end{align*}
     Hence, $alpha \approx \delta^{-2}$ and 
     \begin{equation}
@@ -54,7 +54,7 @@ A $\delta$-LLL reduced basis ensures two criterias \cite{LLL82}:
   \item Lovász condition: $\delta \| \tilde{\mathbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\mathbf{b}}_i + \tilde{\mathbf{b}}_{i+1} \|^2$ for $1\leq i < n$
 \end{enumerate}
 
-Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \frac{\left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle}{\left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle}$. The LLL algorithm shown in \cref{alg:LLL} follows the notation in \cite{LLLReg04}. We start by computing the Gram-Schmidt orthogonalization of the input basis (\cref{alg:LLL-start}) and continue with a reduction step in which we update every basis vector $\mathbf{b}_i$ by pairwisely comparing and subtracting lower indexed basis vector just as in the Lagrange reduction (\cref{alg:LLL-red}) to ensure Criteria \ref{size-red}. Finally, vectors violating the Lovász condition are swapped (\cref{alg:LLL-swap}ff) and the process is repeated until nothing changes. The LLL algorithm can be used to find short vectors of at most $2^{n/2} \lambda_1(\Lambda)$ in polynomial time. Several floating-point variants have been suggested that can significantly speed up the runtime of LLL. For example, L$^2$ runs in $O\mathcal{O}(n^2 \log^2 B)$, where $B$ is a bound on the norm of the input basis vectors \cite{NS05}. % TODO: newer versions?
+Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \frac{\left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle}{\left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle}$. The LLL algorithm shown in \cref{alg:LLL} follows the notation in \cite{LLLReg04}. We start by computing the Gram-Schmidt orthogonalization of the input basis (\cref{alg:LLL-start}) and continue with a reduction step in which we update every basis vector $\mathbf{b}_i$ by pairwisely comparing and subtracting lower indexed basis vector just as in the Lagrange reduction (\cref{alg:LLL-red}) to ensure Criteria \ref{size-red}. Finally, vectors violating the Lovász condition are swapped (\cref{alg:LLL-swap}ff) and the process is repeated until nothing changes. The LLL algorithm can be used to find short vectors of at most $2^{n/2} \lambda_1(\Lambda)$ in polynomial time. Several floating-point variants have been suggested that can significantly speed up the runtime of LLL. For example, L$^2$ runs in $\mathcal{O}(n^2 \log^2 B)$, where $B$ is a bound on the norm of the input basis vectors \cite{NS05}. % TODO: newer versions?
 
 \begin{algorithm2e}
 \SetKwBlock{Begin}{function}{end function} % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
@@ -76,7 +76,7 @@ Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \frac{\left
     Return $\mathbf{B}$\\
   }
 }
-\caption{The $\delta$-LLL Algorithm} \label{alg:LLL}
+\caption{The $\delta$-LLL Algorithm \cite{LLL82}} \label{alg:LLL}
 \end{algorithm2e}
 
 
@@ -135,7 +135,7 @@ Local preprocessing increases the quality of the current block basis by recursiv
 % - practical floating point version of LLL \cite{SE91} best practical results 
 
 It is difficult to find hard runtime bounds for BKZ. The upper bound on the number of rounds is superexponential in the dimension $n$ for a fixed block size \cite{HPS11a, GN08b} before BKZ terminates by itself. In addition, calls to the SVP oracle is called in all dimensions $k' \leq k$ must be taken into account. 
-\citet{APS15} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$. The value $\rho$ is set to $8$ in the \textit{Estimator} based on experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds. 
+Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$ \citet{APS15}. The value $\rho$ is set to $8$ in the \textit{Estimator} derived from experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds. 
 
 % TODO: include? \cite{LP11} runtime according Linder-Peikert model, GSA: suggest $t_{\text{BKZ}}=1.8/\log_2{\delta} - 110$
 
@@ -155,12 +155,13 @@ Enumeration aims to find the shortest vector by enumerating all lattice vectors 
 The low memory cost of enumeration is due to its similarities to depth-first search. 
 
 A very early but very efficient variant was suggested by \citet{Kan83} with a worst-case runtime of $2^{\mathcal{O}(k \log k)}$. BKZ$_k$ using Kannan's enumeration algorithm as SVP oracle yields a short lattice vector of norm $\approx (k^{1/(2k)})^n\cdot \text{Vol}(\Lambda)^{1/n}$ \cite{HS07, ABFKSW20}. % TODO check if n or m
+% TODO: write sth about root hermite factor, ... for the next sections or change next sections
 
 In \cite{Chen13, ABFKSW20} we find a more concrete cost model of $\text{poly}(n) \cdot 2^{1/(2e) k \log k + - 0.995 k + 16.25}$ for BKZ 2.0 (see \cref{sec:BKZ}), where $\text{poly}(n)$ is the number of calls to the enumeration subroutine. BKZ 2.0 achieves a  root Hermite factor of $\left(\frac{k}{2\pi e} \cdot (\pi k)^{1/k}\right)^{\frac{1}{2(k-1)}}$. 
 
 % TODO add to BKZ variants!!! => extended preprocessing and relaxing of search radius, 
 % also add G6K (General Sieve Kernel) from ADHKPS19 (see more in sieving), running time of 2^Theta(k) but also 2^Theta(k) memory
-\citet{ABFKSW20} incorporate an idea called ``extended preprocessing'' and obtain a root Hermite factor of $k^{\frac{1}{2k}(1 + o(1))}$ in $\text{poly}(n) \cdot 2^{0.125k \log k - 0.050k + 56}$ time. The corresponding quantum algorithm reduces the runtime to $k^{k/16 + o(k)}$. In extended preprocessing, instead of preprocessing the current projected basis block of size $k$, the BKZ-reduction is applied to a block of higher dimension $\lceil (1+c)\cdot k\rceil$ for some constant $c$. Enumeration is faster on the first basis vectors as their Gram-Schmidt norms closely follow the Geometric Series Assumption \cite{MW16}. % TODO: move to BKZ ??? And perhaps switch BKZ with this section?
+The FastEnum algorithm in \citet{ABFKSW20} incorporates an idea called ``extended preprocessing'' and achieves a root Hermite factor of $k^{\frac{1}{2k}(1 + o(1))}$ in $\text{poly}(n) \cdot 2^{0.125k \log k - 0.050k + 56}$ time. The corresponding quantum algorithm reduces the runtime to $k^{k/16 + o(k)}$. In extended preprocessing, instead of preprocessing the current projected basis block of size $k$, the BKZ-reduction is applied to a block of higher dimension $\lceil (1+c)\cdot k\rceil$ for some constant $c$. Enumeration is faster on the first basis vectors as their Gram-Schmidt norms closely follow the Geometric Series Assumption \cite{MW16}. % TODO: move to BKZ ??? And perhaps switch BKZ with this section?
 
 A tradeoff of runtime and success probability for ``relaxing'' the approximation and extreme pruning turns out to exponentially speed up the search \cite{LN20} and was combined with extended preprocessing in \cite{ABFKSW20} to further reduce the runtime of BKZ to $\text{poly}(n) \cdot 2^{0.125k \log k - 0.654k + 25.84}$ for a root Hermite factor of $k^(1/(2k))$. 
 
@@ -306,7 +307,7 @@ TODO: small section about use in tool... \cref{tab:costmodels} provides an overv
   \label{tab:costmodels}
 \end{table} % TODO: add to tool, maybe change 8d thing to an optional parameter!!! => reduces number of lists, throw out silly ones...
 % TODO reference in text
-
+% TODO: add description of "core"
 
 
 \section{Algorithms for Solving LWE}
@@ -318,7 +319,8 @@ then test whether $\langle \mathbf{v}, z \rangle$ is close to zero mod q. If uni
 advantage an computational effort need to be balanced (often inverse distinguising advantage is in total cost of attack)
 
 \subsubsection{Dual Attacks}
-rewrite LWE as the problem of finding short vector in dual lattice => SIS
+reduce LWE to SIS
+recover secret vector by finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$ generated by the rows of $\mathbf{A}$ and scaled by q.
 \subsubsection{Primal Attacks}
 
 lattice reduction algorithms solve SIS and BDD 
@@ -337,34 +339,28 @@ very memory expensive (often same order as time complexity)
 
 
 \subsection{BKW \cite{BKW03}}
+The Blum, Kalai and Wasserman (BKW) algorithm was originially designed to solve the Learning Parity with Noise problem (LPN) \cite{BKW03}. In \cref{sec:lwe} we pointed out that LPN is a subproblem of LWE and Albrecht \textit{et al.} adapted BKW to LWE in \cite{ACFFP15a}. The runtime and memory complexity of BKW is in $2^{\mathcal{O}(n)}$ for an LWE instance with secret dimension $n$ prime modulus $q \in \text{poly}(n)$. The number of samples $m$ must be sufficiently large (in $\mathcal{O}(n \log n)$). % TODO check number of samples, APS15 say they need unrestricted access to LWE oracle
+% TODO: 
 
-- BKW by Blum, Kalai and Wasserman \cite{BKW03} to solve Learning Parity with Noise problem (LPN), subproblem of LWE
-- applied to LWE in \cite{ACFFP15a} (original paper appeared in 2013)
-- time and space complexity $2^{\mathcal{O}(n)}$ for LWE with prime modulus $q \in \text{poly}(n)$ % TODO check n or m 
-- Various improvements have been suggested since. For example, \cite{AFFP14} and \cite{KF15} use modulus switching for binary-LWE and other small secret variants \cite{AFFP14} and \cite{DTV15} applies multidimensional Furier transformations. % TODO define binary LWE \cite{AFFP14} and find others, what is modulus switching, how do they apply FFT?
+BKW falls into the regime of dual attacks, that is, it solves LWE by finding a short vector $\mathbf{s}$ in the scaled dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$. 
 
-modified BKW step -> coded-BKW step to cancel out more positions in the $\mathbf{a}$ vectors than traditional BKW step
+% TODO: not sure if lattice vectors are only in Z_q^m (according to APS15), TODO: how exactly is BKW in the dual lattice? intuition missing... if it uses SIS strategy, maybe consider using it for solving SIS? problem: number of samples?
 
-map part of $\mathbf{a}$ vector into nearest codeword in lattice code (linear code over $\mathcal{Z}_q$, Euclidean distance)
+three stages \cite{ACFFP15a}: sample reduction, hypothesis testing and back substitution
 
-introduces some noise, can be kept small by appropriate parameters
+\paragraph{Sample Reduction.} In the following, we present an outline of the main BKW algorithm. The steps in \cref{alg:BKW} are inspired by the textual description in \cite{GJS15} with minor adjustments in notation. 
 
-pair of $\mathbf{a}$ vectors map to same codeword => add together to create new sample with part of $\mathbf{a}$ vector cancelled
+% TODO: preprocessing: need secret distribution that follows error distribution? \cref{sec:lwe-decoding}
 
-samples are input to next step in BKW procedure
-
-additional steps using discrete FFT
-
-slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^n$) greatly increases performance
 
 \begin{algorithm2e}
 \SetKwBlock{Begin}{function}{end function}
-\Begin($\text{BKW} {(}\mathbf{A},\mathbf{z}, t{)}$)
+\Begin($\text{BKW} {(}\mathbf{A} \in \mathbb{Z}^{n\times m},\mathbf{z} \in \mathbb{Z}^m, b \in \mathbb{Z}, d\in \mathbb{Z}{)}$)
 {
   $i = 1$\\
   $\mathbf{A}^{(i)} = \mathbf{A}$\\
   $\mathbf{z}^{(i)} = \mathbf{z}$\\
-  \While{the last $t$ coefficients of the columns of $\mathbf{A}^{(i)}$ are nonzero}{ % TODO
+  \While{the last $n-d$ coefficients of the columns of $\mathbf{A}^{(i)}$ are nonzero}{ % TODO
     // BKW step\\
     $j = 1$\\
     $\mathbf{T}^{(i)} = []$ \Comment Collision table\\
@@ -394,17 +390,36 @@ slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^
     $i = i + 1$\\
     // Calculate input for next BKW step\\
     $\mathbf{A}^{(i)} = (\mathbf{a}_1^{(i)} \cdots \mathbf{a}_{j-1}^{(i)})$\\
-    $\mathbf{z} = (z_1^{(i)}, \ldots, z_{j-1}^{(i)})$\\
+    $\mathbf{z}^{(i)} = (z_1^{(i)}, \ldots, z_{j-1}^{(i)})$\\
   }
+  Return $(\mathbf{A}^{(i)}, \mathbf{z}^{(i)})$
 }
-\caption{BKW}\label{alg:BKW}
+\caption{BKW (Sample Reduction)}\label{alg:BKW}
 \end{algorithm2e} % TODO check
 
-In the following, we present an outline of the original BKW algorithm. The steps in \cref{alg:BKW} are inspired by the textual description in \cite{GJS15} with minor adjustments in notation. 
+For the algorithm, we use the matrix notation of LWE as in \cref{eq:lwe-decoding}, i.e. $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}$. BKW consists of a series of BKW steps that iteratively reduce the dimension of input matrix $\mathbf{A}$ by finding collisions of its column vectors in the currently examined block of $b$ entries. We start from the last $b$ entries of $\mathbf{A}^{(1)} = \mathbf{A}$. In every step $i$, we maintain a collision table $\mathbf{T}^{(i)}$ and loop over the columns $\mathbf{a}_k^{(i)}$ of $\mathbf{A}^{(i)}$ and distinguish between the following cases: (1) If $\mathbf{a}_k^{(i)}$ only has zero entries in the examined block, pass $\mathbf{a}_k^{(i)}$ and $z_k^{(i)}$ to the next step, (2) if no match of $\mathbf{a}_k^{(i)}$ or the negation of $\mathbf{a}_k^{(i)}$ can be found in the collision table, add $\mathbf{a}_k^{(i)}$ to the colission table, and (3) if a match $\mathbf{a}_l^{(i)}$ is found, compute $\mathbf{a}_l^{(i)} + \mathbf{a}_k^{(i)}$ or in the case of a negation match $\mathbf{a}_l^{(i)} - \mathbf{a}_k^{(i)}$ (in $\mathbb{Z}_q$) such that the last $b$ nonzero entries cancel out. By exploiting the symmetry of $\mathbb{Z}_q$ in this way, in every step we obtain at most $(q^b - 1)/2$ columns with distinct coefficients in the current $b$ entries. We also make note of ``observed symbols'' $z_j^{(i)}$ that represent the combination of two samples given their respective matching columns (see lines \ref{alg:BKW-z1}, \ref{alg:BKW-z2} for more details). 
 
-For the algorithm, we use the matrix notation of LWE as in \cref{eq:lwe-decoding}, i.e. $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}$. BKW consists of a series of BKW steps that iteratively reduce the dimension of input matrix $\mathbf{A}$ by finding collisions of its column vectors in the currently examined block of $b$ entries. We start from the last $b$ entries of $\mathbf{A}^{(1)} = \mathbf{A}$. In every step $i$, we maintain a collision table $\mathbf{T}^{(i)}$ and loop over the columns $\mathbf{a}_k^{(i)}$ of $\mathbf{A}^{(i)}$ and distinguish between the following cases: (1) If $\mathbf{a}_k^{(i)}$ only has zero entries in the examined block, pass $\mathbf{a}_k^{(i)}$ and $z_k^{(i)}$ to the next step, (2) if no match of $\mathbf{a}_k^{(i)}$ or the negation of $\mathbf{a}_k^{(i)}$ can be found in the collision table, add $\mathbf{a}_k^{(i)}$ to the colission table, and (3) if a match $\mathbf{a}_l^{(i)}$ is found, compute $\mathbf{a}_l^{(i)} + \mathbf{a}_k^{(i)}$ or in the case of a negation match $\mathbf{a}_l^{(i)} - \mathbf{a}_k^{(i)}$ (in $\mathbb{Z}_q$) such that the last $b$ nonzero entries cancel out. By exploiting the symmetry of $\mathbb{Z}_q$ in this way, in every step we obtain at most $(q^b - 1)/2$ columns with distinct coefficients in the current $b$ entries. We also make note of ``observed symbols'' $z_j^{(i)}$ that represent the combination of two samples given their respective matching columns (see lines \ref{alg:BKW-z1}, \ref{alg:BKW-z2} for more details).
+In each BKW step, the number of columns (and samples) decreases by at least $(q^b - 1)/2$ (size of the colusion set) and the variance of the error distribution $\sigma^2$ increases by a factor of two. The algorithm terminates after $t = \lceil b / (n - d)\rceil$ steps returns a a set of observed symbols $\mathbf{z}^{(t)}$ and a corresponding reduced matrix $\mathbf{A}^{(t)}$ in which only the first $d$ rows have nonzero entries. Parameter $d$ should be set to $1$, as in the original BKW algorithm, or $2$ for the best performance \cite{ACFFP15a}.
 
-In each BKW step, the number of columns (and samples) decreases by at least $(q^b - 1)/2$ (size of the colusion set) and the variance of the error distribution $\sigma^2$ increases by a factor of two. Once the number of remaining nonzero rows of $\mathbf{A}$ is small enough, the remaining part of the secret vector $\mathbf{s}$ is guessed. A hypothesis test ensures that the remaining samples follow a Gaussian with noise $2^t\cdot \sigma^2$, where $t$ is the number of steps. Finally, back substitution is applied to obtain the complete secret vector $\mathbf{s}$. % TODO more detail? see DTV15
+The remaining part $\mathbf{s}'$ of the secret vector $\mathbf{s}$ is then guessed by means of hypothesis testing. After $t$ steps the error term $\left(\mathbf{z}_j^{(t)} - \left\langle \mathbf{s}', \mathbf{a}_j^{(t)}\right\rangle\right)$ with $j \in [m']$ of the $m'$ remaining observed symbols follows a Gaussian distribution $\chi$ with noise $\sigma'^2 = 2^t\cdot \sigma^2$ (see Lemma 1 in \cite{ACFFP15a}). % TODO: Lemma: Let $X_0, \dots, X_{m-1}$ be independent random variables with $X_i \tilde \mathcal{N}(\mu, \sigma^2)$. Then their sum $X = \sum_{i=0}^{m-1} X_i$ is distributed according to $\mathcal{N}(m\mu, m\sigma^2)$.
+We can test the noise of the error term for all $\mathbf{s}'' \in \mathbb{Z}_q^d$ against the hypothesized noise  $\sigma'^2$ by means of the log-likelihood ratio (for details we again refer to \cite{ACFFP15a}) and are thus able to determine $\mathbf{s}'$ given sufficiently many samples $m'$. 
+
+Finally, we can apply back substitution to recover all elements of $\mathbf{s}$. We again apply a similar procedure as in \cref{alg:BKW} to reduce a number of columns from the colission tables computed in the Sample Reduction step and obtain $m'$ columns with $d+d'$ nonzero entries and their corresponding ``observed symbols''. We then substitute the part of $s$ that was recovered in the previous steps and recover the next part of $\mathbf{s}$ by hypothesis testing and repeat the process until we have found $\mathbf{s}$. 
+
+% TODO: runtime complexity change to APS15 Theorem 3, 4 (DTV15) or Cor 4, or try to take complexity from GSJ15
+\begin{theorem}[BKZ Complexity \cite{ACFFP15a}, Corollary 2]
+  Let $(\mathbf{a}_i, z_i)$ be samples following $\mathcal{A}_{\mathbf{s}, \chi}$, set $a = \lfloor \log_2(1/(2\alpha)^2)\rceil$, $b = n/a$ and $q$ a prime. Let $d$ be a small constant $0 < d < \log_2(n)$. Assume $\alpha$ is such that $q^b = q^{n/a} = q^{n/\lfloor \log_2(1/(2\alpha)^2)\rceil}$ is superpolynomial in $n$. Then, given these parameters the cost of the BKW algorithm to solve Search-LWE is 
+  \begin{equation}\label{eq:BKZ-complexity}
+    \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil(\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil(\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
+  \end{equation}
+  operations in $\mathbb{Z}_q$. Furthermore,
+  \begin{equation}
+    a \cdot \left\lceil(\frac{q^b}{2}\right\rceil + \text{poly}(n)\textit{ calls to } \mathcal{A}_{\mathbf{s}, \chi}\textit{ and storage of }  \left(a \cdot \left\lceil(\frac{q^b}{2}\right\rceil \cdot n\right) \textit{ elements in } \mathbb{Z}_q \textit{ are needed.}
+  \end{equation}
+\end{theorem}
+
+The first summand of \cref{eq:BKZ-complexity} roughly corresponds to the cost of creating the colission tables and the second summand is the cost of backsubstitution. For a more detailed cost analysis, see Theorem 2 in \cite{ACFFP15a}.
+
 
 \subsubsection*{Coded-BKW \cite{GJS15}}
 - change BKW step -> more column entries are removed, but additional noise
@@ -412,10 +427,29 @@ In each BKW step, the number of columns (and samples) decreases by at least $(q^
 - step $i$: $I$ set of $b$ positions to be removed, fix some $q$-ary linear $\left[N_i, b\right]$ code $\mathcal{C}_i$ with $q^b$ codewords, find the closest codeword $\mathbf{c}_I \in \mathcal{C}$ for every input vector $\mathbf{a}_I$ such that $\mathbf{a}_I = \mathbf{c}_I + \mathbf{e}_I$, where the error part $\mathbf{e}_I \in \mathbb{Z}_q^{N_i}$ is minimized by a decoding procedure.
 
 Finally, we subtract two vectors and their correpsonding samples and pass the result to the next BKW step. Consider the inner product$\left\langle \mathbf{s}_{I}, \mathbf{a}_{I} \right\rangle = \left\langle \mathbf{s}_{I}, \mathbf{c}_{I} \right\rangle + \left\langle \mathbf{s}_{I}, \mathbf{e}_{I} \right\rangle$. In the subtraction, only the error part $\left\langle \mathbf{s}_{I}, \mathbf{e}_{I} \right\rangle$ remains. 
+
 % TODO
+% TODO: cost estimate??? too complex to include here...
 
-% TODO: pre/post-processing
 
+
+
+% - Various improvements have been suggested since. For example, \cite{AFFP14} and \cite{KF15} use modulus switching for binary-LWE and other small secret variants \cite{AFFP14} and multidimensional Furier transformations can be used to speed up operations \cite{DTV15}. % TODO define binary LWE \cite{AFFP14} and find others, what is modulus switching, how do they apply FFT?
+% lazy modulus switching \cite{KF15}: modulus is switched from $q$ to some $p<q$ and each coefficient $x$ of vectors to be compared is set to $xp/q \in $\mathbf{Z}_p$. We obtain an additional error term, but the number of vectors needed in a block is reduced from $q^b$ to $p^b$. The modulus switching can be applied in each step with decreasing $p$ as the error term due to the standard BKW cancel operations increases and thus allows for a larger additional error term.
+
+% modified BKW step -> coded-BKW step to cancel out more positions in the $\mathbf{a}$ vectors than traditional BKW step
+
+% map part of $\mathbf{a}$ vector into nearest codeword in lattice code (linear code over $\mathbb{Z}_q$, Euclidean distance)
+
+% introduces some noise, can be kept small by appropriate parameters
+
+% pair of $\mathbf{a}$ vectors map to same codeword => add together to create new sample with part of $\mathbf{a}$ vector cancelled
+
+% samples are input to next step in BKW procedure
+
+% additional steps using discrete FFT
+
+% slightly modified for BINARY-LWE (secret vector uniformly chosen from $\{0, 1\}^n$) greatly increases performance
 
 
 
@@ -505,8 +539,6 @@ It should be evident that a lower quality of the reduced input basis can be comp
 
 
 \subsection{Primal-uSVP \cite{ADPS16, BG14}} % => AFG14, Kan87
-% TODO: describe BKZ 2.0?
-
 % TODO: taken from ADPS16, change
 BKZ: reduce lattice basis using SVP oracle in smaller dimension $b$, known that number of calls to oracle polynomial
 - enumeration algorithm as oracle: in super-exponential time
@@ -559,6 +591,7 @@ Let $\mathbf{v}$ be a solution to SVP$_\kappa^2$, i.e. $\|\mathbf{v}\| \leq \kap
 
 
 \subsection{Meet-in-the-Middle \cite{APS15}}
+% simple description in AFFP14 sec 6
 
 
 
@@ -568,16 +601,115 @@ Let $\mathbf{v}$ be a solution to SVP$_\kappa^2$, i.e. $\|\mathbf{v}\| \leq \kap
 
 
 \section{Algorithms for Solving SIS}
-\subsection{Dual Attack \cite{MR09, RS10}}
-% TODO: checkout 
-\subsubsection{MR variant \cite{MR09}}
+Recall that the SIS$_{n, q, m, \beta}$ problem asks to find a short vector $\mathbf{s} \in \mathbb{Z}_q^m$ of norm $\|\mathbf{s}\| \leq \beta$ such that such that $\mathbf{A} \cdot \mathbf{s} = 0 \; \text{mod } q$ for some uniformly distributed matrix $\mathbf{A}^{n\times m}$. Solving SIS is equivalent to finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$. 
+
+
+\subsection{Lattice Reduction \cite{MR09, RS10}}
+\subsubsection{MR variant \cite{MR09}} \label{sec:mr-variant}
+Our first approach to solving SIS follows quite naturally. Given $\mathbf{A}$, we can efficiently compute the basis $\mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ of the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ in polynomial time using Gauss-Jordan elimination or other more modern algorithms.
+
+We can then apply a lattice reduction algorithm and obtain a basis with root Hermite factor $\delta$. The first basis $\mathbf{b}_1$ vector of the reduced basis has length $\|\mathbf{b}_1\| = \delta^m \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp})^{1/m}$. We can see that $\delta$ depends on the subdimension $m$ which we want to be ideal in order to minimize the cost of the lattice reduction by relaxing $\delta$. 
+
+We further assume that $\text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = \text{Vol}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = q^n$ (see \cite{MR09} for more details). For $q$ prime and $m$ much larger than $n$ we have that the rank of $\mathbf{A}$ is $n$ as the rows of $\mathbf{A}$ are with high probability linearly independent. The nullity or the dimension of the kernel of $\mathbf{A}$ is $m-n$ and as a result the dual lattice has $q^{m-n}$ points in $\mathbb{Z}_q^m$. Consider the fundamental domain $D = \mathcal{P}(\Lambda(\mathbf{A}^\intercal)^{\perp})$ and the fact that $\Lambda(\mathbf{A}^\intercal)^{\perp} + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda(\mathbf{A}^\intercal)^{\perp}||D \mod q|$ and thus
+\begin{equation}
+  \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = |D \mod q| = \frac{q^m}{|\Lambda(\mathbf{A}^\intercal)^{\perp}|} = \frac{q^{m}}{q^{m-n}} = q^n.
+\end{equation}
+
+
+We now have our first equation 
+\begin{equation}\label{eq:mr-delta}
+  \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}},
+\end{equation}
+which becomes minimal for $m = \sqrt{n \log q / \log \delta}$.
+\begin{theorem}[Optimal subdimension $m$ \cite{MR09}]
+  Given a $q$-ary scaled dual lattice  $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm yields an optimal output if performed in subdimension 
+  \begin{equation}
+    m' = \sqrt{\frac{n \log q}{\log \delta}}. \label{eq:mr-m}
+  \end{equation} 
+\end{theorem}
+
+Higher dimension increase the complexity of the reduction algorithms and lower dimensions may cause a lack of sufficiently short lattice vectors \cite{MR09}. In contexts in which \cref{eq:mr-delta} does not hold, we may still choose $m$ as in \cref{eq:mr-m} heuristically. Removing columns from $\mathbf{A}$ does not greatly impact our results since we can just set the corresponding components of the secret vector $s$ to zero. We reformulate \cref{eq:mr-delta} a bit:
+\begin{align}
+  \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}} \iff&\log \beta = m \log \delta + \frac{n \log q}{m}\\
+  \iff&\log \delta = \frac{\log \beta}{m} - \frac{n \log q}{m^2} \label{eq:mr-log-delta}
+\end{align}
+
+We continue by plugging \cref{eq:mr-m} into \cref{eq:mr-log-delta}:
+\begin{align}
+  \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \frac{n \log q}{\left(\sqrt{\frac{n \log q}{\log \delta}}\right)^2} \iff&\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \log \delta\\
+  \iff&2\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}}\\
+  \iff&\log \delta = \frac{\log^2 \beta}{4n \log q}
+\end{align}
+
+\begin{theorem}[Optimal subdimension $m$ \cite{MR09}]
+  Given a $q$-ary scaled dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm performed in its optimal subdimension achieves a log root Hermite factor of  
+  \begin{equation}
+    \log \delta = \frac{\log^2 \beta}{4n \log q}. \label{eq:mr-log-RHF}
+  \end{equation} 
+\end{theorem}
+
+To estimate the cost of the lattice reduction for SIS, we call a function from the \textit{Estimator} to find the required block size $k$ such that BKZ achieves root Hermite factor $\delta$ and apply a cost model with the optimal subdimension $m'$ and block size $k$. 
+% TODO: describe how k is computed?
+
+Note that for LWE we have $\alpha, q$ as input parameters instead of a bound. We can convert $\alpha$ to a required bound $\beta = \frac{1}{\alpha} \sqrt{\ln (\frac{1}{\epsilon})/ \pi}$ such that the success probability of solving an LWE instance is given by $\epsilon$ (Corollary 2 in \cite{APS15}). The \textit{Estimator} uses a rinse and repeat strategy to find the best tradeoff between runtime and success probability.
+
+% TODO: fall unterscheidungen, m' > m oder delta zu klein
+
+
 
 
 
 \subsubsection{RS variant \cite{RS10}}
-"concrete estimates of ``symmetric bit security'', concrete runtime estimates for various Hermite factors in random $q$-ary lattices"
-permissive form of distiguishing attack in \cite{MR09}, adversarial advantage is about $2^{-72}$
+% permissive form of distiguishing attack in \cite{MR09}, adversarial advantage is about $2^{-72}$ \cite{LP11}.
 
+A similar approach is described in \cite{RS10}. The optimal subdimension and required root Hermite factor are given by a slightly different expression. Apart from that the attack works as described in \cref{sec:mr-variant}.
+
+\begin{theorem}[Optimal subdimension $m$ (\cite{RS10}, Conjecture 2)]
+  For every $n \geq 128,$ constant $c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))$ and $\beta < q$, the best known approach to solve SIS with parameters ($n, m, q, \beta$) involves solving $\delta$-HSVP in dimension $m' = \min(x : q^{2n/x} \leq \beta)$ with $\delta = \sqrt{d}{\beta / q^{n/m'}}$.
+\end{theorem}
+
+We reformulate the expression for $m'$
+\begin{align}
+  q^{2n / m'} &\leq \beta \\
+  \frac{2n}{m' \log(q)} &\leq \beta \\
+  m' &\geq \frac{2n \log(q)}{\log(\beta)}
+\end{align}
+and obtain $m' = \left\lceil \frac{2n \log(q)}{\log(\beta)} \right\rceil$. If $m' > m$, we take $m' = m$. 
+
+The root Hermite factor $\delta$ must be larger than $1$ for the reduction to be tractable. From $\delta = \sqrt{d}{\beta / q^{n/m'}} \geq 1$ it follows that we need $m' \geq n \log_2(q) / \log_2(\beta)$. 
+
+% TODO: add some comments
+% TODO: give intuition about the conjecture???
 
 
 \subsection{Combinatorial Attack \cite{MR09}}
+Micciancio and Regev also describe a combinatorial method for solving SIS \cite{MR09}. 
+
+- matrix $\mathbf{A} \in \mathbb{Z}_q^{n \times m}$, dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$, find lattice vector bounded by $b$ in all $m$ coefficients
+
+- $2^k$ sets of column vectors for some $k$, $m/2^k$ columns in each set
+- compute all linear combinations $c_1 \mathbf{b}_1 + \cdots + c_{m/2^k}\mathbf{b}_{m/2^k}$ for column vectors $\mathbf{b}_i$ in each set such that the coefficients are bounded by $b$, i.e. $|c_1| \leq b$ to produce $2^k$ new sets of $l=(2b+1)^{m/2^k}$ vectors % TODO: at most or exactly?
+- combine sets pairwisely: for each vector in first set $\mathbf{x}$ combine with each vector $\mathbf{y}$ in second set, if first $\log_q l$ components in $\mathbf{x} \pm \mathbf{y}$ are zero put in combined set
+- combined sets have size $l$ as $\log_q l$ components $q^{\log_q l}$ values % TODO rewrite
+- now $2^{k-1}$ sets, repeat $k-1$ times => vectors in last result set have zero entries in first $k \log_q l$ components % TODO
+
+Choose $k$ such that 
+\begin{equation}
+  n \approx (k+1) \log_q l = (k+1) \log_q (2b+1)^{m/2^k} \iff \frac{2^k}{k+1} \approx \frac{m \log(2\beta + 1)}{n \log(q)}
+\end{equation}
+- then approximately $\log_q l$ coodinates in result set that are not cancelled out => we should obtain at least one zero vector as at there are most $l$ different vectors
+- zero vector is linear combination with entries bounded by $b$
+
+
+\begin{align}
+  \frac{2^k}{k+1} &\approx \frac{m \log(2\beta + 1)}{n \log(q)}\\
+  \text{diff} &= \text{abs}\left(\frac{2^k}{k+1} - \frac{m \log(2\beta + 1)}{n \log(q)}\right)
+\end{align}
+
+To find an optimal $k$, we iterate over $k$ starting from $k=1$ and calculate the difference $\text{diff}$. When $\text{diff}$ does not decrease for 10 iteration steps, we stop and take the current $k$.
+
+We make a conservative estimate of the cost by estimating the number of operations needed to create the initial lists as the overall cost is dominated by this parameter. Each of the $2^k$ lists contains $L$ vectors. The cost for any operation on a list element is at least $\log_2(q) \cdot n$. Hence, the total cost is $2^k * L * \log_2(q) * n$.
+
+
+
+% TODO maybe change definition of lattice so that we can write A instead of A^\intercal.

@@ -191,7 +191,7 @@ class SIS():
     """
     Namespace for SIS algorithms
     """
-    def _lattice_reduction_rs(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
+    def lattice_reduction_rs(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
         r""" 
         Estimate cost of solving SIS by means of lattice reduction according to :cite:p:`RS10`. Part of this method is based on :py:mod:`lattice_parameter_estimation.estimator.estimator._dual`.
 
@@ -210,9 +210,9 @@ class SIS():
 
         To calculate :math:`\delta_0` we use :cite:p:`RS10` Conjecture 2:
 
-        For every :math:`n \geq 128,` constant :math:`c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))` and :math:`\beta < q`, the best known approach to solve SIS with parameters (:math:`n, m, q, \beta`) involves solving :math:`\delta`-HSVP in dimension :math:`d = \min(x : q^{2n/x} \leq \beta)` with :math:`\delta_0 = \sqrt[d]{\beta / q^{n/d}}`.
+        For every :math:`n \geq 128,` constant :math:`c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))` and :math:`\beta < q`, the best known approach to solve SIS with parameters (:math:`n, m, q, \beta`) involves solving :math:`\delta`-HSVP in dimension :math:`d = \min(x : q^{2n/x} \leq \beta)` with :math:`\delta_0 = \sqrt{d}{\beta / q^{n/d}}`.
 
-        :math:`\delta_0` must be larger than 1 for the reduction to be tractable. From :math:`\delta_0 = \sqrt[d]{\beta / q^{n/d}} \geq 1` it follows that :math:`d \geq n \log_2(q) / \log_2(\beta)`. If :math:`m \leq n \log_2(q) / \log_2(\beta)` a :class:`ValueError` is raised. 
+        :math:`\delta_0` must be larger than 1 for the reduction to be tractable. From :math:`\delta_0 = \sqrt{d}{\beta / q^{n/d}} \geq 1` it follows that :math:`d \geq n \log_2(q) / \log_2(\beta)`. If :math:`d \leq n \log_2(q) / \log_2(\beta)` a :class:`ValueError` is raised. 
 
         :param n: height of matrix
         :param m: width of matrix
@@ -266,9 +266,9 @@ class SIS():
             raise TrivialSolution("beta > q") 
 
 
-    def _lattice_reduction(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
+    def lattice_reduction(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
         r""" 
-        Estimate cost of solving SIS by means of lattice reduction according to section 3.3 of :cite:`APS15` and :cite:`MR09`. Part of this method is based on :py:mod:`lattice_parameter_estimation.estimator.estimator._dual`.
+        Estimate cost of solving SIS by means of lattice reduction according to section 3.3 of :cite:`APS15` and :cite:`MR09`. Part of this method is based on :py:mod:`lattice_parameter_estimation.estimator._dual`.
 
         .. math::
 
@@ -337,8 +337,8 @@ class SIS():
             raise TrivialSolution("beta > q") 
     
 
-    lattice_reduction = est.partial(est.rinse_and_repeat, _lattice_reduction, repeat_select={"m": False})
-    lattice_reduction_rs = est.partial(est.rinse_and_repeat, _lattice_reduction_rs, repeat_select={"m": False})
+    lattice_reduction_ = est.partial(est.rinse_and_repeat, lattice_reduction, repeat_select={"m": False})
+    lattice_reduction_rs_ = est.partial(est.rinse_and_repeat, lattice_reduction_rs, repeat_select={"m": False})
 
 
     def combinatorial(q, n, m, bound, reduction_cost_model=None):
@@ -353,7 +353,7 @@ class SIS():
 
         To find an optimal :math:`k`, we iterate over :math:`k` starting from :math:`k=1` and calculate the difference :math:`\text{diff}`. When :math:`\text{diff}` does not decrease for 10 iteration steps, we stop and take the current :math:`k`.
 
-        We make a conservative estimate of the cost by estimating the number of operations needed to create the initial lists. Each of the :math:`2^k` lists contains :math:`L` vectors. The cost for any operation on a list element is at least :math:`\log_2(q) * n`. Hence, the total cost is :math:`2^k * L * \log_2(q) * n`.
+        We make a conservative estimate of the cost by estimating the number of operations needed to create the initial lists. Each of the :math:`2^k` lists contains :math:`L` vectors. The cost for any operation on a list element is at least :math:`\log_2(q) \cdot n`. Hence, the total cost is :math:`2^k \cdot L \cdot \log_2(q) \cdot n`.
 
         :param n: height of matrix
         :param m: width of matrix
