@@ -1358,7 +1358,7 @@ class SIS(BaseProblem):
             # if "reduction-rs" in config.algorithms:
             #     algs.append({"algname": "lattice-reduction", 
             #                             "cname": cname, 
-            #                             "algf": partial(algorithms.SIS.lattice_reduction, 
+            #                             "algf": partial(algorithms.SIS.lattice_reduction_, 
             #                                             self.n, self.bound.to_L2(self.n).value, 
             #                                             self.q,reduction_cost_model["success_probability"],  
             #                                             self.m, reduction_cost_model=cost_model),
@@ -1369,7 +1369,7 @@ class SIS(BaseProblem):
                 # TODO: implement drop_and_solve and scale variants
                 algs.append({"algname": "lattice-reduction-rs", 
                                         "cname": cname, 
-                                        "algf": partial(algorithms.SIS._lattice_reduction_rs, 
+                                        "algf": partial(algorithms.SIS.lattice_reduction_rs, 
                                                         n=self.n, beta=self.bound.to_L2(self.n).value, q=self.q, success_probability=reduction_cost_model["success_probability"], 
                                                         m=self.m, reduction_cost_model=cost_model),
                                         "prio": 1,
@@ -1377,7 +1377,7 @@ class SIS(BaseProblem):
                                         "inst": self.variant})
                 # algs.append({"algname": "lattice-reduction-rs-rinse", 
                 #                         "cname": cname, 
-                #                         "algf": partial(algorithms.SIS.lattice_reduction_rs,
+                #                         "algf": partial(algorithms.SIS.lattice_reduction_rs_,
                 #                                         self.n, self.bound.to_L2(self.n).value, self.q, reduction_cost_model["success_probability"], 
                 #                                         self.m, reduction_cost_model=cost_model),
                 #                         "prio": 1,
@@ -1386,7 +1386,7 @@ class SIS(BaseProblem):
             if "reduction" in config.algorithms:
                 algs.append({"algname": "lattice-reduction", 
                                         "cname": cname, 
-                                        "algf": partial(algorithms.SIS._lattice_reduction, 
+                                        "algf": partial(algorithms.SIS.lattice_reduction, 
                                                         n=self.n, beta=self.bound.to_L2(self.n).value, q=self.q, success_probability=reduction_cost_model["success_probability"], 
                                                         m=self.m, reduction_cost_model=cost_model),
                                         "prio": 2,

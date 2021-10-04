@@ -270,6 +270,7 @@ In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$
 % TODO: some algebraic background?
 \subsection{Norms and Bounds} % TODO: check
 %TODO: write some prose about why we need that
+% TODO: make sure that it is clear that these are bounds!!!
 Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. We define the following norms \cite{BDLOP18}:
 \begin{align}
   \ell_1 : \| f| \|_1 &= \sum_i |f_i|\\
@@ -443,7 +444,8 @@ Other Notes: %TODO
   * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \mathbf{y} \in \mathbb{R}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle \in \mathbb{Z}\}$
     % TODO: show examples
     scaled-by-$q$ dual lattice:  $\{ \mathbf{y} \in \mathbb{Z}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle = 0 \mod q\}$ % not sure if needed
-    
+    basis of the dual of a lattice with basis $\mathbf{B}$ is $\mathbf{B'} = \mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ % https://cseweb.ucsd.edu/classes/wi12/cse206A-a/LecDual.pdf
+
   * smoothing lemma
 
   * Voronoi region % \cite{GSJ15}
@@ -541,7 +543,7 @@ Other Notes: %TODO
 
     For some applications, we receive a Gaussian distribution as input, but require a bound in some norm in order to estimate the hardness of SIS. Hence, we need to transform the Gaussian width parameter into a bound $\beta$ given some security parameter $\text{sec}$. Note that a $n$-dimensional Gaussian can be sampled by sampling $n$ independent 1-dimensional Gaussians. %TODO reformulate
         
-    For a Gaussian distribution, the following holds: 
+    For a Gaussian distribution, the following holds: % put as theorem, also for norm inequalities
     
     \begin{equation}
       \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \beta^2/s^2}
@@ -566,10 +568,12 @@ Other Notes: %TODO
 
 
 
+
+
 \section{Two Important Problems}
 Applications: SIS can be used for one-way functions and collision-resistant hasing. LWE can be used to build pseudo-random number generators, public-key encryption schemes and oblivious transfer and secure MPC. Lattice Trapdoors (trapdoor functions, digital signatures)? Punctured Trapdoors (identity-based encryption, attribute-based encryption, predicate encryption)? % TODO: from https://www.youtube.com/watch?v=LlPXfy6bKIY see below for more detail
 
-\subsection{Learning with Errors (LWE)}
+\subsection{Learning with Errors (LWE)} \label{sec:lwe}
 Following based on \cite{Reg10}:% TODO: change or quote 
 
 Introduced by Regev in \cite{Reg09}
@@ -593,6 +597,7 @@ Formal Definition:
 
 Additions are performed in $\mathbb{Z}_q$. We say that an algorithm solves LWE with modulus $q$ and error distribution $\chi$ if, for any $\mathbf{s} \in \mathbb{Z}_q^n$, given an arbitrary number of independent samples from $\mathcal{A}_{\mathbf{s}, \chi}$ it outputs $\mathbf{s}$ (with high probability). For $q=2$ corresponds to \textit{learning parity with noise} (LPN) problem. % TODO still needed with Search-LWE\ldots???
 
+% TODO: error distribution => gaussian, paramter alpha, define?
 % TODO matrix Schreibweise vs nicht matrix schreibweise
 % TODO Define Search/Decision LWE? 
 \begin{definition}[Search-LWE$_{n, q, m, \chi}$] % \cite{LP11}
@@ -607,14 +612,14 @@ Additions are performed in $\mathbb{Z}_q$. We say that an algorithm solves LWE w
 % TODO: Einheitsmatrix in notation
 % TODO: notation \mathbf{x} = (x_1, \ldots, x_n) is column vector and  \mathbf{x}^\intercal its corresponding tranpose
 % TODO: add somewhere we assume that m > n
-\subsubsection{LWE as a Decoding Problem}
+\subsubsection{LWE as a Decoding Problem} \label{sec:lwe-decoding}
 We request $m$ samples $(\mathbf{a}_1, z_1), \ldots, (\mathbf{a}_m, z_m)$ where $z_i = \langle \mathbf{a}_i, \mathbf{s} \rangle + e_i \in \mathbb{Z}_q$. Let $A = \left[ \mathbf{a}_1 \cdots \mathbf{a}_m\right]$, $\mathbf{z} = \left[z_1, \ldots, z_m\right]^\intercal$ and $e = \left[e_1, \ldots, e_n\right]^\intercal$. Hence, we can reformulate LWE as a decoding problem as in \cite{GJS15}:
 \begin{equation} \label{eq:lwe-decoding}
   \mathbf{z} =  \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}
 \end{equation} % TODO duplicate???
 with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word. Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$. 
 
-An LWE$_{n, q, m, \chi}$ instance with a secret vector $\mathbf{s}$ chosen according to a uniform distribution can be transformed into an LWE$_{n, q, m-n, \chi}$ instance with a secret vector $\hat{\mathbf{s}}$ chosen according to the error distribution $\chi$ at a loss of $n$ samples as follows: Let $\mathbf{A}_0 = \left[ \mathbf{a}_1 \cdots \mathbf{a}_n\right]$ where $\mathbf{a}_1, \ldots, \mathbf{a}_n$ are the first $n$ columns of $\mathbf{A}$. We introduce new variables $\hat{\mathbf{s}} = \mathbf{A}^\intercal_0 \mathbf{s}  - \left[z_1, \ldots, z_n\right]^\intercal = \left[e_0, \ldots, e_n\right]^\intercal$ and $\hat{\mathbf{A}} = \mathbf{A}_0^{-1} \mathbf{A} = \left[\mathbf{I} \; \hat{\mathbf{a}}_{n+1} \cdots \hat{\mathbf{a}}_{m}\right]$ and compute $\hat{\mathbf{z}} = \mathbf{z} -  \hat{\mathbf{A}}^\intercal \left[z_1, \ldots, z_n\right]^\intercal  = \left[\mathbf{0}, \hat{z}_{n+1} \cdots \hat{z}_{m} \right]^\intercal$. 
+An LWE$_{n, q, m, \chi}$ instance with a secret vector $\mathbf{s}$ chosen according to a uniform distribution can be transformed into an LWE$_{n, q, m-n, \chi}$ instance with a secret vector $\hat{\mathbf{s}}$ chosen according to the error distribution $\chi$ at a loss of $n$ samples as follows: Let $\mathbf{A}_0 = \left[ \mathbf{a}_1 \cdots \mathbf{a}_n\right]$ where $\mathbf{a}_1, \ldots, \mathbf{a}_n$ are the first $n$ columns of $\mathbf{A}$. We introduce new variables $\hat{\mathbf{s}} = \mathbf{A}^\intercal_0 \mathbf{s}  - \left[z_1, \ldots, z_n\right]^\intercal = \left[e_0, \ldots, e_n\right]^\intercal$ and $\hat{\mathbf{A}} = \mathbf{A}_0^{-1} \mathbf{A} = \left[\mathbf{I} \; \hat{\mathbf{a}}_{n+1} \cdots \hat{\mathbf{a}}_{m}\right]$ and compute $\hat{\mathbf{z}} = \mathbf{z} -  \hat{\mathbf{A}}^\intercal \left[z_1, \ldots, z_n\right]^\intercal  = \left[\mathbf{0}, \hat{z}_{n+1} \cdots \hat{z}_{m} \right]^\intercal$. % TODO: where do we need that? maybe move there, cite somewhere \e.g. KF15, ACPS, BLPRS13 classical hardness of learning with errors
 
 % TODO parameter choice: often prime q \in poly(n), \chi has mean zero and \sigma = \alpha \cdot q for some small \alpha, e.g. Regev: q \approx n^2, \alpha = 1/(\sqrt{2\pi n} \cdot \log_2^2 n)
 
@@ -645,6 +650,9 @@ The dual problem to LWE is the \textit{Short Integer Solution problem} (SIS).
 Finding such a vector corresponds to finding a short lattice vector in costets of the lattice $\Lambda^{\perp}(\mathbf{A}) = \{ y \mid \mathbf{A} \cdot y \mod q \}$ % TODO get source other than https://www.youtube.com/watch?v=LlPXfy6bKIY
 
 Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SIS$_{n, q, m, \beta}$ is as hard as worst-case approx-SIVP (and \textsc{GapSVP}) to within $\beta \cdot \tilde{O}(\sqrt{n})$ factor 
+
+% TODO: application, perhaps something as in file:///C:/Users/Nico/OneDrive/Studium/Informatik/6BA/Supplemental%20Material/[BC%20Micciancio]%20The%20Short%20Integer%20Solutions%20Problem%20and%20Cryptographic%20Applications.pdf would be nice
+
 
 \subsection{Ring and Module Variants} 
 - problem key sizes in LWE/SIS in $O(n^2)$ (matrix $\mathbf{A} \in \mathbb{Z}_q^{m \times n})$, where $m \in \Omega(n)$)% TODO change or \cite{Reg10}
@@ -705,7 +713,8 @@ schnellste, beste => effizient, etc. parallel... problem reductions...
 
 \chapter{Usage Examples}
 \section{Two Problem Search}
-basiert auf [BDLOP18]
+% TODO: based on \cite{BDLOP18}
+two problems lwe sis, what they are, how to solve it by the tool
 \section{TODO: find other schemes to apply}
 
 
