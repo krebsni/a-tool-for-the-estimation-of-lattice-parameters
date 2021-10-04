@@ -232,7 +232,7 @@ class SIS():
 
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        if beta < q:
+        if beta < norm.Loo(q/2, n).to_L2().value:
             # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
             # Requirements
             if n < 128 or q < n*n: 
@@ -263,7 +263,7 @@ class SIS():
             return ret.reorder(["rop", "m"])
 
         else: # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q") 
+            raise TrivialSolution(f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})")
 
 
     def _lattice_reduction(n, beta, q, success_probability=None, m=oo, reduction_cost_model=None):
@@ -309,7 +309,7 @@ class SIS():
 
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        if beta < q:
+        if beta < norm.Loo(q/2, n).to_L2().value:
             
             log_delta_0 = log(beta, 2) ** 2  / (4  * n * log(q, 2))
             delta_0 = min(RR(2) ** log_delta_0, RR(1.02190))  # at most LLL
@@ -334,7 +334,7 @@ class SIS():
             return ret.reorder(["rop", "m"])
 
         else: # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q") 
+            raise TrivialSolution(f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})")
     
 
     lattice_reduction = est.partial(est.rinse_and_repeat, _lattice_reduction, repeat_select={"m": False})
@@ -363,7 +363,7 @@ class SIS():
         beta = bound # we need Loo norm
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        elif beta < q:
+        elif beta < norm.Loo(q/2, n).to_L2().value:
             # find optimal k
             k = closest_k = 1
             difference = oo
@@ -390,4 +390,4 @@ class SIS():
             return est.Cost([("rop", cost), ("k", RR(2**k))]) # TODO other information?, return k just as k?
 
         else: # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q")
+            raise TrivialSolution(f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})")

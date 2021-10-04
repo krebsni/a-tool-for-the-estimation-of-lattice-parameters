@@ -133,10 +133,10 @@ def generic_search(sec, initial_parameters, next_parameters, parameter_cost, par
     ignore_all_failed = False
     while parameters:
         current_parameter_set = parameters.pop(0)
-        costs.pop(0)
+        cost = costs.pop(0)
 
         logger.info(SEPARATOR)
-        logger.info(f"Checking next parameter set: {current_parameter_set}") # TODO: print nicely
+        logger.info(f"Checking next parameter set: {current_parameter_set} with cost {cost}") # TODO: print nicely
         
         try:
             if scalar_parameters:

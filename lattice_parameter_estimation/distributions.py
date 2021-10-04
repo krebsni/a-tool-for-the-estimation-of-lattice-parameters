@@ -75,7 +75,11 @@ class Uniform(norm.BaseNorm, Distribution):
 
         :returns: noise rate :math:`\alpha`
         """
-        variance = est.SDis.variance(self._convert_for_lwe_estimator(), q=q, n=self.n)
+        if n is None:
+            n = self.dimension
+            if self.dimension is None:
+                raise ValueError("Dimension must be specified as the object has not be initialized with dimension.")
+        variance = est.SDis.variance(self._convert_for_lwe_estimator(), q=q, n=n)
         return est.alphaf(sqrt(variance), q, sigma_is_stddev=True)
 
     def get_range(self):
@@ -165,7 +169,11 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         r"""
         :returns: noise rate :math:`\alpha = s / q`
         """
-        return self.alpha
+        if self.alpha is not None:
+            return self.alpha
+        else:
+            return est.alphaf(self.s, q, sigma_is_stddev=False)
+
     
     def get_stddev(self):
         """
@@ -213,11 +221,8 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
             if self.dimension is None:
                 raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
 
-        bound = self.s * sqrt(log(2.0)* (sec + 1)  / pi)
-        if self.componentwise:
-            return norm.Lp(value=bound, p=oo, dimension=dimension)
-        else:
-            return norm.Lp(value=bound, p=2, dimension=dimension)
+        bound = self.s * sqrt(log(2.0) * (sec + 1)  / pi)
+        return norm.Lp(value=bound, p=2, dimension=dimension)
 
     def to_L1(self, sec=None, dimension=None):
         r"""
@@ -270,7 +275,7 @@ class GaussianAlpha(Gaussian):
     r"""
     Helper class for Gaussian distribution with input parameter :math:`\alpha`. 
     """
-    def __init__(self, alpha, q, componentwise=True, sec=None, dimension=None):
+    def __init__(self, alpha, q, sec=None, dimension=None):
         r"""
         :param sigma: noise rate :math:`\alpha`
         :param q: modulus
@@ -281,7 +286,6 @@ class GaussianAlpha(Gaussian):
         self.alpha = alpha
         self.sigma = alpha_to_stddevf(self.alpha, q)
         self.s = est.sigmaf(self.sigma)
-        self.componentwise = componentwise
         self.sec = sec
         self.dimension = dimension
 
@@ -290,7 +294,7 @@ class GaussianSigma(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
     """
-    def __init__(self, sigma, q, componentwise=True, sec=None, dimension=None):
+    def __init__(self, sigma, q=None, sec=None, dimension=None):
         """
         :param sigma: standard deviation :math:`\sigma`
         :param q: modulus
@@ -300,8 +304,11 @@ class GaussianSigma(Gaussian):
         """
         self.sigma = sigma
         self.s = est.sigmaf(self.sigma)
-        self.alpha = est.alphaf(self.sigma, q, sigma_is_stddev=True)
-        self.componentwise = componentwise
+        if q is not None:
+            self.alpha = est.alphaf(self.sigma, q, sigma_is_stddev=True)
+        else:
+            self.alpha = None
+            self.q = q
         self.sec = sec
         self.dimension = dimension
 
@@ -310,7 +317,7 @@ class GaussianS(Gaussian):
     """
     Helper class for Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
     """
-    def __init__(self, s, q, componentwise=True, sec=None, dimension=None):
+    def __init__(self, s, q=None, sec=None, dimension=None):
         """
         :param sigma: Gaussian width :math:`s = \sigma \cdot \sqrt{2\pi}`
         :param q: modulus
@@ -320,7 +327,10 @@ class GaussianS(Gaussian):
         """
         self.s = s
         self.sigma = est.stddevf(self.s)
-        self.alpha = est.alphaf(s, q)
-        self.componentwise = componentwise
+        if q is not None:
+            self.alpha = est.alphaf(s, q)
+        else:
+            self.alpha = None
+            self.q = q
         self.sec = sec 
         self.dimension = dimension
