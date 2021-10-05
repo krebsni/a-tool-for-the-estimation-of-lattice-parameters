@@ -208,49 +208,49 @@
 
 - rise of quantum computing (short history)
 
-  * conceptual
+* conceptual
 
-  * reality
+* reality
 
 
 - problem: some hard classical problems no longer hard
 
-  * Shor's Algorithm (Peter Shor, 1994) %Sho97
-    => quantum computers can solve the factoring and the discrete logarithm problem in polynomial time
+* Shor's Algorithm (Peter Shor, 1994) %Sho97
+=> quantum computers can solve the factoring and the discrete logarithm problem in polynomial time
 
-  * application to encryption
+* application to encryption
 
-  * overview of current encryption methods that will become insecure
+* overview of current encryption methods that will become insecure
 
 
 - one solution (among hash-based, code-based, isogeny-based, and multivariate): lattice crypto
 
-  * overview over history and capability of lattice crypto
+* overview over history and capability of lattice crypto
 
-  * advantages: good (quasilinear) asymptotic key sized, good concrete runtimes and key sizes, worst-case secure instantiations, advanced cryptographic primitives previously infeasible
+* advantages: good (quasilinear) asymptotic key sized, good concrete runtimes and key sizes, worst-case secure instantiations, advanced cryptographic primitives previously infeasible
 
-  * including intro to LWE/SIS and applications to build crypto systems
+* including intro to LWE/SIS and applications to build crypto systems
 
-    . SIS: signature schemes, hash functions
+. SIS: signature schemes, hash functions
 
-    . LWE: ``cryptomania'' applications (PKE, ...), signature schemes, lines:
+. LWE: ``cryptomania'' applications (PKE, ...), signature schemes, lines:
 
-      - cryptographic applications
+- cryptographic applications
 
-      - establishing theoretical and asymptotic hardness \cite{Reg05} % ? Check
-        \cite{BLPRS13, MP13} 
-      - concrete hardness of LWE: attacks, runtime estimates, 
+- establishing theoretical and asymptotic hardness \cite{Reg05} % ? Check
+\cite{BLPRS13, MP13}
+- concrete hardness of LWE: attacks, runtime estimates,
 
-  * briefly outline concept and benefits of hard-case to average-case reductions
+* briefly outline concept and benefits of hard-case to average-case reductions
 
 
 - purpose of this thesis
 
-  * building schemes: need realistic hardness estimates of schemes for given parameter settings
+* building schemes: need realistic hardness estimates of schemes for given parameter settings
 
-  * lack in the past: no unified/easy to use tool => thesis aims to solve this problem
-    tool we call \textit{Lattice Parameter Estimation} 
-    LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{Estimator}.
+* lack in the past: no unified/easy to use tool => thesis aims to solve this problem
+tool we call \textit{Lattice Parameter Estimation} % TODO: too long. Maybe just "tool"?
+LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{Estimator}.
 
 
 - overview of chapters/how to read
@@ -260,87 +260,35 @@
 \chapter{Preliminaries} \label{chap:Preliminaries}
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.  
+In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.
 % TODO: anything else? Inner product, negation in ring
 
 
-\section{Math} 
+\section{Math}
 % TODO: check out MG02 for more details for this section!!!
 
-% TODO: some algebraic background?
-\subsection{Norms and Bounds} % TODO: check
-%TODO: write some prose about why we need that
-% TODO: make sure that it is clear that these are bounds!!!
-Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. We define the following norms \cite{BDLOP18}:
-\begin{align}
-  \ell_1 : \| f| \|_1 &= \sum_i |f_i|\\
-  \ell_2 : \| f| \|_2 &= \left(\sum_i |f_i|^2\right) ^{\frac{1}{2}}\\
-  \ell_\infty : \| f| \|_\infty &= \max_i |f_i|
-\end{align}
-
-Then the following inequations hold \cite{BDLOP18}:
-\begin{align}
-  \| f \|_1 &\leq \sqrt{n} \| f \|_2 \label{norm1}\\
-  \| f \|_1 &\leq n \| f \|_\infty \label{norm2}\\
-  \| f \|_2 &\leq \sqrt{n} \| f \|_\infty \;\;(\text{since }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3}\\
-  \| f \|_\infty& \leq \| f \|_1 \label{norm4}
-\end{align}
-
-Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, for $x, y \in \mathcal{O}_K$ it holds the following inequations hold (we assume that $C_m$ in \cite{DPSZ12} is $1$) \cite{DPSZ12}. 
-\begin{align}
-  \| f \|_\infty &\leq \| \sigma(f) \|_\infty \label{norm5}\\
-  \| \sigma(f) \|_\infty &\leq \| f \|_1 \label{norm6}
-\end{align}
-
-From the above inequations, we obtain the following norm transformations to $\ell_p$-norms:
-\begin{itemize}
-  \item From \cref{norm1}, it follows that $\| f \|_1 \leq \sqrt{n} \| f \|_2$ and from \cref{norm2}, $\| f \|_1 \leq n \| f \|_\infty$.
-  \item From \cref{norm3} and \cref{norm4}, it follows that $\| f \|_2 \leq \sqrt{n}  \| f \|_1$ and from \cref{norm3}, $\| f \|_2 \leq \sqrt{n}  \| f \|_\infty$.
-  \item From \cref{norm4}, it follows that $\| f \|_\infty \leq  \| f \|_1$ and from \cref{norm1} and \cref{norm4}, $\| f \|_\infty \leq \sqrt{n}  \| f \|_2$.
-  \item From \cref{norm6}, it follows that $\| \sigma(f) \|_\infty \leq  \| f \|_1$, from \cref{norm1} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2$, and from \cref{norm2} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq n  \| f \|_\infty$.
-\end{itemize}
-
-Likewise, we get the following transformations to the $\mathcal{C}_\infty$-norm:
-\begin{itemize}
-  \item From \cref{norm2} and \cref{norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
-  \item From \cref{norm3} and \cref{norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
-  \item From \cref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
-\end{itemize}
-
-Let $f$ be defined as above and let $g \in \mathcal{R}_q$ where $g = \sum_i \overline{g}_i X^i$ where $g_i \in \left[-(q-1)/2, (q-1)/2\right]$ and $\overline{g}_i = g_i \mod q$ as in \cite{BDLOP18}. Then, we can define the following inequations for multiplication according to \cite{BDLOP18}:
-
-\begin{itemize}
-  \item If $\|f\|_\infty \leq \beta, \|g\|_1 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
-  \item If $\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
-\end{itemize}
-
-Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the following inequation holds according to \cite{DPSZ12}:
-\begin{align}
-  \| x \cdot y \|_\infty \leq C_m \cdot n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty\\
-  \| \sigma(x \cdot y) \|_\infty \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
-\end{align}
-
+% TODO: some algebraic background
 
 
 \subsection{Lattices}
 - background and history: example from lecture -> change % TODO: from lecture -> change!!!
 
-  * Birhoff [Bir40]
+* Birhoff [Bir40]
 
-  * cryptoanalysis [LLL82]
+* cryptoanalysis [LLL82]
 
-  * cryptosystems [Ajt96, HPS98]
-    SIS introduced Ajtai \cite{Ajt96}
+* cryptosystems [Ajt96, HPS98]
+SIS introduced Ajtai \cite{Ajt96}
 
-  * [MR04]
+* [MR04]
 
-  * LWE, assumption: worst-case lattice problems are hard [Reg05]
+* LWE, assumption: worst-case lattice problems are hard [Reg05]
 
-  * fully homomorphic [Gen09]
+* fully homomorphic [Gen09]
 
-  * BGV scheme [BV11, BGV12]
+* BGV scheme [BV11, BGV12]
 
-  * tools [LPR10, LPR13] ideal latties, RLWE
+* tools [LPR10, LPR13] ideal latties, RLWE
 
 Other Notes: %TODO
 - PKE \cite{AD97, Reg03, Reg05}, CCA security \cite{PW08, Pei09}, identity-based encryption \cite{GPV08, CHKP10, ABB10}, fully homomorphic \cite{Gen09a}
@@ -349,218 +297,200 @@ Other Notes: %TODO
 - $q$-ary lattice: modulus $q\geq 2$
 
 - math % TODO: rewrite or \cite{Gop16}
-  * lattice $\Lambda$ % TODO: check all n/m's
-
-    
-
-    - discrete additive subgroup of $\mathbb{R}^m$ % define discrete and additive subgroup?
-
-    - Let $\mathbf{b}_1, \ldots, \mathbf{b}_n \in \mathbb{R}^m$ be a set of linearly independent basis vectors and $\mathbf{B} = \left[\mathbf{b}_1, \ldots, \mathbf{b}_n\right] \in \mathbb{R}^{m\times n}$ be the corresponding basis with column vectors $\mathbf{b}_i$
-
-    - $n$ is the dimension of the Lattice
-
-    - $\Lambda(\mathbf{B})$ defined by all integer combinations of elements of $\mathbf{B}$:
-    \begin{equation}
-      \Lambda(\mathbf{B}) = \left\{ x \in \mathbb{R}^m \mid \exists \alpha_1, \ldots, \alpha_n \in \mathbb{Z} : \mathbf{x} = \sum_{i=1}^n \alpha_i \mathbf{b}_i \right\}
-    \end{equation} 
-    - show example plot % TODO
-
-    - full-ranked lattice: dimension is maximal, $m$
-
-    - basis $\mathbf{B}$ is not unique -> let $\mathbf{U}\in \mathbb{Z}^{n\times n}$ be a modular matrix (determinant is $\pm1$), then $\mathbf{B}\cdot \mathbf{U}$ is also a basis of the $\Lambda$ ($\mathbf{U} \cdot \mathbb{Z}^{n} = \mathbb{Z}^{n}$) -> different basis for the same lattice $\Lambda$
-
-    - lattice coset:
-      quotient group $\mathbb{R}^n/\Lambda$ of cosets
-      \begin{equation*}
-        \mathbf{c} + \Lambda = {\mathbf{c} + \mathbf{v} \mid v \in \Lambda}
-      \end{equation*}
-      with $\mathbf{c} \in \mathbb{R}^n$ % TODO: maybe add plot
-
-    - fundamental domain: subset of $\mathbb{R}^m$ containing exactly one representative of every coset
-
-    - (shifted) fundamental parallelipiped \label{eq:fundamental-parallelipiped}: $\mathcal{P}(\mathbf{B}) = \mathbf{B} \cdot [ - 1/2, 1/2)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \mid \mathbf{x} \sum_{i=1}^n \gamma_i \mathbf{x}_i, \gamma_i \in  [ - 1/2, 1/2) \right\}$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
-    % TODO: first define [0, 1)
-    % intuition: collection of all points that can be written as By where y in [0, 1)^n
-    % TODO: maybe add plot
-
-    - determinant of lattice $\Lambda(\mathbf{B})$: $\sqrt{\text{det}\left(\mathbf{B}^\intercal \mathbf{B}\right)}$. For a full-ranked lattice the determinant is 
-    \begin{equation}
-      \det(\Lambda(\mathbf{B})) = |\det(\mathbf{B})|
-    \end{equation}
-      is well-defined (independent from basis) => volume of fundamental domain % TODO define
-      can be generalized to not full-ranked => $\det(\Lambda(\mathbf{A})) = \sqrt{\det(\mathbf{A}^\perp \mathbf{A})}$ % TODO perp
-
-  * minimum distance of $\lambda_1(\Lambda)$ of a lattice is the length of its shortest nonzero vector, i.e. $\lambda_1(\Lambda) \min_{v \in \Lambda \setminus \{0\}}$
-  * $i$th successive minimum $\lambda_i(\Lambda)$
-    - Let $r\in \mathbb{R}$ and $\mathbf{c} \in \mathbb{R}^m$, then we define $\mathcal{B}(\mathbf{c}, r)$ as the ball of radius $r$ with center $\mathbf{c}$. 
-
-    - smallest radius $r$ such that the ball $\mathcal{B}(\mathbf{0}, r)$ centered at the origin of $\Lambda$ contains $i$ linearly independent lattice vectors. 
-
-    - in general hard to calculate $\lambda_i(\Lambda(\mathbf{B}))$ for a given basis  
-  % * Gaussian heuristic: 
-  %   - estimate length of shortest lattice vactor in $n$-dimensional lattice $Lambda$, i.e. estimate $\lambda_1(\Lambda)$ given $\det{\Lambda}$
-  %   \begin{equation}
-  %     \lambda_1{\Lambda} \approx \frac{\Gamma(1 + n/2)^{1/n}}{\sqrt{\pi}} \det(\Lambda)^{1/n}
-  %   \end{equation}
-  
-  * modular integer (or $q$-ary) lattices % \cite{MR09}
-
-    - full-ranked lattice $\Lambda$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}$ => if $\mathbf{x} \in \mathbb{Z}^m$ in $\Lambda$ then $\mathbf{x} \mod q$ also in $\Lambda$. 
-
-    - can be specified in two ways by matrix $\mathbf{A} \in \mathbb{Z}_q^{m\times n}$: % TTODO switch m and n for consistency
-    \begin{equation}
-      \Lambda_q(\mathbf{A}) = \left\{ x \in \mathbb{Z}^m \mid \exists y \in \mathbb{Z}^n : \mathbf{x} = \mathbf{A}\mathbf{y} \mod q \right\}
-    \end{equation}
-    % TODO: corresponds to linear code generated by columns of A (mod q)
-    or
-    \begin{equation}
-      \Lambda_q^\perp(\mathbf{A}) = \left\{ x \in \mathbb{Z}^m \mid  \mathbf{A}^\intercal\mathbf{x} = 0 \mod q \right\}
-    \end{equation}
-
-    - finding a short vector in $\Lambda_q(\mathbf{A})$ corresponds to LWE % TODO check
-
-    - finding short vectors in $\Lambda_q^\perp(\mathbf{A})$ corresponds to SIS % TODO check \cite{Reg10}
-
-    - easy to find basis of $\Lambda_q(\mathbf{A})$ \cite{AFG13}
-
-    - with high probability determinant of $q$-ary lattice is $\det(\Lambda_q(\mathbf{A}))=q^{m-n}$ if $\mathbf{A} \in \mathbb{Z}_q^{m\times n}$
+* lattice $\Lambda$ % TODO: check all n/m's
 
 
-  * Gram-Schmidt basis
 
-    - set of column vectors $\mathbf{B} \in \mathbb{Z}_q^{m\times n}$, $\pi_{\text{span}(\mathbf{B})}(\mathbf{t})$ for projection of vector $\mathbf{t}$ unto span of vectors of $\mathbf{B}$
+- discrete additive subgroup of $\mathbb{R}^m$ % define discrete and additive subgroup?
 
-    - $\pi_{\text{span}(\mathbf{B})}(\mathbf{t}) = \mathbf{B}(\mathbf{B}^\perp \mathbf{B})^{-1}\mathbf{B}^\intercal \cdot \mathbf{t}$
+- Let $\mathbf{b}_1, \ldots, \mathbf{b}_n \in \mathbb{R}^m$ be a set of linearly independent basis vectors and $\mathbf{B} = \left[\mathbf{b}_1, \ldots, \mathbf{b}_n\right] \in \mathbb{R}^{m\times n}$ be the corresponding basis with column vectors $\mathbf{b}_i$
 
-    - Gram-Schmidt orthogonalization $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ of basis $\mathbf{B}$: $\tilde{\mathbf{b}}_i = \mathbf{b}_i - \pi_{\text{span}(\mathbf{b}_1, \ldots, \mathbf{b}_{i-1})}(\mathbf{b}_i)$ for $i \in \{1, \ldots, n\}$ 
+- $n$ is the dimension of the Lattice
 
-    - Gram-schmidt coefficients $\mu_{i, j} = \frac{\left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle}{\left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle}$ %Pla18
+- $\Lambda(\mathbf{B})$ defined by all integer combinations of elements of $\mathbf{B}$:
+\begin{equation}
+  \Lambda(\mathbf{B}) = \left\{ x \in \mathbb{R}^m \mid \exists \alpha_1, \ldots, \alpha_n \in \mathbb{Z} : \mathbf{x} = \sum_{i=1}^n \alpha_i \mathbf{b}_i \right\}
+\end{equation}
+- show example plot % TODO
 
-    Alternative:
-    Let $\mathbf{B} = \left[\mathbf{b}_1 \cdots \mathbf{b}_n\right], \mathbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\mathbf{b}}_i$ as follows: $\tilde{\mathbf{b}}_1 = \mathbf{b}_1$. For $i \in \{2, \ldots, n\}$ let $\tilde{\mathbf{b}}_i$ be the component of $\mathbf{b}_i$ that is orthogonal to the span of $\left\{\mathbf{b}_1, \ldots, \mathbf{b}_{i-1}\right\}$. Then,  $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\mathbf{B}$ where $\| \tilde{\mathbf{b}}_i\| \leq \| \mathbf{b}_i\|$. 
-    % TODO Also check out algorithm from AGVW17
+- full-ranked lattice: dimension is maximal, $m$
 
-  
-  * dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \mathbf{y} \in \mathbb{R}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle \in \mathbb{Z}\}$
-    % TODO: show examples
-    scaled-by-$q$ dual lattice:  $\{ \mathbf{y} \in \mathbb{Z}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle = 0 \mod q\}$ % not sure if needed
-    basis of the dual of a lattice with basis $\mathbf{B}$ is $\mathbf{B'} = \mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ % https://cseweb.ucsd.edu/classes/wi12/cse206A-a/LecDual.pdf
+- basis $\mathbf{B}$ is not unique -> let $\mathbf{U}\in \mathbb{Z}^{n\times n}$ be a modular matrix (determinant is $\pm1$), then $\mathbf{B}\cdot \mathbf{U}$ is also a basis of the $\Lambda$ ($\mathbf{U} \cdot \mathbb{Z}^{n} = \mathbb{Z}^{n}$) -> different basis for the same lattice $\Lambda$
 
-  * smoothing lemma
+- lattice coset:
+quotient group $\mathbb{R}^n/\Lambda$ of cosets
+\begin{equation*}
+  \mathbf{c} + \Lambda = {\mathbf{c} + \mathbf{v} \mid v \in \Lambda}
+\end{equation*}
+with $\mathbf{c} \in \mathbb{R}^n$ % TODO: maybe add plot
 
-  * Voronoi region % \cite{GSJ15}
-  The fundamental Voronoi region $\mathcal{V}$ is defined as 
-  \begin{equation}
-    \mathcal{V} = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \forall \mathbf{y} \in \Lambda : \| \mathbf{x} \| \leq \| \mathbf{x} - \mathbf{y} \| \right\}
-  \end{equation}
+- fundamental domain: subset of $\mathbb{R}^m$ containing exactly one representative of every coset
 
-  * Linear Code \cite{VanLint12} % TODO maybe move to Coded BKW
-    Let $\mathbb{F}_q^n$ be the $n$-dimensional vector space over the field $\mathbb{F}_q$. A $q$-ary linear code $\mathcal{C}$ or $[n, k]$-code is a $k$-dimensional linear subspace of $\mathbb{F}_q^n$ such that 
-    \begin{itemize}
-      \item $\mathbf{0} \in \mathcal{C}$,
-      \item if $\mathbf{x}, \mathbf{y} \in \mathcal{C}$, then $\mathbf{x} + \mathbf{x} \in \mathcal{C}$,
-      \item and if $\mathbf{x} \in \mathcal{C}$ and $\gamma \in \mathbb{F}_q$, then $\gamma \mathbf{x} \in \mathcal{C}$.
-    \end{itemize}
-    There are $q^k$ different codewords in $\mathcal{C}$.
+- (shifted) fundamental parallelipiped \label{eq:fundamental-parallelipiped}: $\mathcal{P}(\mathbf{B}) = \mathbf{B} \cdot [ - 1/2, 1/2)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \mid \mathbf{x} \sum_{i=1}^n \gamma_i \mathbf{x}_i, \gamma_i \in  [ - 1/2, 1/2) \right\}$ every coset has representative  % c - B * \left\lfloor^{-1} \cdot c\right\rceil
+% TODO: first define [0, 1)
+% intuition: collection of all points that can be written as By where y in [0, 1)^n
+% TODO: maybe add plot
 
-    Let $\mathcal{C}$ be a $q$-ary linear $[n, k]$-code. The lattice over $\mathcal{C}$ is defined as % \cite{GJS15}
-    \begin{equation}
-      \Lambda(\mathcal{C}) = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \exists \mathbf{y} \in \mathcal{C} : \mathbf{x} = \mathbf{y} \mod q  \right\}.
-    \end{equation} % TODO check
-    Similarly, for a lattice $\Lambda(\mathbf{B})$ a lattice code $\mathcal{C}$ defined by $\Lambda(\mathbf{B})$ and a shaping region $\mathcal{V} \subset \mathbb{R}^n$ (e.g. the Voronoi region) is a subspace of $\mathbb{R}^n$ such that all codewords are lattice vectors in $\Lambda(\mathbf{B})$ within the region $\mathcal{V}$ \cite{SFS08}:
-    \begin{equation}
-      C' = \left\{ x \in \Lambda(\mathbf{B}) \mid x \in \mathcal{V} \right\}.
-    \end{equation} % TODO check
+- determinant of lattice $\Lambda(\mathbf{B})$: $\sqrt{\text{det}\left(\mathbf{B}^\intercal \mathbf{B}\right)}$. For a full-ranked lattice the determinant is
+\begin{equation}
+  \det(\Lambda(\mathbf{B})) = |\det(\mathbf{B})|
+\end{equation}
+is well-defined (independent from basis) => volume of fundamental domain % TODO define
+can be generalized to not full-ranked => $\det(\Lambda(\mathbf{A})) = \sqrt{\det(\mathbf{A}^\perp \mathbf{A})}$ % TODO perp
+
+* minimum distance of $\lambda_1(\Lambda)$ of a lattice is the length of its shortest nonzero vector, i.e. $\lambda_1(\Lambda) \min_{v \in \Lambda \setminus \{0\}}$
+* $i$th successive minimum $\lambda_i(\Lambda)$
+- Let $r\in \mathbb{R}$ and $\mathbf{c} \in \mathbb{R}^m$, then we define $\mathcal{B}(\mathbf{c}, r)$ as the ball of radius $r$ with center $\mathbf{c}$.
+
+- smallest radius $r$ such that the ball $\mathcal{B}(\mathbf{0}, r)$ centered at the origin of $\Lambda$ contains $i$ linearly independent lattice vectors.
+
+- in general hard to calculate $\lambda_i(\Lambda(\mathbf{B}))$ for a given basis
+% * Gaussian heuristic: 
+%   - estimate length of shortest lattice vactor in $n$-dimensional lattice $Lambda$, i.e. estimate $\lambda_1(\Lambda)$ given $\det{\Lambda}$
+%   \begin{equation}
+%     \lambda_1{\Lambda} \approx \frac{\Gamma(1 + n/2)^{1/n}}{\sqrt{\pi}} \det(\Lambda)^{1/n}
+%   \end{equation}
+
+* modular integer (or $q$-ary) lattices % \cite{MR09}
+
+- full-ranked lattice $\Lambda$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}$ => if $\mathbf{x} \in \mathbb{Z}^m$ in $\Lambda$ then $\mathbf{x} \mod q$ also in $\Lambda$.
+
+- can be specified in two ways by matrix $\mathbf{A} \in \mathbb{Z}_q^{m\times n}$: % TTODO switch m and n for consistency
+\begin{equation}
+  \Lambda_q(\mathbf{A}) = \left\{ x \in \mathbb{Z}^m \mid \exists y \in \mathbb{Z}^n : \mathbf{x} = \mathbf{A}\mathbf{y} \mod q \right\}
+\end{equation}
+% TODO: corresponds to linear code generated by columns of A (mod q)
+or
+\begin{equation}
+  \Lambda_q^\perp(\mathbf{A}) = \left\{ x \in \mathbb{Z}^m \mid  \mathbf{A}^\intercal\mathbf{x} = 0 \mod q \right\}
+\end{equation}
+
+- finding a short vector in $\Lambda_q(\mathbf{A})$ corresponds to LWE % TODO check
+
+- finding short vectors in $\Lambda_q^\perp(\mathbf{A})$ corresponds to SIS % TODO check \cite{Reg10}
+
+- easy to find basis of $\Lambda_q(\mathbf{A})$ \cite{AFG13}
+
+- with high probability determinant of $q$-ary lattice is $\det(\Lambda_q(\mathbf{A}))=q^{m-n}$ if $\mathbf{A} \in \mathbb{Z}_q^{m\times n}$
+
+
+* Gram-Schmidt basis \label{sec:gram-schmidt}% TODO: maybe move to lattice reduction?
+
+- set of column vectors $\mathbf{B} \in \mathbb{Z}_q^{m\times n}$, $\pi_{\text{span}(\mathbf{B})}(\mathbf{t})$ for projection of vector $\mathbf{t}$ unto span of vectors of $\mathbf{B}$
+
+- $\pi_{\text{span}(\mathbf{B})}(\mathbf{t}) = \mathbf{B}(\mathbf{B}^\perp \mathbf{B})^{-1}\mathbf{B}^\intercal \cdot \mathbf{t}$
+
+- Gram-Schmidt orthogonalization $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ of basis $\mathbf{B}$: $\tilde{\mathbf{b}}_i = \mathbf{b}_i - \pi_{\text{span}(\mathbf{b}_1, \ldots, \mathbf{b}_{i-1})}(\mathbf{b}_i)$ for $i \in \{1, \ldots, n\}$
+
+- Gram-schmidt coefficients $\mu_{i, j} = \frac{\left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle}{\left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle}$ %Pla18
+
+Alternative:
+Let $\mathbf{B} = \left[\mathbf{b}_1 \cdots \mathbf{b}_n\right], \mathbf{b}_i \in \mathbb{Z}_q^{m}$ be a basis. Define $\tilde{\mathbf{b}}_i$ as follows: $\tilde{\mathbf{b}}_1 = \mathbf{b}_1$. For $i \in \{2, \ldots, n\}$ let $\tilde{\mathbf{b}}_i$ be the component of $\mathbf{b}_i$ that is orthogonal to the span of $\left\{\mathbf{b}_1, \ldots, \mathbf{b}_{i-1}\right\}$. Then,  $\tilde{\mathbf{B}} = \left[\tilde{\mathbf{b}}_1 \cdots \tilde{\mathbf{b}}_n\right]$ is called the Gram-Schmidt orthogonalization of basis $\mathbf{B}$ where $\| \tilde{\mathbf{b}}_i\| \leq \| \mathbf{b}_i\|$.
+% TODO Also check out algorithm from AGVW17
+
+
+* dual of a lattice is "the set of points whose inner products with the vectors in the lattice are integers" $\Lambda$: $\Lambda^{\perp} := \{ \mathbf{y} \in \mathbb{R}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle \in \mathbb{Z}\}$
+% TODO: show examples
+scaled-by-$q$ dual lattice:  $\{ \mathbf{y} \in \mathbb{Z}^m \mid \forall \mathbf{v} \in \Lambda: \langle \mathbf{y}, \mathbf{v} \rangle = 0 \mod q\}$ % not sure if needed
+basis of the dual of a lattice with basis $\mathbf{B}$ is $\mathbf{B'} = \mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ % https://cseweb.ucsd.edu/classes/wi12/cse206A-a/LecDual.pdf
+
+* smoothing lemma
+
+* Voronoi region % \cite{GSJ15}
+The fundamental Voronoi region $\mathcal{V}$ is defined as
+\begin{equation}
+  \mathcal{V} = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \forall \mathbf{y} \in \Lambda : \| \mathbf{x} \| \leq \| \mathbf{x} - \mathbf{y} \| \right\}
+\end{equation}
+
+* Linear Code \cite{VanLint12} % TODO maybe move to Coded BKW
+Let $\mathbb{F}_q^n$ be the $n$-dimensional vector space over the field $\mathbb{F}_q$. A $q$-ary linear code $\mathcal{C}$ or $[n, k]$-code is a $k$-dimensional linear subspace of $\mathbb{F}_q^n$ such that
+\begin{itemize}
+  \item $\mathbf{0} \in \mathcal{C}$,
+  \item if $\mathbf{x}, \mathbf{y} \in \mathcal{C}$, then $\mathbf{x} + \mathbf{x} \in \mathcal{C}$,
+  \item and if $\mathbf{x} \in \mathcal{C}$ and $\gamma \in \mathbb{F}_q$, then $\gamma \mathbf{x} \in \mathcal{C}$.
+\end{itemize}
+There are $q^k$ different codewords in $\mathcal{C}$.
+
+Let $\mathcal{C}$ be a $q$-ary linear $[n, k]$-code. The lattice over $\mathcal{C}$ is defined as % \cite{GJS15}
+\begin{equation}
+  \Lambda(\mathcal{C}) = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \exists \mathbf{y} \in \mathcal{C} : \mathbf{x} = \mathbf{y} \mod q  \right\}.
+\end{equation} % TODO check
+Similarly, for a lattice $\Lambda(\mathbf{B})$ a lattice code $\mathcal{C}$ defined by $\Lambda(\mathbf{B})$ and a shaping region $\mathcal{V} \subset \mathbb{R}^n$ (e.g. the Voronoi region) is a subspace of $\mathbb{R}^n$ such that all codewords are lattice vectors in $\Lambda(\mathbf{B})$ within the region $\mathcal{V}$ \cite{SFS08}:
+\begin{equation}
+  C' = \left\{ x \in \Lambda(\mathbf{B}) \mid x \in \mathcal{V} \right\}.
+\end{equation} % TODO check
 
 
 % TODO: where to put
 
-    We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$ where $\Lambda(\mathbf{B}) \subset \mathbb{R}^m$ as the distance of a vector $\mathbf{t} \in \mathbb{R}^m$ to the closest lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$, i.e. 
-    \begin{equation}\label{eq:dist}
-      \text{dist}(\mathbf{t}, \Lambda(\mathbf{B})) = \min_{\mathbf{v} \in \Lambda(\mathbf{B})}\|\mathbf{t} -  \mathbf{v}\|.
-    \end{equation}
+We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$ where $\Lambda(\mathbf{B}) \subset \mathbb{R}^m$ as the distance of a vector $\mathbf{t} \in \mathbb{R}^m$ to the closest lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$, i.e.
+\begin{equation}\label{eq:dist}
+  \text{dist}(\mathbf{t}, \Lambda(\mathbf{B})) = \min_{\mathbf{v} \in \Lambda(\mathbf{B})}\|\mathbf{t} -  \mathbf{v}\|.
+\end{equation}
 
-    
-    
+
+
 
 - Lattice problems
 
-  * Minkowski theorem: Let $\Lambda$ be a lattice of dimension $n$, then $\lambda_1 \leq \sqrt{n} \cdot (\det \Lambda)^{\frac{1}{n}}$
+* Minkowski theorem: Let $\Lambda$ be a lattice of dimension $n$, then $\lambda_1 \leq \sqrt{n} \cdot (\det \Lambda)^{\frac{1}{n}}$
 
-  * Lattice reduction: find short basis compared to $\lambda_1(\Lambda)$... 
+* Lattice reduction: find short basis compared to $\lambda_1(\Lambda)$...
 
-  * SVP: given a basis $\mathbf{B}$ of lattice $\Lambda$ find shortest nonzero lattice vector =>  $v\in \Lambda$ s.t. $\| v \| = \lambda_1(\Lambda)$
+* SVP: given a basis $\mathbf{B}$ of lattice $\Lambda$ find shortest nonzero lattice vector =>  $v\in \Lambda$ s.t. $\| v \| = \lambda_1(\Lambda)$
 
 \begin{definition}[$\gamma$-approximate Shortest Vector Problem (SVP$_\gamma$)] \label{def:gammaSVP} % TODO find source
   Given a basis $\mathbf{B}$ of lattice $\Lambda$, find a short lattice vector $v\in \Lambda$ such that $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$
 \end{definition}
 
 \begin{definition}[$\kappa$-approximate Hermite Shortest Vector Problem (HSVP$_\kappa$)] \label{def:kappaHSVP} % TODO find source
-  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, find a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \kappa \cdot \text{det}(\Lambda)^{\frac{1}{n}}$. 
+  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, find a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \kappa \cdot \text{det}(\Lambda)^{\frac{1}{n}}$.
 \end{definition}
 
-  * \textsc{GapSVP}$_\gamma$ (decision version of \textsc{SVP}): "given basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ with either $\lambda_1{\Lambda} \leq 1$ or $\lambda_1{\Lambda} \geq \gamma(n)$, decide which is the case" %\cite{Pei16}
-    NP hard for any constant $\gamma$ % Kho04, HR07 see LM09
-    fastest algorithm for $1\leq \gamma \leq \text{poly}(n)$ has runtime complexity of $2^{O(n)}$
-  
-  * $\gamma$-unique Shortest Vector Problem (uSVP$_\gamma$) \cite{LM09}: given lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, find shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$
-    % or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
-    %NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
+* \textsc{GapSVP}$_\gamma$ (decision version of \textsc{SVP}): "given basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ with either $\lambda_1{\Lambda} \leq 1$ or $\lambda_1{\Lambda} \geq \gamma(n)$, decide which is the case" %\cite{Pei16}
+NP hard for any constant $\gamma$ % Kho04, HR07 see LM09
+fastest algorithm for $1\leq \gamma \leq \text{poly}(n)$ has runtime complexity of $2^{O(n)}$
 
-  * CVP$_\gamma$: given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\mathbf{t}\in\mathbb{R}^n$ find point in lattice that is close to $\mathbf{t}$ => find  $\mathbf{v} \in \mathbb{R}^n$ with $\|\mathbf{t} - \mathbf{v}\| < \gamma \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{v}\|$
+* $\gamma$-unique Shortest Vector Problem (uSVP$_\gamma$) \cite{LM09}: given lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, find shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$
+% or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
+%NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
 
-  * \textsc{SIVP} (shortest independent vector problem): given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\mathbf{v}_1, \ldots, \mathbf{v}_n \in \Lambda(\mathbf{B})$ such that $\max_i \|\mathbf{v}_i\|$ for $i \in \{1, \ldots, n\}$ is minimal
+* CVP$_\gamma$: given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$ and target $\mathbf{t}\in\mathbb{R}^n$ find point in lattice that is close to $\mathbf{t}$ => find  $\mathbf{v} \in \mathbb{R}^n$ with $\|\mathbf{t} - \mathbf{v}\| < \gamma \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{v}\|$
 
-  * $\gamma$-Bounded Distance Decoding (BDD$_\gamma$): Given a lattice $\Lambda$ and a target vector $\mathbf{t}$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, find the closest lattice vector $\mathbf{v} \in \Lambda$, i.e. find $\mathbf{v} = \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$ minimal \cite{LM09}
-    % or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
-    % alternate NP hard for $\gamma > 1/\sqrt{2}$ \cite{LLM06}
+* \textsc{SIVP} (shortest independent vector problem): given  basis $\mathbf{B}$ of $n$-dimensional lattice $\Lambda$, find $n$ linearly independent lattice vectors $\mathbf{v}_1, \ldots, \mathbf{v}_n \in \Lambda(\mathbf{B})$ such that $\max_i \|\mathbf{v}_i\|$ for $i \in \{1, \ldots, n\}$ is minimal
 
-  % TODO: add some kind of discussion, e.g. see 1.2 in LM09 or better overview from bootcamp
+* $\gamma$-Bounded Distance Decoding (BDD$_\gamma$): Given a lattice $\Lambda$ and a target vector $\mathbf{t}$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, find the closest lattice vector $\mathbf{v} \in \Lambda$, i.e. find $\mathbf{v} = \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$ minimal \cite{LM09}
+% or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
+% alternate NP hard for $\gamma > 1/\sqrt{2}$ \cite{LLM06}
 
-  * ideal lattice (do I need that?)
+% TODO: add some kind of discussion, e.g. see 1.2 in LM09 or better overview from bootcamp
 
-  * ...?
+* ideal lattice (do I need that?)
 
-  * eher die Sachen für LWE/SIS als die Sachen für Algorithmen (analog Vorlesung), evtl. 
-  
-  Intuition für die anderen Sachen...
+* ...?
+
+* eher die Sachen für LWE/SIS als die Sachen für Algorithmen (analog Vorlesung), evtl.
+
+Intuition für die anderen Sachen...
 
 
 
 \subsection{Distributions}
 
-  - Gaussian, def, component-wise, trafo to bound % TODO: GPV08, or LS15
+- Gaussian, def, component-wise, trafo to bound % TODO: GPV08, or LS15
 
-    * definition:
-      discrete Gaussian distribution over $q$-ary lattice $\Lambda$ with Gaussian width parameter $s > 0$ and center $\mathbf{c}$, denoted by $D_{\Lambda, s, \mathbf{c}}$: probability of sampling a vector $\mathbf{x}\in \Lambda$ is proportional to $e^{-\pi \|\mathbf{x} - \mathbf{c}\|^2/s^2}$ % \cite{Reg10, GPV08} or "probability distribution that assigns mass proportional to ... to each point $\mathbf{x}\in \Lambda$"
-      In order to avoid confusion, throughout this work and in the \textit{Lattice Parameter Estimation} we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$, and define $\alpha := \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$. 
+* definition:
+discrete Gaussian distribution over $q$-ary lattice $\Lambda$ with Gaussian width parameter $s > 0$ and center $\mathbf{c}$, denoted by $D_{\Lambda, s, \mathbf{c}}$: probability of sampling a vector $\mathbf{x}\in \Lambda$ is proportional to $e^{-\pi \|\mathbf{x} - \mathbf{c}\|^2/s^2}$. If $\mathbf{c} = \mathbf{0}$ we simply write  $D_{\Lambda, s}$ % \cite{Reg10, GPV08} or "probability distribution that assigns mass proportional to ... to each point $\mathbf{x}\in \Lambda$"
+In order to avoid confusion, throughout this work and in the \textit{Lattice Parameter Estimation} we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$, and define $\alpha := \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
 
-    * better definition in GPV08 => different definition needed for LWE??? % TODO
-    * how to do this? => variant of Babai's ``nearest-plane'' algorithm, see \cite{GPV08} % TODO
+* better definition in GPV08 => different definition needed for LWE??? % TODO
+* how to do this? => variant of Babai's ``nearest-plane'' algorithm, see \cite{GPV08} % TODO
 
-    * component-wise
-    
+* component-wise
 
-    For some applications, we receive a Gaussian distribution as input, but require a bound in some norm in order to estimate the hardness of SIS. Hence, we need to transform the Gaussian width parameter into a bound $\beta$ given some security parameter $\text{sec}$. Note that a $n$-dimensional Gaussian can be sampled by sampling $n$ independent 1-dimensional Gaussians. %TODO reformulate
-        
-    For a Gaussian distribution, the following holds: % put as theorem, also for norm inequalities
-    
-    \begin{equation}
-      \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \beta^2/s^2}
-    \end{equation}
-    
-    We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-sec}$, hence
-    
-    \begin{align*}
-      2 e^{-\pi \beta^2/s^2} &\approx 2^{-sec}\\
-      -\pi \frac{\beta^2}{s^2} &\approx (-sec - 1)\ln (2)\\
-      \beta  &\approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}
-    \end{align*}
+* smoothing factor here?
 
 
-    * smoothing factor here?
-
-    * Uniform (stuff I use in tool)
 
 
 
@@ -577,20 +507,20 @@ Applications: SIS can be used for one-way functions and collision-resistant hasi
 Following based on \cite{Reg10}:% TODO: change or quote 
 
 Introduced by Regev in \cite{Reg09}
-Origin: work of Ajtai and Dwork \cite{AD97}, first public-key cryptosystem based on worst-case lattice problems, simlifications/improvements \cite{GGH97b, Reg03} imply hardness result for LWE. 
+Origin: work of Ajtai and Dwork \cite{AD97}, first public-key cryptosystem based on worst-case lattice problems, simlifications/improvements \cite{GGH97b, Reg03} imply hardness result for LWE.
 Early work: hardness based on unique-SVP, Peikert \cite{Pei09} and Lyubashevsky and Micciancio \cite{LM09} show that unique-SVP is essentially equivalent to \textsc{GapSVP}.
 
 - ´cryptomania´ applications: public-key encryption schemes under chosen-plaintext attacks \cite{Reg05, KTX07, PVW08}, and chosen-ciphertext attacks \cite{PW08, Pei09}, oblivious transfer protocoles \cite{PVW08}, identity-based encryption (IBE) schemes \cite{GPV08, CHKP10, ABB10}, leakage-resilient encryption \cite{AGV09, ACPS09, DGKPV10, GKPV10}, and more % TODO change or \cite{Reg10}
 
 - most important: fully homomorphic encryption schemes \cite{Gen09a, BV11, Bra12, GSW13} % TODO 
 
-Intuition: 
-- "recover $\mathbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approximate´ random linear equations on $\mathbf{s}$" 
+Intuition:
+- "recover $\mathbf{s} \in \mathbb{Z}_q^n$ given sequence of ´approximate´ random linear equations on $\mathbf{s}$"
 - public matrix  $\mathcal{A} \in \mathbb{Z}^{n \times m}$, secret vector $\mathcal{s}\in \mathbb{Z}^n$, given $\mathcal{z} = \mathcal{A}^\intercal \mathcal{s}$ we can find $\mathbf{s}$ by linear algebra
 when we add a small error vector $\mathbf{e} \in \mathbb{Z}^m$, solving $\mathcal{z}' = \mathcal{A}^\intercal \mathcal{s} + \mathbf{e}$ for $\mathbf{s}$ or distinguishing $\mathbf{z}'$ from uniform becomes hard
 
 
-Formal Definition: 
+Formal Definition:
 \begin{definition}[LWE Distribution \cite{Reg10}] %TODO
   For $n \geq 1$, modulus $q \geq 2$, error distribution $\chi$ on $\mathbb{Z}_q$, and a fixed secret vector $\mathbf{s}$, let $\mathcal{A}_{\mathbf{s}, \chi}$ be the probability distribution over $\mathbb{Z}_q^n \times \mathbb{Z}_q$ by choosing a vector $\mathbf{a}_i \in \mathbb{Z}_q^n$ uniformly at random, $e_i \in \mathbb{Z}_q$ according to $\chi$ and returning pairs of $(\mathbf{a}_i, \langle \mathbf{a}_i, \mathbf{s} \rangle + e_i \mod q) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$.
 \end{definition}
@@ -617,7 +547,7 @@ We request $m$ samples $(\mathbf{a}_1, z_1), \ldots, (\mathbf{a}_m, z_m)$ where 
 \begin{equation} \label{eq:lwe-decoding}
   \mathbf{z} =  \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}
 \end{equation} % TODO duplicate???
-with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word. Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$. 
+with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word. Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$.
 
 An LWE$_{n, q, m, \chi}$ instance with a secret vector $\mathbf{s}$ chosen according to a uniform distribution can be transformed into an LWE$_{n, q, m-n, \chi}$ instance with a secret vector $\hat{\mathbf{s}}$ chosen according to the error distribution $\chi$ at a loss of $n$ samples as follows: Let $\mathbf{A}_0 = \left[ \mathbf{a}_1 \cdots \mathbf{a}_n\right]$ where $\mathbf{a}_1, \ldots, \mathbf{a}_n$ are the first $n$ columns of $\mathbf{A}$. We introduce new variables $\hat{\mathbf{s}} = \mathbf{A}^\intercal_0 \mathbf{s}  - \left[z_1, \ldots, z_n\right]^\intercal = \left[e_0, \ldots, e_n\right]^\intercal$ and $\hat{\mathbf{A}} = \mathbf{A}_0^{-1} \mathbf{A} = \left[\mathbf{I} \; \hat{\mathbf{a}}_{n+1} \cdots \hat{\mathbf{a}}_{m}\right]$ and compute $\hat{\mathbf{z}} = \mathbf{z} -  \hat{\mathbf{A}}^\intercal \left[z_1, \ldots, z_n\right]^\intercal  = \left[\mathbf{0}, \hat{z}_{n+1} \cdots \hat{z}_{m} \right]^\intercal$. % TODO: where do we need that? maybe move there, cite somewhere \e.g. KF15, ACPS, BLPRS13 classical hardness of learning with errors
 
@@ -633,7 +563,7 @@ Best algorithm to solve LWE: Blum, Kalai, and Wasserman \cite{BKW03} with $2^{O(
 Hardness: best algorithm exponential, extension of LPN (LPN believed to be hard), hard assuming worst-case hardness of \textsc{GapSVP} % TODO make sure that is correct
 and \textsc{SIVP} \cite{Reg05, Pei09}. More details? Different cases for $q$ exponential/polynomial, approximation factors...
 Hardness based on worst-case lattice problems => strong security guarantees, such as conjectured security against quantum computers...
- 
+
 Search to decision reduction => distiguishing is LWE samples from uniform samples sufficient, worst-case to average-case reduction => sufficient to solve distinguishing for uniform secret
 
 \subsection{Short Integer Solution (SIS)}
@@ -649,12 +579,12 @@ The dual problem to LWE is the \textit{Short Integer Solution problem} (SIS).
 
 Finding such a vector corresponds to finding a short lattice vector in costets of the lattice $\Lambda^{\perp}(\mathbf{A}) = \{ y \mid \mathbf{A} \cdot y \mod q \}$ % TODO get source other than https://www.youtube.com/watch?v=LlPXfy6bKIY
 
-Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SIS$_{n, q, m, \beta}$ is as hard as worst-case approx-SIVP (and \textsc{GapSVP}) to within $\beta \cdot \tilde{O}(\sqrt{n})$ factor 
+Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SIS$_{n, q, m, \beta}$ is as hard as worst-case approx-SIVP (and \textsc{GapSVP}) to within $\beta \cdot \tilde{O}(\sqrt{n})$ factor
 
 % TODO: application, perhaps something as in file:///C:/Users/Nico/OneDrive/Studium/Informatik/6BA/Supplemental%20Material/[BC%20Micciancio]%20The%20Short%20Integer%20Solutions%20Problem%20and%20Cryptographic%20Applications.pdf would be nice
 
 
-\subsection{Ring and Module Variants} 
+\subsection{Ring and Module Variants}
 - problem key sizes in LWE/SIS in $O(n^2)$ (matrix $\mathbf{A} \in \mathbb{Z}_q^{m \times n})$, where $m \in \Omega(n)$)% TODO change or \cite{Reg10}
 
 - idea: introduce some sort of a structure in samples: $n$ power of two, $\mathbf{a}$ vectors in groups of size $n$, for each group $\mathbf{a}_1 = [a_1, \ldots, a_n]^\intercal$, $a_i$ are uniformly random in $\mathbb{Z}_q$, and $\mathbf{a}_i = [a_i, \ldots, a_n, -a_1, \ldots, -a_{i-1}]^\intercal$. Hence, $n$ vectors only need $O(n)$ memory, also speedups in operations by using FFT % TODO change or \cite{Reg10}
@@ -675,19 +605,9 @@ Hardness: for any poly-bounded $m, \beta$ and for ``large enough'' prime $q$: SI
 
 % TODO: LWE
 
-While there exist special cases where the Ring structure of problem instances can be exploited in an attack on LWE or SIS, % TODO: find examples
-in general, the hardness of Ring and Module variants is estimated by interpreting the coefficients of elements of $\mathcal{R}_q$ as vectors in $\mathbb{Z}_q^n$ \cite{ACDDPPVW18}.
-We thus reduce Ring and Module instances as follows:
-\begin{itemize}
-  \item RLWE$_{n, q, m, \chi} \longrightarrow$ LWE$_{n, q, m \cdot n, \chi}$
-  \item MLWE$_{n, d, q, m, \chi} \longrightarrow$ LWE$_{n \cdot d, q, m \cdot n, \chi}$
-  \item RSIS$_{n, q, m, \beta} \longrightarrow$ SIS$_{n, q, m \cdot n, \beta}$
-  \item MSIS$_{n, d, q, m, \beta} \longrightarrow$ SIS$_{n \cdot d, q, m \cdot n, \beta}$
-\end{itemize}
-Note that in the Ring and Module variants $n$ denotes the degree of the polnomial of the underlying Ring, %TODO: correct?
-while in the standard variant, $n$ denotes the dimension of the secret. 
-  
-  
+
+
+
 
 
 
@@ -700,19 +620,274 @@ while in the standard variant, $n$ denotes the dimension of the secret.
 \input{algorithms-estimates.tex}
 
 
-\section{Tool}
-class for distributions... from section this modelling, problems, generic search... Überblick, wie verwendbar,
-automatische norm umwandlung,
-sonstige features
 
-\subsection{Runtime and Cost Comparison}
-defaults...
-schnellste, beste => effizient, etc. parallel... problem reductions...
+\chapter{Lattice Parameter Estimation Tool}
+The main goal of the thesis is the creation a tool that combines the algorithm estimates for LWE and SIS that we introduced above and can be configured without much knowledge of the workings of the underlying algorithms. To our knowledge there has not been a tool that includes the function of generically searching for secure parameters for both LWE and SIS instances as well as for ring and module variants. Some schemes (e.g. commitment schemes, see \cref{sec:two-problem-search}) depend on the statistical security of either LWE or SIS. We hence include classes respectively to find parameters satisfying this criteria. % TODO: maybe not here just in the section. 
+Furthermore, we provide a set of utility classes and methods for most commonly used distributions and norms.
+A configuration class allows for a substantial customization of the estimation process.
+The tool can either estimate the bit security level of fixed parameter sets or generically search for parameter sets that satisfy a certain bit security level.
+
+% class for distributions... from section this modelling, problems, generic search... Überblick, wie verwendbar,
+% automatische norm umwandlung,
+% sonstige features
+\section{Supported Distributions} \label{sec:supported-distributions}% TODO
+\subsection{Gaussian Distribution}
+In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $sec$. Note that a $n$-dimensional Gaussian $D_{\mathbf{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbf{Z}, s}$ \cite{GJS15}. %TODO check
+
+For a Gaussian distribution and a random variable $X$ with $X \sim D_{\mathbf{Z}, s}$, the following holds: % put as theorem, also for norm inequalities
+
+\begin{equation}
+  \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \|\mathbf{v}\|^2/s^2}
+\end{equation}
+
+We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-sec}$ with $\beta = \|\mathbf{v}\|$  and obtain
+
+\begin{align*}
+  2 e^{-\pi \beta^2/s^2}   & \approx 2^{-sec}                               \\
+  -\pi \frac{\beta^2}{s^2} & \approx (-sec - 1)\ln (2)                      \\
+  \beta                    & \approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}.
+\end{align*}
+
+\begin{theorem}[Gaussian to Bound]
+  Given a Gaussian distribution $D_{\mathbf{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $sec$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbf{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-sec}$ as follows:
+  \begin{equation}
+    \beta  \approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}.
+  \end{equation}
+\end{theorem}
+
+If the Gaussian is specified componentwise we consider $\beta$ as an instance of $\texttt{norm.Lp}$ with $\texttt{p} = \infty$, else as an instance of $\texttt{norm.Lp}$ with $\texttt{p} = 2$.
+
+
+\subsection{Uniform Distribution}
+% TODO
+
+
+
+\section{Norms and Bounds} % TODO: check
+%TODO: write some prose about why we need that
+% TODO: make sure that it is clear that these are bounds!!!
+Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. We define the following norms \cite{BDLOP18}:
+\begin{align}
+  \ell_1 : \| f| \|_1           & = \sum_i |f_i|                               \\
+  \ell_2 : \| f| \|_2           & = \left(\sum_i |f_i|^2\right) ^{\frac{1}{2}} \\
+  \ell_\infty : \| f| \|_\infty & = \max_i |f_i|
+\end{align}
+
+Then the following inequations hold \cite{BDLOP18}:
+\begin{align}
+  \| f \|_1      & \leq \sqrt{n} \| f \|_2 \label{norm1}                                                                    \\
+  \| f \|_1      & \leq n \| f \|_\infty \label{norm2}                                                                      \\
+  \| f \|_2      & \leq \sqrt{n} \| f \|_\infty \;\;(\text{since }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \\
+  \| f \|_\infty & \leq \| f \|_1 \label{norm4}
+\end{align}
+
+Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, for $x, y \in \mathcal{O}_K$ it holds the following inequations hold (we assume that $C_m$ in \cite{DPSZ12} is $1$) \cite{DPSZ12}.
+\begin{align}
+  \| f \|_\infty         & \leq \| \sigma(f) \|_\infty \label{norm5} \\
+  \| \sigma(f) \|_\infty & \leq \| f \|_1 \label{norm6}
+\end{align}
+
+From the above inequations, we obtain the following norm transformations to $\ell_p$-norms:
+\begin{itemize}
+  \item From \cref{norm1}, it follows that $\| f \|_1 \leq \sqrt{n} \| f \|_2$ and from \cref{norm2}, $\| f \|_1 \leq n \| f \|_\infty$.
+  \item From \cref{norm3} and \cref{norm4}, it follows that $\| f \|_2 \leq \sqrt{n}  \| f \|_1$ and from \cref{norm3}, $\| f \|_2 \leq \sqrt{n}  \| f \|_\infty$.
+  \item From \cref{norm4}, it follows that $\| f \|_\infty \leq  \| f \|_1$ and from \cref{norm1} and \cref{norm4}, $\| f \|_\infty \leq \sqrt{n}  \| f \|_2$.
+  \item From \cref{norm6}, it follows that $\| \sigma(f) \|_\infty \leq  \| f \|_1$, from \cref{norm1} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2$, and from \cref{norm2} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq n  \| f \|_\infty$.
+\end{itemize}
+
+Likewise, we get the following transformations to the $\mathcal{C}_\infty$-norm:
+\begin{itemize}
+  \item From \cref{norm2} and \cref{norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
+  \item From \cref{norm3} and \cref{norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+  \item From \cref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
+\end{itemize}
+
+Let $f$ be defined as above and let $g \in \mathcal{R}_q$ where $g = \sum_i \overline{g}_i X^i$ where $g_i \in \left[-(q-1)/2, (q-1)/2\right]$ and $\overline{g}_i = g_i \mod q$ as in \cite{BDLOP18}. Then, we can define the following inequations for multiplication according to \cite{BDLOP18}:
+
+\begin{itemize}
+  \item If $\|f\|_\infty \leq \beta, \|g\|_1 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
+  \item If $\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
+\end{itemize}
+
+Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the following inequation holds according to \cite{DPSZ12}:
+\begin{align}
+  \| x \cdot y \|_\infty \leq C_m \cdot n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty \\
+  \| \sigma(x \cdot y) \|_\infty \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
+\end{align}
+
+
+
+
+\section{Problems}
+We now present the problem classes in $\texttt{lattice\_parameter\_estimation/problem}$ (see \cref{fig:problem-classes}).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=1\textwidth]{graphics/problem_classes.pdf}
+  \caption{Problem Classes}\label{fig:problem-classes}
+\end{figure}
+
+$\texttt{LWE}$ and $\texttt{SIS}$ inherit from the base class $\texttt{BaseProblem}$ respectively. All instances provide a method $\texttt{get\_estimate\_algorithms()}$ that returns a list of algorithm instances that can be executed by the function $\texttt{estimate()}$. Furthermore, any instance of $\texttt{BaseProblem}$ can be compared to a bit security level (for more details, we refer the reader to the documentation). The $\texttt{LWE}$ class is initialized by the secret dimension $n$, a modulus $q$, the number of samples $m$, a $\texttt{secret\_distribution}$ and a $\texttt{error\_distribution}$. Both $\texttt{secret\_distribution}$ and $\texttt{error\_distribution}$ must be instances of the class $\texttt{distributions.Distribution}$. Instead of $\texttt{secret\_distribution}$ and $\texttt{error\_distribution}$, a bound of type $\texttt{norm.BaseNorm}$ must be set for $\texttt{SIS}$. Note that both {distributions.Uniform} and {distributions.Gaussian} are instances of $\texttt{norm.BaseNorm}$ and can thus be used as a bound. We compute the bound for a given distribution instance as described in \cref{sec:supported-distributions}.
+
+For ring and module variants $\texttt{RLWE}$, $\texttt{RSIS}$ and $\texttt{MLWE}$, $\texttt{MSIS}$ respectively $n$ denotes the degree of the polynomial of the underlying ring $\mathcal{R}_q$. The module variants $\texttt{MLWE}$ and $\texttt{MSIS}$ take an addition parameter $d$ for the rank of the module.
+
+While there exist special cases where the ring structure of problem instances can be exploited in an attack on LWE or SIS, % TODO: find examples
+in general, the hardness of ring and Module variants is estimated by interpreting the coefficients of elements of $\mathcal{R}_q$ as vectors in $\mathbb{Z}_q^n$ \cite{ACDDPPVW18}.
+We thus reduce ring and Module instances as follows when calling $\texttt{get\_estimate\_algorithms()}$ on the ring and module variant of $\texttt{LWE}$ and $\texttt{SIS}$:
+\begin{itemize}
+  \item RLWE$_{n, q, m, \chi} \longrightarrow$ LWE$_{n, q, m \cdot n, \chi}$
+  \item MLWE$_{n, d, q, m, \chi} \longrightarrow$ LWE$_{n \cdot d, q, m \cdot n, \chi}$
+  \item RSIS$_{n, q, m, \beta} \longrightarrow$ SIS$_{n, q, m \cdot n, \beta}$
+  \item MSIS$_{n, d, q, m, \beta} \longrightarrow$ SIS$_{n \cdot d, q, m \cdot n, \beta}$
+\end{itemize}
+
+
+\paragraph{$\texttt{StatisticalGaussianMLWE}$.} For LWE, we define a statistically secure variant over a Gaussian distribution and over a uniform distribution. $\texttt{StatisticalGaussianMLWE}$ follows Corollary 7.5 and Theorem 7.4 in \cite{LPR13}. To avoid confusion we first specify the mapping for differing usage of parameters in \cite{LPR13} as compared to this work \cref{tab:mapping-LPR13} and obtain the following theorem:
+
+\begin{table}
+  \centering
+  \begin{tabular}[h]{lll}
+    \toprule
+    Parameters in \cite{LPR13} & Use Here & Represents                    \\\hline
+    $l$                        & $m+d$    & width of matrix $\mathbf{A}$  \\
+    $k$                        & $m$      & height of matrix $\mathbf{A}$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Parameter Mapping from \cite{LPR13}}\label{tab:mapping-LPR13}
+\end{table}
+
+\begin{theorem}{Statistically Secure MLWE Over a Gaussian Distribution \cite{LPR13}}
+  Let $\mathcal{R}$ be the ring of integers in the $m'$th cyclotomic number field $K$ of degree $n$, and $q \geq 2$ an integer.
+  For positive integers $m \leq m + d \leq \text{poly}(n)$, let $\mathbf{A} = [ \mathbf{I}_{[m]} \mid \bar{\mathbf{A}}] \in (\mathcal{R}_q)^{[m] \times [m+d]}$, where $\mathbf{I}_{[m]} \in (\mathcal{R}_q)^{[m] \times [m]}$ is the identity matrix and $\bar{\mathbf{A}} \in (\mathcal{R}_q)^{[m] \times [d]}$ is uniformly random.
+  Then with probability $1 - 2^{-\Omega(n)}$ over the choice of $\bar{\mathbf{A}}$, the distribution of $\mathbf{A}\mathbf{x} \in (\mathcal{R}_q)^{[m]}$ where each coordinate of $\mathbf{x} \in (\mathcal{R}_q)^{[m+d]}$ is chosen from a discrete Gaussian distribution of parameter $s > 2n \cdot q^{m / (m+d) + 2/(n (m+d))}$ over $\mathcal{R}$, satisfies that the probability of each of the $q^{n m}$ possible outcomes is in the interval $(1 \pm 2^{-\Omega(n)}) q^{-n }$ (and in particular is within statistical distance $2^{-\Omega(n)}$ of the uniform distribution over $(\mathcal{R}_q)^{[m]}$). % TODO change [x]times[y] notation???
+\end{theorem}
+% TODO: anything more? can you provide an intuition?
+
+If a security parameter is passed and $sec > n$, we raise an exepction.
+The resulting minimal standard deviation is stored in the instance variable $\texttt{min\_sigma}$ and the corresponding distribution can be obtained by calling $\texttt{get\_secret\_distribution\_min\_width()}$ on the class instance.
+
+
+
+\paragraph{$\texttt{StatisticalUniformMLWE}$.} The authors of \cite{BDLOP18} describe statistically secure MLWE instances over a Uniform distribution with invertible elements. The samples $(\mathbf{A}', h_{\mathbf{A}'}(y))$ of the resulting MLWE instance are within statistical distance $2^{-sec}$ of $(\mathbf{A}', \mathbf{u})$ for uniformly distributed $\mathbf{u}$. % TODO: check formulation
+
+In \cref{tab:mapping-BDLOP18} we specify the mapping of parameters used in \cite{BDLOP18} and obtain the following theorem: %TODO 
+
+\begin{table}
+  \centering
+  \begin{tabular}[h]{lll}
+    \toprule
+    Parameters in \cite{BDLOP18} & Use Here & Represents                                         \\\hline
+    $k$                          & $m+d$    & width of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$  \\
+    $n$                          & $m$      & height of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$ \\
+    $d$                          & $d_2$    & variable                                           \\
+    $N$                          & $n$      & degree of Ring polynomial                          \\
+    \bottomrule
+  \end{tabular}
+  \caption{Parameter Mapping from \cite{BDLOP18}}\label{tab:mapping-BDLOP18}
+\end{table}
+
+
+\begin{theorem}[Statistically Secure MLWE Over a Uniform Distribution \cite{BDLOP18}]
+  Let $1 < d_2 < n$ be a power of 2. If $q$ is a prime congruent to $2d_2 + 1 \;(\text{mod } 4d_2)$ and
+  \begin{equation}
+    q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
+  \end{equation}
+  then any (all-powerful) algorithm $\mathcal{A}$ has advantage at most $2^{-sec}$ in solving $\text{DKS}_{m,m+d,\beta}^\infty$, where $\text{DKS}^\infty$ is the decisional knapsack problem in $\ell_\infty$-norm.
+\end{theorem}
+
+
+Hence, we have:
+\begin{align}
+  \beta_{min} & = \frac{q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)}}{2} \\
+  \beta_{max} & = \frac{1}{2\sqrt{d_2}} \cdot q^{1/d_2} - 1
+\end{align}
+% TODO: explain ho to arrive at 2*sec instead of 256 
+
+The variable $d_2$ can be passed as an argument. If it is not passed, we try to find $d_2$ by iterating over all powers of $2$ that are smaller than $n$.
+The resulting bounds are converted to $\ell_\infty$ and stored in the instance variables $\texttt{min\_beta}$ and $\texttt{max\_beta}$. We also provide an instance method $\texttt{get\_beta\_bounds()}$ to obtain a tuple of both.
+
+For both statistically secure MLWE variants, we include the corresponding ring versions $\texttt{StatisticalGaussianRLWE}$ and $\texttt{StatisticalUniformRLWE}$ for $d=1$ and matrix versions $\texttt{StatisticalGaussianMatrixMLWE}$ and $\texttt{StatisticalUniformMatrixMLWE}$ for which the width and height of the matrix $\mathbf{A}$ in \cite{LPR13} can be passed instead of $m$ and $d$. % TODO: include instead of included?
+% TODO: explain why this doesn't work for LWE
+
+
+\paragraph{$\texttt{StatisticalMSIS}$.} We can find parameters for a statistically secure MSIS instance by following Section 4.1 of \cite{DOTT21}. More specifically, we ask to find a MLWE instance where the probability that non zero elements $\mathbf{r}$ in the Euclidean ball $B_{m}(0, 2B)$ satisfy $\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}$ is smaller than $2^{-sec}$. % TODO check that this is not a quote
+
+We give a mapping of the parameters in \cite{DOTT21} in \cref{tab:mapping-DOTT21}
+
+\begin{table}
+  \centering
+  \begin{tabular}[h]{lll}
+    \toprule
+    Parameters in \cite{DOTT21} & Use Here & Represents                            \\\hline
+    $m'$                        & $m+d$    & width of matrix $\hat{\mathbf{A}}_1$  \\
+    $m$                         & $m$      & height of matrix $\hat{\mathbf{A}}_1$ \\
+    $B$                         & $B$      & norm-bound of secret                  \\
+    $s$                         & $s$      & Gaussian width (not stddev)           \\
+    $N$                         & $n$      & degree of polynomial                  \\
+    \bottomrule
+  \end{tabular}
+  \caption{Parameter Mapping from \cite{DOTT21}}\label{tab:mapping-DOTT21}
+\end{table}
+
+
+The number of elements in $B_{m+d}(0, 2B)$ can be estimated from above as $|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}$. The scheme is statistically binding if the probability that non zero elements in $B_{m+d}(0, 2B)$ of radius $2B$ in $\mathcal{R}_q^{m+d}$ map to $\mathbf{0}$ in $\mathcal{R}_q^{m}$ is negligible. Hence, it must hold that $|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-sec}$ and we get:
+
+% TODO: look for bound of ball without o(...) if change also change in docstring
+
+\begin{align}
+  \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} & \leq 2^{-sec} \cdot q^{m\cdot n}                                                                       \\
+  B                                                                           & \leq 2^{\frac{-sec}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}
+\end{align}
+
+We convert the bound $B$ to a Gaussian over $\ell_2$-norm by following the procedure described in \cref{sec:norm}: % TODO: add appropriate reference
+
+\begin{equation}
+  s  \approx x \sqrt{\frac{\pi}{(sec + 1) \ln(2)}}
+\end{equation}
+
+% TODO: rephrase to obtain a lemma?
+The resulting parameters $B$ and $s$ can be accessed by the instance variables $\texttt{max\_sigma}$ and $\texttt{max\_beta}$ or by calling $\texttt{get\_secret\_distribution\_max\_width()}$ on the class instance.
+
+As for statistically secure MLWE we again include a matrix version $\texttt{StatisticalMatrixMSIS}$ and a ring $\texttt{StatisticalRSIS}$ by setting $d=1$. In addition, the proof also applies to the base SIS variant and hence we include $\texttt{StatisticalSIS}$. Here the height of the matrix $n$ becomes the rank of the modulus in the MSIS instance, i.e. $d=n$, and the degree of the polynomial is $1$.
+
+
+
+
+
+\section{Configuration}
+\subsection{Cost Models}
+TODO:
+- update plots, include setting for BKZ estimate (8d model, maybe even add a BKZ function that can be tweaked)
+- classification
+- include plots
+- how to specify own cost model
+
+
+\subsection{Algorithms}
+- include plots
+- write about pro/cons
+- maybe add section of cost comparison for the algorithms of the previous section
+
+
+\subsection{Others}
+- security strategy
+- parallel and timeout
+- termination
+
+\subsection{Generic Search}
+
+
+
+
+
+
+
+
 
 
 
 \chapter{Usage Examples}
-\section{Two Problem Search}
+\section{Two Problem Search}\label{sec:two-problem-search}
 % TODO: based on \cite{BDLOP18}
 two problems lwe sis, what they are, how to solve it by the tool
 \section{TODO: find other schemes to apply}

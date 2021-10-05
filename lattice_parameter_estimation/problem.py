@@ -55,6 +55,7 @@ class AlgorithmResult():
     """
     Encapsulates algorithm estimates.
     """
+
     def __init__(self, runtime, problem_instance, params, alg_name, c_name="", cost=est.Cost([("rop", oo)]), is_successful=True, error=None, is_insecure=False):
         """ 
         :param runtime: runtime [s]
@@ -67,6 +68,7 @@ class AlgorithmResult():
         :param error: string with error description
         :param is_insecure: must be ``True`` if found cost estimate violates security requirement
         """
+
         self.runtime = runtime
         self.problem_instance = problem_instance
         self.params = params
@@ -81,6 +83,7 @@ class AlgorithmResult():
         """ 
         :returns: JSON-serializable dict
         """
+
         return {
             "inst": self.problem_instance,
             "alg_name": self.alg_name,
@@ -95,9 +98,11 @@ class AlgorithmResult():
         }
 
     def __bool__(self):
+
         return self.is_secure
 
     def __str__(self) -> str:
+
         ret = self.str_no_err()
         if not self.is_successful:
             ret += f"\nError: {self.error}"
@@ -107,6 +112,7 @@ class AlgorithmResult():
         """ 
         :returns: string without error message.
         """
+
         if not self.is_successful:
             detail = f"insuccessful (took {str(self.runtime)}s) \n\tparams: {str(self.params)}"
         else:
@@ -121,6 +127,7 @@ class AggregateEstimationResult():
     
     TODO: Type of return value needed for overloaded lt-operator :class:`BaseProblem` instances.
     """
+
     def __init__(self, config : algorithms.Configuration, error="all_failed", runtime=0, problem_instances : List[BaseProblem] = []):
         """
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
@@ -133,6 +140,7 @@ class AggregateEstimationResult():
         :ivar lowest_sec: lowest found security estimate
         :ivar runtime: total runtime
         """
+
         self.error = error
         self.is_insecure = False
         self.lowest_sec = oo
@@ -149,6 +157,7 @@ class AggregateEstimationResult():
 
         :param algorithm_result: instance of :class:`AlgorithmResult`
         """
+
         self._contains_res = True
         if algorithm_result.is_insecure:
             self.is_insecure = True
@@ -170,6 +179,7 @@ class AggregateEstimationResult():
 
         :param algorithm_result: instance of :class:`AggregateEstimationResult`
         """
+
         if not aggregate_result.is_secure():
             self.is_insecure = True
         if aggregate_result.error != "all_failed": # => error is "early_termination" or "timeout"
@@ -191,6 +201,7 @@ class AggregateEstimationResult():
         :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
         :param only_successful: only return estimate results for successful algorithms
         """
+
         if not self._contains_res:
             return self.alg_res_dict
 
@@ -219,6 +230,7 @@ class AggregateEstimationResult():
         """
         Returns if secure according to security strategy in config
         """
+
         if self.is_insecure:
             return False
         
@@ -247,6 +259,7 @@ class AggregateEstimationResult():
         :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
         :param only_successful: only return estimate results for successful algorithms
         """
+
         alg_result_dict = {}
         former_dict = self.get_algorithm_result_dict(sort_by_rop=sort_by_rop,   
             only_best_per_algorithm=only_best_per_algorithm, only_successful=only_successful)
@@ -270,6 +283,7 @@ class AggregateEstimationResult():
         :param only_best_per_algorithm: if ``True`` only the best algorithm for each cost model is returned
         :param only_successful: only return estimate results for successful algorithms
         """
+
         with open(filename + ".json", 'w') as fout:
             json.dump(self.to_dict(sort_by_rop=sort_by_rop, only_best_per_algorithm=only_best_per_algorithm, 
                         only_successful=only_successful), fout, indent=4)
@@ -278,6 +292,7 @@ class AggregateEstimationResult():
         """ 
         Calls :meth:`is_secure`.
         """
+
         return self.is_secure()
 
     def __str__(self) -> str:
@@ -336,6 +351,7 @@ def reduce_parameter_problems(parameter_problems : Iterable[BaseProblem], config
 
         :param parameter_problems: iterable over instances of :class:`BaseProblem`
         """
+
         parameter_problems = list(parameter_problems)
         if not REDUCE_PROBLEMS:
             return parameter_problems
@@ -398,6 +414,7 @@ def algorithms_executor(algs, config : algorithms.Configuration, sec=None, res_q
 
     :returns: ``None`` if res_queue is set, else an instance of :class:`AggregateEstimationResult`
     """
+
     start = time.time()
     results = AggregateEstimationResult(config=config)
     results = []
@@ -514,6 +531,7 @@ def estimate(
 
     :returns: instance of :class:`AggregateEstimationResult`
     """
+
     # Create algorithm list of tuples (problem_instance, alg)
     algs = [] 
     parameter_problems = reduce_parameter_problems(parameter_problems, config)
@@ -640,6 +658,7 @@ class LWE(BaseProblem):
     """ 
     Learning with Errors (LWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
     """
+
     _counter = 1
 
     def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="LWE", label=None): 
@@ -652,6 +671,7 @@ class LWE(BaseProblem):
         :param variant: for internal use to distinguish variants
         :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
+
         # check soundness of parameters
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
@@ -716,7 +736,8 @@ class LWE(BaseProblem):
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
-        """         
+        """   
+
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator() 
         alpha = RR(self.error_distribution.get_alpha(q=self.q, n=self.n))
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
@@ -923,6 +944,7 @@ class MLWE(LWE):
     """ 
     Module Learning with Errors (MLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
     """
+
     _counter = 1
     
     def __init__(self, n, d, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, label=None, variant="MLWE"):
@@ -952,53 +974,29 @@ class MLWE(LWE):
         self.secret_distribution = secret_distribution
         self.error_distribution = error_distribution
 
-    def get_estimate_algorithms(self, config : algorithms.Configuration, use_reduction=False):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         r"""
         Compute list of estimate functions on the MLWE instance according to the attack configuration.
 
-        If use_reduction is `False`, the cost is estimated for an LWE instance with dimension :math:`n=n \cdot d`. Else, the MLWE instance will be reduced to RLWE according to :cite:`KNK20b` as follows:
-
-        Corollary (:cite:`KNK20b` Corollary 1, note: :cite:`KNK20b` contains error in exponent of q):
-
-        If we take :math:`k = d`, then there exists an efficient reduction from :math:`\textit{M-SLWE}_{m,q, \Psi \leq \alpha}^{R^d}\left(\chi^d\right)` to :math:`\textit{R-SLWE}_{m,q^d, \Psi \leq \alpha\cdot n^2\cdot\sqrt{d}}^{R}\left(U(R_q^\vee)\right)` with controlled error rate :math:`\alpha`.
-
-        Note that the reduction only works for Search-MLWE TODO: find reduction for decision-MLWE?
-
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
-        :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        # TODO: check if correct
-        use_reduction = False
-        if use_reduction:
-            raise NotImplementedError()
-            alpha_MLWE = self.error_distribution.get_alpha()
-            alpha_RLWE = RR(alpha_MLWE * self.n**2 * sqrt(self.d))
-            q_RLWE = self.q**self.d
-            secret_distribution_RLWE = distributions.Uniform(0, self.q) # TODO: is this correct?
-            error_distribution_RLWE = distributions.Gaussian_alpha(alpha_RLWE, q_RLWE) # TODO: componentwise or L2?
-            # TODO how to do RLWE?
-            rlwe = RLWE(n=self.n, q=q_RLWE, m=self.m, secret_distribution=secret_distribution_RLWE, 
-                                error_distribution=error_distribution_RLWE)
-
-            return rlwe.get_estimate_algorithms(config=config,       
-                                        use_reduction=use_reduction)
-            
-        else:
-            lwe = LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
-                        error_distribution=self.error_distribution, variant="MLWE", label=self.label)
-            return lwe.get_estimate_algorithms(config=config)
+        
+        lwe = LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
+                    error_distribution=self.error_distribution, variant="MLWE", label=self.label)
+        return lwe.get_estimate_algorithms(config=config)
 
     def to_LWE(self):
         """
         :returns: LWE instance with parameters :math:`n=n \cdot d` and :math:`m=m \cdot n`
         """
+
         return LWE(n=self.n*self.d, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="MLWE", label=self.label)
 
     def __str__(self):
-        # TODO
+
         return "MLWE instance with parameters (n=" + str(self.n) + ", d=" + str(self.d) + ", q=" + str(self.q) \
             + ", m=" + str(self.m) + ", secret_distribution=" + str(self.secret_distribution._convert_for_lwe_estimator())  \
             + ", error_distribution=" + str(self.error_distribution._convert_for_lwe_estimator()) + ")"
@@ -1008,6 +1006,7 @@ class RLWE(LWE):
     """ 
     Ring Learning with Errors (RLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
     """
+
     _counter = 1
 
     def __init__(self, n, q, m, secret_distribution : distributions.Distribution, error_distribution : distributions.Distribution, variant="RLWE", label=None):
@@ -1021,6 +1020,7 @@ class RLWE(LWE):
         :param variant: for internal use to distinguish variants
         :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
+
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
@@ -1041,10 +1041,10 @@ class RLWE(LWE):
         Compute list of estimate functions on the RLWE instance according to the attack configuration by interpreting the coefficients of elements of :math:`\mathcal{R}_q` as vectors in :math:`\mathbb{Z}_q^n` as in :cite:`ACDDPPVW18`, p. 6. 
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
-        :param use_reduction: specify if reduction to RLWE is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
+
         lwe = LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="RLWE", label=self.label)
         return lwe.get_estimate_algorithms(config=config)
@@ -1053,11 +1053,12 @@ class RLWE(LWE):
         """
         :returns: LWE instance with parameters :math:`n=n` and :math:`m=m \cdot n`
         """
+
         return LWE(n=self.n, q=self.q, m=self.m*self.n, secret_distribution=self.secret_distribution,    
                     error_distribution=self.error_distribution, variant="RLWE", label=self.label)
 
     def __str__(self):
-        # TODO
+
         return "RLWE instance with parameters (n=" + str(self.n) + ", q=" + str(self.q) \
             + ", m=" + str(self.m) + ", secret_distribution=" + str(self.secret_distribution._convert_for_lwe_estimator())  \
             + ", error_distribution=" + str(self.error_distribution._convert_for_lwe_estimator()) + ")"
@@ -1081,7 +1082,7 @@ class StatisticalGaussianMLWE():
     Then Corollary 7.5 combined with Theorem 7.4 in :cite:`LPR13` reads as follows:
     Let :math:`\mathcal{R}` be the ring of integers in the :math:`m'`th cyclotomic number field :math:`K` of degree :math:`n`, and :math:`q \geq 2` an integer. 
     For positive integers :math:`m \leq m + d \leq \text{poly}(n)`, let :math:`\mathbf{A} = [ \mathbf{I}_{[m]} \mid \bar{\mathbf{A}}] \in (\mathcal{R}_q)^{[m] \times [m+d]}`, where :math:`\mathbf{I}_{[m]} \in (\mathcal{R}_q)^{[m] \times [m]}` is the identity matrix and :math:`\bar{\mathbf{A}} \in (\mathcal{R}_q)^{[m] \times [d]}` is uniformly random. 
-    Then with probability :math:`1 - 2^{-\Omega(n)}` over the choice of :math:`\bar{\mathbf{A}}`, the distribution of :math:`\mathbf{A}\mathbf{x} \in (\mathcal{R}_q)^{[m]}` where each coordinate of :math:`\mathbf{x} \in (\mathcal{R}_q)^{[m+d]}` is chosen from a discrete Gaussian distribution of paramete :math:`r > 2n \cdot q^{m / (m+d) + 2/(n (m+d))}` over :math:`\mathcal{R}`, satisfies that the probability of each of the :math:`q^{n m}` possible outcomes is in the interval :math:`(1 \pm 2^{-\Omega(n)}) q^{-n }` (and in particular is within statistical distance :math:`2^{-\Omega(n)}` of the uniform distribution over :math:`(\mathcal{R}_q)^{[m]}`). 
+    Then with probability :math:`1 - 2^{-\Omega(n)}` over the choice of :math:`\bar{\mathbf{A}}`, the distribution of :math:`\mathbf{A}\mathbf{x} \in (\mathcal{R}_q)^{[m]}` where each coordinate of :math:`\mathbf{x} \in (\mathcal{R}_q)^{[m+d]}` is chosen from a discrete Gaussian distribution of parameter :math:`s > 2n \cdot q^{m / (m+d) + 2/(n (m+d))}` over :math:`\mathcal{R}`, satisfies that the probability of each of the :math:`q^{n m}` possible outcomes is in the interval :math:`(1 \pm 2^{-\Omega(n)}) q^{-n }` (and in particular is within statistical distance :math:`2^{-\Omega(n)}` of the uniform distribution over :math:`(\mathcal{R}_q)^{[m]}`). 
     
     :ivar min_sigma: minimum :math:`\sigma` (standard deviation) required for statistically secure MLWE
     :ivar sec: set to parameter sec if sec is specified in constructor, else set to n
@@ -1147,6 +1148,7 @@ class StatisticalGaussianRLWE(StatisticalGaussianMLWE):
     :ivar min_sigma: minimum :math:`\sigma` (standard deviation) required for statistically secure MLWE
     :ivar sec: set to parameter sec if sec is specified in constructor, else set to n
     """
+
     def __init__(self, n, q, m, sec=None):
         """
         :param n: degree of polynomial
@@ -1154,6 +1156,7 @@ class StatisticalGaussianRLWE(StatisticalGaussianMLWE):
         :param m: number of samples
         :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
         """
+
         super().__init__(n=n, d=1, q=q, m=m, sec=sec)
 
 
@@ -1181,7 +1184,7 @@ class StatisticalUniformMLWE():
 
         q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
 
-    then any (all-powerful) algorithm :math:`\mathcal{A}` has advantage at most :math:`2^{-sec}` in solving :math:`\text{DKS}_{m,m+d,\beta}^\infty`, where :math:`\text{DKS}^\infty` is the decisional knapsack problem in :math:`L_\infty`-norm. 
+    then any (all-powerful) algorithm :math:`\mathcal{A}` has advantage at most :math:`2^{-sec}` in solving :math:`\text{DKS}_{m,m+d,\beta}^\infty`, where :math:`\text{DKS}^\infty` is the decisional knapsack problem in :math:`\ell_\infty`-norm. 
 
     Hence, we have: 
 
@@ -1191,11 +1194,10 @@ class StatisticalUniformMLWE():
 
         \beta_{max} = \frac{1}{2\sqrt{d_2}} \cdot q^{1/d_2} - 1
 
-    TODO: explain ho to arrive at 2*sec instead of 256 
-
-    :ivar min_beta: :math:`\beta_{min}`
-    :ivar max_beta: :math:`\beta_{max}`
+    :ivar min_beta: :math:`\beta_{min}`, instance of :py:mod:`lattice_parameter_estimation.norm.Lp` with `p=oo`
+    :ivar max_beta: :math:`\beta_{max}` , instance of :py:mod:`lattice_parameter_estimation.norm.Lp` with `p=oo`
     """
+
     def __init__(self, sec, n, d, q, m, d_2=None):
         r"""
         :param sec: required bit security of MLWE instance
@@ -1205,6 +1207,7 @@ class StatisticalUniformMLWE():
         :param m: number of samples (height of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
         :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
         """
+
         if d_2 is None:
             d_2 = StatisticalUniformMLWE.find_d(q, n)
 
@@ -1227,6 +1230,7 @@ class StatisticalUniformMLWE():
         """
         :returns: tuple (min_beta, max_beta), betas are instances of :py:mod:`lattice_parameter_estimation.norm.Lp`
         """
+
         return (self.min_beta, self.max_beta)
 
     def find_d(q, n):
@@ -1236,6 +1240,7 @@ class StatisticalUniformMLWE():
         :param q: prime
         :param n: upper bound of d (degree of polynomial)
         """
+
         d = 2
         while d < n:
             if (q % (4 * d)) == (2 * d + 1):
@@ -1254,6 +1259,7 @@ class StatisticalUniformMatrixMLWE(StatisticalUniformMLWE):
     :ivar min_beta: :math:`\beta_{min}`
     :ivar max_beta: :math:`\beta_{max}`
     """
+
     def __init__(self, sec, n, q, width, height, d_2=None):
         r"""
         :param n: degree of polynomial
@@ -1275,6 +1281,7 @@ class StatisticalUniformRLWE(StatisticalUniformMLWE):
     :ivar min_beta: :math:`\beta_{min}`
     :ivar max_beta: :math:`\beta_{max}`
     """
+
     def __init__(self, sec, n, q, m, d_2=None):
         r"""
         :param sec: required bit security of MLWE instance
@@ -1283,6 +1290,7 @@ class StatisticalUniformRLWE(StatisticalUniformMLWE):
         :param m: number of samples (height of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
         :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
         """
+
         super().__init__(sec=sec, n=n, d=1, q=q, m=m, d_2=d_2)
 
 
@@ -1291,6 +1299,7 @@ class SIS(BaseProblem):
     """ 
     Short Integer Solution (SIS) problem class used to create a list of algorithms from for cost estimation.
     """
+
     _counter = 1
 
     def __init__(self, n, q, m, bound : norm.BaseNorm, variant="SIS", label=None):
@@ -1302,6 +1311,7 @@ class SIS(BaseProblem):
         :param variant: for internal use to distinguish variants
         :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
+
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
@@ -1347,6 +1357,7 @@ class SIS(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "SIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
+
         cost_models = config.reduction_cost_models() 
         algs = []
         for reduction_cost_model in cost_models:
@@ -1413,9 +1424,11 @@ class SIS(BaseProblem):
         return algs
 
     def to_SIS(self):
+
         return self
         
     def __str__(self):
+
         return f"SIS [n={str(self.n)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
@@ -1435,6 +1448,7 @@ class MSIS(SIS):
         :param variant: for internal use to distinguish variants
         :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
+
         if not n or not d or not q or not m or n<0 or d<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
 
@@ -1449,56 +1463,27 @@ class MSIS(SIS):
         self.m = m
         self.bound = bound
     
-    def get_estimate_algorithms(self, config : algorithms.Configuration, use_reduction=False):
+    def get_estimate_algorithms(self, config : algorithms.Configuration):
         r"""
         Compute list of estimate functions on the MSIS instance according to the attack configuration.
 
-        TODO: If use_reduction is `False`, the algorithms take an SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n` as input. Else, the MSIS instance will be reduced to RSIS according to :cite:`KNK20b` as follows:
-
-        Corollary (:cite:`KNK20b` Corollary 2):
-
-        Let :math:`k = 2` and :math:`q` be a prime. Let a positive real number :math:`\beta` be an upper bound on the :math:`L_2`-norm of the solution of :math:`\text{R-SIS}_{q,m,\beta}` and :math:`d \in \mathbb{N}` be a module rank such that
-
-        .. math:: \sqrt{n m} \cdot q^{1/m} \leq \beta < \sqrt[2d-1]{q / (\sqrt{m}^{d-1})}.
-        
-        Then there exists a reduction from :math:`\text{M-SIS}_{q^k,m^k,\beta'}` to :math:`\text{R-SIS}_{q,m,\beta}` with :math:`\beta' = m^{k(d-1)/2} \cdot \beta^{k(2d-1)}`.
-
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
-        :param use_reduction: specify if reduction to RSIS is used
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
-        # TODO
-        if use_reduction:
-            raise NotImplementedError()
-            # transform to L2-norm
-            self.beta = self.bound.to_L2(self.n * self.d).value # TODO: check dimension
 
-            # TODO: check preconditions
-            k = 2
-            lower = RR(sqrt(self.n * self.m) * self.q**(1 / self.m))
-            upper = RR((self.q / sqrt(self.m)**(self.d-1))**(1 / (2 * self.d - 1)))
-            if lower <= self.beta and self.beta < upper:
-                q_RSIS = RR(round(self.q**(1/k)))
-                m_RSIS = RR(round(self.m**(1/k)))
-                beta_RSIS = RR((self.beta / (self.m**((self.d - 1) / 2)))**(1 / (k * (2 * self.d - 1))))
-                bound = norm.Lp(beta_RSIS, self.n, 2) # new dimension of input vector (instead of n * d in M-SIS)
-
-            rsis = RSIS(n=self.n, q=q_RSIS, bound=bound, m=m_RSIS)
-            return rsis.get_estimate_algorithms(config=config,     
-                                        use_reduction=use_reduction) # TODO: use_reduction makes sense?
-
-        else:
-            sis = SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS", label=self.label)
-            return sis.get_estimate_algorithms(config=config)
+        sis = SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS", label=self.label)
+        return sis.get_estimate_algorithms(config=config)
     
     def to_SIS(self):
         """
         :returns: SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n`
         """
+
         return SIS(n=self.n*self.d, q=self.q, m=self.m*self.n, bound=self.bound, variant="MSIS", label=self.label)
 
     def __str__(self):
+
         return f"MSIS [n={str(self.n)}, d={str(self.d)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
@@ -1506,6 +1491,7 @@ class RSIS(SIS):
     """ 
     Ring Short Integer Solution (RSIS) problem class used to create a list of algorithms from for cost estimation.
     """
+
     _counter = 1
 
     def __init__(self, n, q, m, bound : norm.BaseNorm, variant="RSIS", label=None):
@@ -1517,6 +1503,7 @@ class RSIS(SIS):
         :param variant: for internal use to distinguish variants
         :param label: short string to refer to describe the problem name, e.g. ``"LWE-Regev"``
         """
+
         ## We interpret the coefficients of elements of R_q as vectors in Z_q^n [ACD+18, p. 6]
         if not n or not q or not m or n<0 or q<0 or m<0:
             raise ValueError("Parameters not specified correctly")
@@ -1539,6 +1526,7 @@ class RSIS(SIS):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """ 
+
         sis = SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS", label=self.label)
         return sis.get_estimate_algorithms(config=config)
     
@@ -1546,9 +1534,11 @@ class RSIS(SIS):
         """
         :returns: SIS instance with dimension :math:`n=n \cdot d` and :math:`m=m \cdot n`
         """
+
         return SIS(n=self.n, q=self.q, m=self.m*self.n, bound=self.bound, variant="RSIS", label=self.label)
 
     def __str__(self):
+
         return f"RSIS [n={str(self.n)}, q={str(self.q)}, m={str(self.m)}, bound ({type(self.bound).__name__})={str(float(self.bound.value))}]"
 
 
@@ -1556,7 +1546,7 @@ class StatisticalMSIS():
     r"""
     Statistically secure MSIS according to :cite:`DOTT21`, section 4.1.
 
-    MLWE problem instance where the probability that non zero elements :math:`\mathbf{r}` in the Euclidean ball :math:`B_{m}(0, 2B)` satisfy :math:`\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}` is smaller than :math:`2^{-sec}`.
+    MSIS problem instance where the probability that non zero elements :math:`\mathbf{r}` in the Euclidean ball :math:`B_{m}(0, 2B)` satisfy :math:`\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}` is smaller than :math:`2^{-sec}`.
 
     Mapping of parameters in :cite:`DOTT21` to use here:
     
@@ -1571,14 +1561,12 @@ class StatisticalMSIS():
     ============================ ============= ============================================
 
     The number of elements in :math:`B_{m+d}(0, 2B)` can be estimated from above as :math:`|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}`. The scheme is statistically binding if the probability that non zero elements in :math:`B_{m+d}(0, 2B)` of radius :math:`2B` in :math:`\mathcal{R}_q^{m+d}` map to :math:`\mathbf{0}` in :math:`\mathcal{R}_q^{m}` is negligible. Hence, it must hold that :math:`|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-sec}` and we get:
-    
-    TODO: look for bound of ball without o(...)
         
     .. math::
         \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} &\leq 2^{-sec} \cdot q^{m\cdot n} \\
         B &\leq 2^{\frac{-sec}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}\\
     
-    We convert the bound :math:`B` to a Gaussian over :math:`L_2`-norm by following the procedure described in :ref:`to_Lp <to_Lp>`:
+    We convert the bound :math:`B` to a Gaussian over :math:`\ell_2`-norm by following the procedure described in :ref:`to_Lp <to_Lp>`:
 
     .. math::
         s  \approx x \sqrt{\frac{\pi}{(sec + 1) \ln(2)}}
@@ -1595,6 +1583,7 @@ class StatisticalMSIS():
         :param q: modulus
         :param m: number of samples (or width of matrix)
         """
+
         # TODO: check paramters
         max_beta = RR(2**(-sec / ((m + d) * n)  - 1) * q**(m / (m + d)) * sqrt((m + d) * n / (2 * pi * e)))
         # convert beta bound to Gaussian width parameter
@@ -1621,6 +1610,7 @@ class StatisticalMatrixMSIS(StatisticalMSIS):
     :ivar max_sigma: standard deviation :math:`\sigma`
     :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
     """
+
     def __init__(self, n, q, width, height, sec=None):
         r"""
         :param n: degree of polynomial
@@ -1629,6 +1619,7 @@ class StatisticalMatrixMSIS(StatisticalMSIS):
         :param height: height of matrix :math:`\mathbf{A}`
         :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
         """
+
         super().__init__(n=n, q=q, d=width-height, m=height, sec=sec)
         
 
@@ -1642,6 +1633,7 @@ class StatisticalRSIS(StatisticalMSIS):
     :ivar max_sigma: standard deviation :math:`\sigma`
     :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
     """
+
     def __init__(self, sec, n, q, m):
         """
         :param sec: required bit security of MSIS instance
@@ -1649,22 +1641,25 @@ class StatisticalRSIS(StatisticalMSIS):
         :param q: modulus
         :param m: number of samples (or width of matrix)
         """
+
         super().__init__(sec=sec, n=n, d=1, q=q, m=m) # TODO: check Gaussian
 
 class StatisticalSIS(StatisticalMSIS):
     r"""
     Statistically secure RSIS according to :cite:`DOTT21`, section 4.1.
     
-    For details, see :class:`StatisticalMSIS` with degree of polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e. :math:`d=n`). TODO clarify
+    For details, see :class:`StatisticalMSIS` with degree of polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e. :math:`d=n`). 
 
     :ivar max_sigma: standard deviation :math:`\sigma`
     :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
     """
+
     def __init__(self, sec, n, q, m):
         """
         :param sec: required bit security of MSIS instance
-        :param n: secret dimension
+        :param n: height of matrix
         :param q: modulus
-        :param m: number of samples (or width of matrix)
+        :param m: width of matrix
         """
+
         super().__init__(sec=sec, n=1, d=n, q=q, m=m)

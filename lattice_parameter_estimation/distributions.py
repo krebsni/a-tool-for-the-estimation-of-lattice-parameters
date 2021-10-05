@@ -154,7 +154,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
     r""" 
     Gaussian distribution. 
 
-    Includes various constructors (in subclasses) :class:`GaussianS` for Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`, :class:`GaussianSigma` for standard deviation :math:`\sigma` and :class:``GaussianAlpha :math:`\alpha = s / q`. Can be componentwise or in :math:`L_2`. Gaussian can be converted to bounds in various norms with statistical security parameter ``sec``. 
+    Includes various constructors (in subclasses) :class:`GaussianS` for Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`, :class:`GaussianSigma` for standard deviation :math:`\sigma` and :class:`GaussianAlpha :math:`\alpha = s / q`. Can be componentwise or in :math:`L_2`. Gaussian can be converted to bounds in various norms with statistical security parameter ``sec``. 
     """
 
     @abstractmethod
