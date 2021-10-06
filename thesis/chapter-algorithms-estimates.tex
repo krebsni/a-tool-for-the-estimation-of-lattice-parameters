@@ -145,7 +145,7 @@ In addition, \cite{CN11} optimizes the \textit{enumeration radius} by using expe
 % - practical floating point version of LLL \cite{SE91} best practical results 
 
 It is difficult to find hard runtime bounds for BKZ. The upper bound on the number of rounds is superexponential in the dimension $n$ for a fixed block size \cite{HPS11a, GN08b} before BKZ terminates given that no early termination strategy is used. In addition, calls to the SVP oracle in all dimensions $k' \leq k$ must be taken into account.
-Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$ \citet{APS15}. The value $\rho$ is set to $8$ in the \textit{Estimator} derived from experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds.
+Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$ \citet{APS15}. The value $\rho$ is set to $8$ in the \textit{Estimator} and is derived from experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds. \label{sec:bkz-8d}
 
 % TODO: include? \cite{LP11} runtime according Linder-Peikert model, GSA: suggest $t_{\text{BKZ}}=1.8/\log_2{\delta} - 110$
 
@@ -156,7 +156,9 @@ Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ i
 
 \subsection{Cost Models for Lattice Reduction} \label{sec:costmodels}
 % TODO. write little introduction
-In this section, we will look at various high level ideas to realize an SVP solver that can be used as a subroutine in BKZ and present up-to-date cost models from the literature. SVP is known to be NP-complete even for large constant approximation factors \cite{Ajt98, Khot05}. An exponential approximation factor can be achieved in polynomial time but is mostly insufficient for practical purposes \cite{LLL82}.  We will mainly focus on two classes of (nearly) exact SVP solvers, namely, enumeration algorithms and sieving algorithms. Enumeration algorithms can solve SVP in a lattice of dimension $k$ in $2^{\mathcal{O}(k \log k)}$ time and polynomial space. Sieving algorithms only need $2^{\mathcal{O}(k)}$ time, however, at the cost of exponential memory complexity. Only recently, progress in sieving strategies has given rise to BKZ implementations relying on sieving (e.g. the General Sieve Kernel (G6K) impelmentation \cite{ADHKPS19, DSW21}) that outperform enumeration implementations already in relatively small dimensions $\gtrsim 70$ in the classical setting \cite{ABLR21}. On the other hand, quantum speedups for enumeration are greater than for sieving. Aono \textit{et al.} show a quadratic cost reduction for enumeration \citet{ANS18}, while the cost sieving only decreases by a factor of $2^0.027$ with idealized assumptions \cite{Laa15}. % assuming no depth restriction and quantum accessible RAM (qRAM)
+In this section, we will look at various high level ideas to realize an SVP solver that can be used as a subroutine in BKZ and present up-to-date cost models from the literature. SVP is known to be NP-complete even for large constant approximation factors \cite{Ajt98, Khot05}. An exponential approximation factor can be achieved in polynomial time but is mostly insufficient for practical purposes \cite{LLL82}.  We will mainly focus on two classes of (nearly) exact SVP solvers, namely, enumeration algorithms and sieving algorithms. Enumeration algorithms can solve SVP in a lattice of dimension $k$ in $2^{\mathcal{O}(k \log k)}$ time and polynomial space. Sieving algorithms only need $2^{\mathcal{O}(k)}$ time, however, at the cost of exponential memory complexity. Only recently, progress in sieving strategies has given rise to BKZ implementations relying on sieving (e.g. the General Sieve Kernel (G6K) impelmentation \cite{ADHKPS19, DSW21}) that outperform enumeration implementations already in relatively small dimensions $\gtrsim 70$ in the classical setting \cite{ABLR21}. On the other hand, quantum speedups for enumeration are greater than for sieving. Aono \textit{et al.} show a quadratic cost reduction for enumeration \citet{ANS18}, while the cost sieving only decreases by a factor of $2^0.027$ with idealized assumptions \cite{Laa15}. The authors of \cite{ADPS16} argue that due of a lower bound $2^0.2075k$ on the required size of the building lists future quantum sieving algorithms are not expected to achieve an asymptotic runtime below $2^0.2075k$. % assuming no depth restriction and quantum accessible RAM (qRAM)
+
+A selection of the most relevant cost models for cryptographic purposes is shown \cref{tab:costmodels}. All these cost models are supported in our tool.
 
 
 % nice overview in https://cseweb.ucsd.edu/~daniele/LatticeLinks/Enum.html
@@ -196,29 +198,30 @@ The second group of SVP solvers are sieving algorithms \cite{ADHKPS19, MV10, NV0
   \centering
   \begin{tabular}{ll}
     \toprule
-    Name                                     & Cost Estimate                                          \\\hline
+    Algorithm                                & Cost Estimate                                          \\\hline
     List Sieve \cite{MV10}                   & $2^{0.3199n + o(n)}$ time, $2^{0.1325 + o(n)}$ memory  \\
     NV-sieve \cite{NV08, ADHKPS19}           & $2^{0.415n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
     NV-sieve (quantum) \cite{NV08, ADHKPS19} & $2^{0.311n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
     Gauss sieve \cite{MV10, HK17}            & $2^{0.415n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
     BGJ-sieve \cite{BGJ15}                   & $2^{0.311n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
     3-sieve \cite{BLS16, HK17}               & $2^{0.3962n + o(n)}$ time, $2^{0.1887n + o(n)}$ memory \\
-    BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$ time                               \\
-    BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$ time                               \\
+    BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
+    BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
     \bottomrule
   \end{tabular}
-  \caption{Sieving Algorithms} % TODO: cite? from estimate all the?
+  \caption{Overview of Popular Sieving Algorithms} % TODO: cite? from estimate all the?
   \label{tab:sieving}
 \end{table}
 
-\cref{tab:sieving} presents a list of currently best sieving algorithms.
+\cref{tab:sieving} presents a list of currently best sieving algorithms. Note that some runtime and space complexities are only conjectured and not proven yet.
+
 In the Nguyen-Vidick sieve \cite{NV08}, we iteratively reduce a pair of list points whose combined length is smaller than the longest list vector. The longest vector is then replaced by the result. The list length is fixed.
 In the Gauss sieve \cite{MV10}, we start with an empty list and a stack. In each step, a new point is either sampled or taken from the stack. We then attempt to reduce the new point with all points in the list. If a reduction is successful, the longer vector of the pair is replaced. If the longer vector was the list point, the replacement is inserted in the stack. If no reduction is possible, the stack points are moved back to the list. If the stack is empty, all list points are reduced pairwisely. In practice, the Gauss sieve outperforms Nguyen-Vidick sieve.
 The Becker-Gama-Joux sieve \cite{BGJ15} exploits coding theory to find vectors that are likely to be nearest neighbors. Similar vectors are stored in the same bucket to speed up the search for reduction candidates.
 The 3-sieve \cite{BLS16, HK17} reduces the required list size by using triples instead of pairs of points for combination.
 Finally, the Becker-Ducas-Gama-Laarhoven sieve \cite{BDGL16} applies locality sensitive hashing to create buckets of points in near neighborhood similar to the Becker-Gama-Joux sieve. % CHECK if that is ListDecoding
 
-TODO: small section about use in tool... \cref{tab:costmodels} provides an overview of the cost models that are built into the Lattice Parameter Estimation.
+
 
 
 
@@ -291,29 +294,28 @@ TODO: small section about use in tool... \cref{tab:costmodels} provides an overv
   \centering
   \begin{tabular}{lll}
     \toprule
-    Name                             & Reference                        & Cost model                                        \\\hline
-    Q-Core-Sieve                     & \cite{Laa15,ADPS16,AGPS20}       & $2^{0.265n}$                                      \\
-    Q-Core-Sieve + O(1)              & \cite{SAL+17}                    & $2^{0.265n + 16}$                                 \\
-    Q-Core-Sieve (min space)         & \cite{SHRS17}                    & $2^{0.2975n}$                                     \\
-    Q-$\beta$-Sieve                  & \cite{NAB+17}                    & $n \cdot 2^{0.265n}$                              \\
-    Q-$8d$-Sieve                     & \cite{BAA+17}                    & $8d \cdot 2^{0.265n + 16.4}$                      \\
-    Core-Sieve                       & \cite{BDGL16,ADPS16,AGPS20}      & $2^{0.292n}$                                      \\
-    Core-Sieve + O(1)                & \cite{SAL+17}                    & $2^{0.292n + 16}$                                 \\
-    Core-Sieve (min space)           & \cite{SHRS17}                    & $2^{0.368n}$                                      \\
-    $\beta$-Sieve                    & \cite{NAB+17}                    & $n \cdot 2^{0.292n}$                              \\
-    $8d$-Sieve                       & \cite{DTGW17}                    & $8d \cdot 2^{0.292n + 16.4}$                      \\
-    Q-Core-Enum + O(1)               & \cite{SHRS17, Chen13,ACDDPPVW18} & $2^{\frac{0.18728n \log n - 1.0192 n + 16.1}{2}}$ \\
-    Lotus (Enum)                     & \cite{PHAM17, ACDDPPVW18}        & $2^{0.125n \log n - 0.755 n + 2.254}$             \\
-    Core-Enum + O(1)                 & \cite{SHRS17, Chen13,ACDDPPVW18} & $2^{0.18728n \log n - 1.0192 n + 16.1}$           \\
-    $8d$-Enum (quadratic fit) + O(1) & \cite{BC0V17}                    & $8d \cdot 2^{0.000784 n^2 + 0.366 n + 0.875}$     \\
-    BKZ 2.0 Core-Enum                & \cite{CN11, Chen13, ABFKSW20}    & $2^{0.184k \log k - 0.995k + 16.25}$              \\
-    ABF+ Core-Enum                   & \cite{ABFKSW20}                  & $2^{0.125k \log k}$                               \\
-    ABF+ Core-Enum + O(1)            & \cite{ABFKSW20}                  & $2^{0.125k \log k - 0.547k + 10.4}$               \\
-    ABF Q-Core-Enum                  & \cite{ABFKSW20}                  & $2^{0.0625 k \log k}$                             \\
-    ABLR Core-Enum + O(1)            & \cite{ABLR21}                    & $2^{0.125k \log k - 0.654k + 25.84}$              \\
+    Name                             & Reference                       & Cost model                            \\\hline
+    Sieving                          &                                 &                                       \\\hline
+    Q-Sieve (paranoid lower bound)   & \cite{ADPS16}                   & $2^{0.2075k}$                         \\
+    Q-Sieve                          & \cite{Laa15,ADPS16,AGPS20}      & $2^{0.265k}$                          \\
+    Q-Sieve + O(1)                   & \cite{SAL+17}                   & $2^{0.265k + 16}$                     \\
+    Q-Sieve (min space)              & \cite{SHRS17}                   & $2^{0.2975k}$                         \\
+    Sieve                            & \cite{BDGL16,ADPS16,AGPS20}     & $2^{0.292k}$                          \\
+    Sieve + O(1)                     & \cite{SAL+17}                   & $2^{0.292k + 16}$                     \\
+    Sieve (min space)                & \cite{SHRS17}                   & $2^{0.368k}$                          \\\hline
+    Enumeration                      &                                 &                                       \\\hline
+    Lotus                            & \cite{PHAM17, ACDDPPVW18}       & $2^{0.125k \log k - 0.755 k + 2.254}$ \\
+    Enum + O(1)                      & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.187k \log k - 1.019 k + 16.1}$  \\
+    Q-Enum + O(1)                    & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.0936k \log k - 0.51 k + 8.05}$  \\
+    BCLV-Enum (quadratic fit) + O(1) & \cite{BCLV17}                   & $2^{0.000784 k^2 + 0.366 k + 0.875}$  \\
+    BKZ2.0-Enum                      & \cite{CN11, Chen13, ABFKSW20}   & $2^{0.184k \log k - 0.995k + 16.25}$  \\
+    ABF-Enum                         & \cite{ABFKSW20}                 & $2^{0.125k \log k}$                   \\
+    ABF-Enum + O(1)                  & \cite{ABFKSW20}                 & $2^{0.125k \log k - 0.547k + 10.4}$   \\
+    Q-ABF-Enum                       & \cite{ABFKSW20}                 & $2^{0.0625 k \log k}$                 \\
+    ABLR-Enum + O(1)                 & \cite{ABLR21}                   & $2^{0.125k \log k - 0.654k + 25.84}$  \\
     \bottomrule
   \end{tabular}
-  \caption{Cost Models Overview} % TODO: cite? from estimate all the?
+  \caption{SVP Cost Models Overview (based on Table 4 in \cite{ACDDPPVW18})} % TODO: cite? from estimate all the?
   \label{tab:costmodels}
 \end{table} % TODO: add to tool, maybe change 8d thing to an optional parameter!!! => reduces number of lists, throw out silly ones...
 % TODO reference in text
