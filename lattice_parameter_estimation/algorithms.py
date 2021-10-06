@@ -371,7 +371,7 @@ class SIS:
 
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        if beta < q:
+        if beta < norm.Loo(q / 2, n).to_L2().value:
             # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
             # Requirements
             if n < 128 or q < n * n:
@@ -404,13 +404,15 @@ class SIS:
             ret = est.lattice_reduction_cost(
                 reduction_cost_model, delta_0, m, B=log(q, 2)
             )
-            ret[u"m"] = m
-            ret[u"d"] = m  # d is lattice dimension, beta is block size
-            ret[u"|v|"] = RR(delta_0 ** m * q ** (n / m))
+            ret["m"] = m
+            ret["d"] = m  # d is lattice dimension, beta is block size
+            ret["|v|"] = RR(delta_0 ** m * q ** (n / m))
             return ret.reorder(["rop", "m"])
 
         else:  # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q")
+            raise TrivialSolution(
+                f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})"
+            )
 
     def lattice_reduction(
         n, beta, q, success_probability=None, m=oo, reduction_cost_model=None
@@ -457,7 +459,7 @@ class SIS:
 
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        if beta < q:
+        if beta < norm.Loo(q / 2, n).to_L2().value:
 
             log_delta_0 = log(beta, 2) ** 2 / (4 * n * log(q, 2))
             delta_0 = min(RR(2) ** log_delta_0, RR(1.02190))  # at most LLL
@@ -480,20 +482,15 @@ class SIS:
             ret = est.lattice_reduction_cost(
                 reduction_cost_model, delta_0, m, B=log(q, 2)
             )
-            ret[u"m"] = m
-            ret[u"d"] = m  # d is lattice dimension, beta is block size
-            ret[u"|v|"] = RR(delta_0 ** m * q ** (n / m))
+            ret["m"] = m
+            ret["d"] = m  # d is lattice dimension, beta is block size
+            ret["|v|"] = RR(delta_0 ** m * q ** (n / m))
             return ret.reorder(["rop", "m"])
 
         else:  # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q")
-
-    lattice_reduction_ = est.partial(
-        est.rinse_and_repeat, lattice_reduction, repeat_select={"m": False}
-    )
-    lattice_reduction_rs_ = est.partial(
-        est.rinse_and_repeat, lattice_reduction_rs, repeat_select={"m": False}
-    )
+            raise TrivialSolution(
+                f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})"
+            )
 
     def combinatorial(q, n, m, bound, reduction_cost_model=None):
         r""" 
@@ -517,7 +514,7 @@ class SIS:
         beta = bound  # we need Loo norm
         if beta <= 1:
             raise IntractableSolution("beta < 1")
-        elif beta < q:
+        elif beta < norm.Loo(q / 2, n).to_L2().value:
             # find optimal k
             k = closest_k = 1
             difference = oo
@@ -546,4 +543,6 @@ class SIS:
             )  # TODO other information?, return k just as k?
 
         else:  # not a hard problem, trivial solution exists
-            raise TrivialSolution("beta > q")
+            raise TrivialSolution(
+                f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})"
+            )

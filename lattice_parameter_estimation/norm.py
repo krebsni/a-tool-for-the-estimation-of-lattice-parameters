@@ -176,6 +176,8 @@ class Lp(BaseNorm):
             TypeError(f"Cannot add {type(self)} to {type(other)}")
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
+        if isinstance(other, Coo):
+            return NotImplemented # use __add__ of Coo
 
         if self.p == other.p:
             return Lp(value=self.value + other.value, p=self.p, dimension=self.dimension)
@@ -187,6 +189,9 @@ class Lp(BaseNorm):
             if self.p == oo:
                 val = other.to_Loo().value
             return Lp(value=self.value + val, p=self.p, dimension=self.dimension)
+
+    def __sub__(self, other):
+        return self.__add__(other)
 
     def __mul__(self, other):
         r""" 
@@ -252,7 +257,7 @@ class Coo(BaseNorm):
         self.value = value
         self.dimension = dimension
 
-    def to_L1(self, dimension):
+    def to_L1(self, dimension=None):
         r"""
         From :math:`\ref{norm2}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_1 \leq  n \| \sigma(f) \|_\infty`.
             
@@ -266,7 +271,7 @@ class Coo(BaseNorm):
                 
         return Lp(value=self.value * self.dimension, p=1, dimension=dimension)
 
-    def to_L2(self, dimension):
+    def to_L2(self, dimension=None):
         r"""
         From :math:`\ref{norm3}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty`.
         
@@ -280,7 +285,7 @@ class Coo(BaseNorm):
                 
         return Lp(value=self.value * sqrt(self.dimension), p=2, dimension=dimension)
 
-    def to_Loo(self, dimension):
+    def to_Loo(self, dimension=None):
         r"""
         From :math:`\ref{norm5}`, it follows that :math:`\| f \|_\infty \leq  \| \sigma(f) \|_\infty`.
 
@@ -313,7 +318,7 @@ class Coo(BaseNorm):
             ValueError("target_norm could not be identified (not Lp or Coo).")
             
 
-    def to_Coo(self, dimension):
+    def to_Coo(self, dimension=None):
         r"""
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`C_\infty`-norm of the vector
@@ -327,7 +332,16 @@ class Coo(BaseNorm):
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
         
-        return Lp(value=self.value + other.to_Coo(), dimension=self.dimension)
+        return Coo(value=self.value + other.to_Coo().value, dimension=self.dimension)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        return self + other
+
+    def __rsub__(self, other):
+        return self + other
 
     def __mul__(self, other):
         r""" 

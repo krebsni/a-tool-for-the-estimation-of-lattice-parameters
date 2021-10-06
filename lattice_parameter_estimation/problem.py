@@ -119,7 +119,7 @@ class AlgorithmResult:
     def __str__(self) -> str:
 
         ret = self.str_no_err()
-        if not self.is_successful:
+        if self.error is not None:
             ret += f"\nError: {self.error}"
         return ret
 
@@ -502,25 +502,17 @@ def algorithms_executor(
         inst = alg_tuple[0]
         alg = alg_tuple[1]
         algf = alg["algf"]
+
+        def conversion(k, v):
+            if k in ["alpha"]:
+                return k, float(v)
+            else:
+                return k, v
+
         params = dict(
             [
-                (k, algf.keywords[k])
-                for k in ["secret_distribution"]
-                if k in set(algf.keywords)
-            ]
-            + [
-                (k, int(algf.keywords[k]))
-                for k in ["n", "q"]
-                if k in set(algf.keywords)
-            ]
-            + [
-                (k, float(algf.keywords[k]))
-                for k in ["alpha"]
-                if k in set(algf.keywords)
-            ]
-            + [
-                (k, float(algf.keywords[k]))
-                for k in ["bound"]
+                conversion(k, algf.keywords[k])
+                for k in ["secret_distribution", "n", "m", "q", "alpha", "bound"]
                 if k in set(algf.keywords)
             ]
         )
@@ -578,7 +570,7 @@ def algorithms_executor(
             is_insecure=is_insecure,
         )
 
-        if error != None and alg_logger.level > logging.INFO:
+        if not is_successful:
             alg_logger.error(str(alg_res))
         else:
             alg_logger.info(str(alg_res))
@@ -863,7 +855,7 @@ class LWE(BaseProblem):
         # TODO: if secret is normal, but doesn't follow noise distribution, not supported by estimator => convert to uniform?
         if (
             secret_distribution == "normal"
-            and self.secret_distribution.get_alpha() != alpha
+            and self.secret_distribution.get_alpha(q=self.q, n=self.n) != alpha
         ):
             raise NotImplementedError(
                 "If secret distribution is Gaussian it must follow the error distribution. Differing Gaussians not supported by lwe-estimator at the moment."
