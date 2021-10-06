@@ -175,7 +175,7 @@ In \cite{ABFKSW20} we find a more concrete experimental cost model of $\text{pol
 % also add G6K (General Sieve Kernel) from ADHKPS19 (see more in sieving), running time of 2^Theta(k) but also 2^Theta(k) memory
 The FastEnum algorithm in \citet{ABFKSW20} incorporates an idea called ``extended preprocessing'' and simulations achieve a root Hermite factor of $k^{\frac{1}{2k}(1 + o(1))}$ in $\text{poly}(n) \cdot 2^{0.125k \log k - 0.050k + 56}$ time. The corresponding quantum algorithm reduces the runtime from $2^{\frac{k \log k}{8} + o(k)}$ to $2^{\frac{k \log k}{16} + o(k)}$. In extended preprocessing, instead of preprocessing the current projected basis block of size $k$, the BKZ-reduction is applied to a block of higher dimension $\lceil (1+c)\cdot k\rceil$ for some constant $c$. Enumeration is faster on the first basis vectors as their Gram-Schmidt norms closely follow the Geometric Series Assumption \cite{MW16}. % TODO: move to BKZ ??? And perhaps switch BKZ with this section?
 
-A tradeoff of runtime and success probability for ``relaxing'' the approximation and extreme pruning turns out to exponentially speed up the search \cite{LN20} and was combined with extended preprocessing by Albrecht \textit{et al.} to further reduce the experimental runtime of BKZ to $\text{poly}(n) \cdot 2^{\frac{k \log k}{8} - 0.654k + 25.84}$ for a root Hermite factor of $k^{\frac{1}{2k0}}$ \cite{ABFKSW20}.
+A tradeoff of runtime and success probability for ``relaxing'' the approximation and extreme pruning turns out to exponentially speed up the search \cite{LN20} and was combined with extended preprocessing by Albrecht \textit{et al.} to further reduce the experimental runtime of BKZ to $\text{poly}(n) \cdot 2^{\frac{k \log k}{8} - 0.654k + 25.84}$ for a root Hermite factor of $k^{\frac{1}{2k}}$ \cite{ABFKSW20}.
 
 % TODO: what to do with poly(n)? just throw it away? 
 
@@ -422,11 +422,11 @@ Finally, we can apply back substitution to recover all elements of $\mathbf{s}$.
 \begin{theorem}[BKZ Complexity \cite{ACFFP15a}, Corollary 2]
   Let $(\mathbf{a}_i, z_i)$ be samples following $\mathcal{A}_{\mathbf{s}, \chi}$, set $a = \lfloor \log_2(1/(2\alpha)^2)\rceil$, $b = n/a$ and $q$ a prime. Let $d$ be a small constant $0 < d < \log_2(n)$. Assume $\alpha$ is such that $q^b = q^{n/a} = q^{n/\lfloor \log_2(1/(2\alpha)^2)\rceil}$ is superpolynomial in $n$. Then, given these parameters the cost of the BKW algorithm to solve Search-LWE is
   \begin{equation}\label{eq:BKZ-complexity}
-    \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil(\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil(\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
+    \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
   \end{equation}
   operations in $\mathbb{Z}_q$. Furthermore,
   \begin{equation}
-    a \cdot \left\lceil(\frac{q^b}{2}\right\rceil + \text{poly}(n)\textit{ calls to } \mathcal{A}_{\mathbf{s}, \chi}\textit{ and storage of }  \left(a \cdot \left\lceil(\frac{q^b}{2}\right\rceil \cdot n\right) \textit{ elements in } \mathbb{Z}_q \textit{ are needed.}
+    a \cdot \left\lceil\frac{q^b}{2}\right\rceil + \text{poly}(n)\textit{ calls to } \mathcal{A}_{\mathbf{s}, \chi}\textit{ and storage of }  \left(a \cdot \left\lceil\frac{q^b}{2}\right\rceil \cdot n\right) \textit{ elements in } \mathbb{Z}_q \textit{ are needed.}
   \end{equation}
 \end{theorem}
 
@@ -567,8 +567,8 @@ and unique-SVP solution $\mathbf{v} = (\mathbf{s}, \mathbf{e}, 1)$ % TODO show
 
 success condition:
 - geometric series assumption known to be optimistic from attacker's point of view
-=> finds basis with Gram-Schmidt norms $\|\tilde{mathbf{b}}_i\| = \delta^{d - 2i-1} \cdot \text{Vol}(\Lambda)^{1/d}$ and $\delta = ((\pi b)^{1/b} \cdot b/2\pi e)^{1/2(b-1)}$ % see APS15 and Chen13 thesis
-unique short vector $\mathbf{v}$ is detected if projection of $\mathbf{v}$ onto span of last $b$ Gram-Schmidt vectors is shorter than $\tilde{mathbf{b}}_{d-b}$, norm of projection is expected to be $\gamma \sqrt{b}$ => attack successful iff $\gamma \sqrt{b} \leq \delta^{d - 2i-1} \cdot q^{m/d}$
+=> finds basis with Gram-Schmidt norms $\|\tilde{\mathbf{b}}_i\| = \delta^{d - 2i-1} \cdot \text{Vol}(\Lambda)^{1/d}$ and $\delta = ((\pi b)^{1/b} \cdot b/2\pi e)^{1/2(b-1)}$ % see APS15 and Chen13 thesis
+unique short vector $\mathbf{v}$ is detected if projection of $\mathbf{v}$ onto span of last $b$ Gram-Schmidt vectors is shorter than $\tilde{\mathbf{b}}_{d-b}$, norm of projection is expected to be $\gamma \sqrt{b}$ => attack successful iff $\gamma \sqrt{b} \leq \delta^{d - 2i-1} \cdot q^{m/d}$
 % TODO define span, e.g. vector space spanned by a number of vectors
 % TODO check if einheitsmatrix is defined
 
