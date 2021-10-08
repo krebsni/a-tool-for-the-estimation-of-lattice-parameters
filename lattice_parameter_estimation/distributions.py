@@ -210,12 +210,12 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         .. math::
             \text{Pr}\left[ |X| \geq x\right] &\leq 2 e^{-\pi x^2/s^2}\\
 
-        We require :math:`2 e^{-\pi x^2/s^2} \approx 2^{-sec}`, hence
+        We require :math:`2 e^{-\pi x^2/s^2} \approx 2^{-\texttt{sec}}`, hence
 
         .. math::
-            2 e^{-\pi x^2/s^2} &\approx 2^{-sec}\\
-            -\pi \frac{x^2}{s^2} &\approx (-sec - 1)\ln (2)\\
-            x  &\approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}\\
+            2 e^{-\pi x^2/s^2} &\approx 2^{-\texttt{sec}}\\
+            -\pi \frac{x^2}{s^2} &\approx (-\texttt{sec} - 1)\ln (2)\\
+            x  &\approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}\\
         
         :param sec: required security for statistical Gaussian to Lp-bound transformation
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``

@@ -1,0 +1,38 @@
+\chapter{Tables}
+\section{Mapping of Parameters in Referenced Papers}
+\begin{table}
+    \centering
+    \begin{tabular}[h]{lll}
+        \toprule
+        Parameters in \cite{LPR13} & Use Here & Represents                    \\\hline
+        $l$                        & $m+d$    & width of matrix $\mathbf{A}$  \\
+        $k$                        & $m$      & height of matrix $\mathbf{A}$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{Parameter Mapping from \cite{LPR13}}\label{tab:mapping-LPR13}
+    \vspace{1cm}
+    \centering
+    \begin{tabular}[h]{lll}
+        \toprule
+        Parameters in \cite{BDLOP18} & Use Here & Represents                                         \\\hline
+        $k$                          & $m+d$    & width of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$  \\
+        $n$                          & $m$      & height of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$ \\
+        $d$                          & $d_2$    & variable                                           \\
+        $N$                          & $n$      & degree of Ring polynomial                          \\
+        \bottomrule
+    \end{tabular}
+    \caption{Parameter Mapping from \cite{BDLOP18}}\label{tab:mapping-BDLOP18}
+    \vspace{1cm}
+    \centering
+    \begin{tabular}[h]{lll}
+        \toprule
+        Parameters in \cite{DOTT21} & Use Here & Represents                            \\\hline
+        $m'$                        & $m+d$    & width of matrix $\hat{\mathbf{A}}_1$  \\
+        $m$                         & $m$      & height of matrix $\hat{\mathbf{A}}_1$ \\
+        $B$                         & $B$      & norm-bound of secret                  \\
+        $s$                         & $s$      & Gaussian width (not stddev)           \\
+        $N$                         & $n$      & degree of polynomial                  \\
+        \bottomrule
+    \end{tabular}
+    \caption{Parameter Mapping from \cite{DOTT21}}\label{tab:mapping-DOTT21}
+\end{table}

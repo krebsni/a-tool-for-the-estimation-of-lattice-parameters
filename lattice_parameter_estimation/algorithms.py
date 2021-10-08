@@ -49,6 +49,7 @@ LATTICE_REDUCTION_RS = "reduction-rs"
 REDUCTION = "reduction"
 REDUCTION_RS = "reduction-rs"
 COMBINATORIAL = "combinatorial"
+COMBINATORIAL_CONSERVATIVE = "combinatorial_conservative"
 
 # All
 ALL = [
@@ -62,6 +63,7 @@ ALL = [
     "reduction",
     "reduction-rs",
     "combinatorial",
+    "combinatorial_conservative",
 ]
 
 
@@ -182,7 +184,7 @@ class Configuration:
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
         :param bkz_svp_rounds: function that takes beta and d as input and returns the number of BKZ rounds, set to ``BKZ_SVP_repeat_core`` by default, the function ``BKZ_SVP_repeat_8d`` can also be used
-        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``LATTICE_REDUCTION_RS`` (or ``REDUCTION_RS``), ``COMBINATORIAL``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
+        :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``LATTICE_REDUCTION_RS`` (or ``REDUCTION_RS``), ``COMBINATORIAL`` and ``COMBINATORIAL_CONSERVATIVE``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
         :param custom_cost_models: list of reduction cost models (see above)
         :param parallel: multiprocessing support, active by default
         :param num_cpus: optional parameter to specify number of cpus used during estimation
@@ -492,6 +494,41 @@ class SIS:
                 f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})"
             )
 
+    def _combinatorial(q, n, m, beta):
+        r"""
+        Subroutine to compute the list size in the combinatorial attack described in :cite:`MR09`.
+
+        For more details, see :py:func:`combinatorial`.
+
+        :param n: height of matrix
+        :param m: width of matrix
+        :param q: modulus
+        :param beta: bound of solution in :math:`L_\infty`-norm (value not class)
+
+        :returns: tuple ``(L, k)`` of list size ``L`` and optimal ``k``such that combinatorial method can divide columns of :math:`A` into :math:`2^k` groups
+        """
+        # TODO: check if reference to combinatorial shows up correctly
+        # find optimal k
+        k = closest_k = 1
+        difference = oo
+        failed, max_failures = 0, 10
+        while failed < max_failures:
+            left = 2 ** k / (k + 1)
+            right = m / n * log(2 * beta + 1, q)
+            new_difference = abs(left - right)
+            if new_difference < difference:
+                difference = new_difference
+                closest_k = k
+                failed = 0
+            else:
+                failed += 1
+            k += 1
+        k = closest_k
+
+        # cost of creating initial lists
+        L = RR((2 * beta + 1) ** (RR(m) / 2 ** k))
+        return (L, k)
+
     def combinatorial(q, n, m, bound, reduction_cost_model=None):
         r""" 
         Estimate cost of solving SIS by means of the combinatorial method as described in :cite:`MR09`.
@@ -515,28 +552,39 @@ class SIS:
         if beta <= 1:
             raise IntractableSolution("beta < 1")
         elif beta < norm.Loo(q / 2, n).to_L2().value:
-            # find optimal k
-            k = closest_k = 1
-            difference = oo
-            failed, max_failures = 0, 10
-            while failed < max_failures:
-                left = 2 ** k / (k + 1)
-                right = m / n * log(2 * beta + 1, q)
-                new_difference = abs(left - right)
-                if new_difference < difference:
-                    difference = new_difference
-                    closest_k = k
-                    failed = 0
-                else:
-                    failed += 1
-                k += 1
-            k = closest_k
-
-            # cost of creating initial lists
-            L = RR((2 * beta + 1) ** (RR(m) / 2 ** k))
+            (L, k) = SIS._combinatorial(q, n, m, beta)
             list_element_cost = log(q, 2) * n
             lists = (2 ** k) * L
             cost = RR(lists * list_element_cost)
+
+            return est.Cost(
+                [("rop", cost), ("k", RR(2 ** k))]
+            )  # TODO other information?, return k just as k?
+
+        else:  # not a hard problem, trivial solution exists
+            raise TrivialSolution(
+                f"beta > ||(q/2, ..., q/2)|| (beta={beta}, q={q}, ||...||={norm.Loo(q/2, n).to_L2().value})"
+            )
+
+    def combinatorial_conservative(q, n, m, bound, reduction_cost_model=None):
+        r"""
+        Estimate cost of solving SIS conservatively by means of the combinatorial method as described in :cite:`MR09`.
+
+        The algorithm works as :py:func:`combinatorial` but outputs a more conservative cost. The overall runtime is dominated by the size of the lists. Variants of the algorithm may speed up various steps and hence we neglect the cost of single operations in the algorithm and just set the cost to the list size :math:`L`.
+
+        :param n: height of matrix
+        :param m: width of matrix
+        :param q: modulus
+        :param bound: bound of solution in :math:`L_\infty`-norm (value not class)
+        """
+        # TODO: check if reference to combinatorial shows up correctly
+        beta = bound  # we need Loo norm
+        if beta <= 1:
+            raise IntractableSolution("beta < 1")
+        elif beta < norm.Loo(q / 2, n).to_L2().value:
+
+            (L, k) = SIS._combinatorial(q, n, m, beta)
+            cost = L
 
             return est.Cost(
                 [("rop", cost), ("k", RR(2 ** k))]

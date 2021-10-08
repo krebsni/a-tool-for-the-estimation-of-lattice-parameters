@@ -1531,7 +1531,7 @@ class StatisticalUniformMLWE:
     r"""
     Statistically secure MLWE over Uniform distribution with invertible elements :cite:`BDLOP18`.
 
-    MLWE problem instance where samples :math:`(\mathbf{A}', h_{\mathbf{A}'}(y))` are within statistical distance :math:`2^{-sec}` of :math:`(\mathbf{A}', \mathbf{u})` for uniform :math:`\mathbf{u}`.
+    MLWE problem instance where samples :math:`(\mathbf{A}', h_{\mathbf{A}'}(y))` are within statistical distance :math:`2^{-\texttt{sec}}` of :math:`(\mathbf{A}', \mathbf{u})` for uniform :math:`\mathbf{u}`.
 
     Mapping of parameters in paper to use here:
 
@@ -1549,15 +1549,15 @@ class StatisticalUniformMLWE:
 
     .. math::
 
-        q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
+        q^{m/(m+d)} \cdot 2^{2 \texttt{sec}/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
 
-    then any (all-powerful) algorithm :math:`\mathcal{A}` has advantage at most :math:`2^{-sec}` in solving :math:`\text{DKS}_{m,m+d,\beta}^\infty`, where :math:`\text{DKS}^\infty` is the decisional knapsack problem in :math:`\ell_\infty`-norm.
+    then any (all-powerful) algorithm :math:`\mathcal{A}` has advantage at most :math:`2^{-\texttt{sec}}` in solving :math:`\text{DKS}_{m,m+d,\beta}^\infty`, where :math:`\text{DKS}^\infty` is the decisional knapsack problem in :math:`\ell_\infty`-norm.
 
     Hence, we have:
 
     .. math::
 
-        \beta_{min} = \frac{q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)}}{2}
+        \beta_{min} = \frac{q^{m/(m+d)} \cdot 2^{2 \texttt{sec}/((m+d)\cdot n)}}{2}
 
         \beta_{max} = \frac{1}{2\sqrt{d_2}} \cdot q^{1/d_2} - 1
 
@@ -1802,7 +1802,23 @@ class SIS(BaseProblem):
                     "inst": self.variant,
                 }
             )
-        # TODO: add more algorithms?
+        if "combinatorial_conservative" in config.algorithms:
+            algs.append(
+                {
+                    "algname": "combinatorial-conservative",
+                    "cname": "",
+                    "algf": partial(
+                        algorithms.SIS.combinatorial_conservative,
+                        n=self.n,
+                        q=self.q,
+                        m=self.m,
+                        bound=self.bound.to_Loo(self.n).value,
+                    ),
+                    "prio": 0,
+                    "cprio": 0,
+                    "inst": self.variant,
+                }
+            )
         return algs
 
     def to_SIS(self):
@@ -1957,7 +1973,7 @@ class StatisticalMSIS:
     r"""
     Statistically secure MSIS according to :cite:`DOTT21`, section 4.1.
 
-    MSIS problem instance where the probability that non zero elements :math:`\mathbf{r}` in the Euclidean ball :math:`B_{m}(0, 2B)` satisfy :math:`\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}` is smaller than :math:`2^{-sec}`.
+    MSIS problem instance where the probability that non zero elements :math:`\mathbf{r}` in the Euclidean ball :math:`B_{m}(0, 2B)` satisfy :math:`\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}` is smaller than :math:`2^{-\texttt{sec}}`.
 
     Mapping of parameters in :cite:`DOTT21` to use here:
     
@@ -1971,16 +1987,16 @@ class StatisticalMSIS:
     :math:`N`                    :math:`n`     degree of polynomial
     ============================ ============= ============================================
 
-    The number of elements in :math:`B_{m+d}(0, 2B)` can be estimated from above as :math:`|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}`. The scheme is statistically binding if the probability that non zero elements in :math:`B_{m+d}(0, 2B)` of radius :math:`2B` in :math:`\mathcal{R}_q^{m+d}` map to :math:`\mathbf{0}` in :math:`\mathcal{R}_q^{m}` is negligible. Hence, it must hold that :math:`|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-sec}` and we get:
+    The number of elements in :math:`B_{m+d}(0, 2B)` can be estimated from above as :math:`|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}`. The scheme is statistically binding if the probability that non zero elements in :math:`B_{m+d}(0, 2B)` of radius :math:`2B` in :math:`\mathcal{R}_q^{m+d}` map to :math:`\mathbf{0}` in :math:`\mathcal{R}_q^{m}` is negligible. Hence, it must hold that :math:`|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-\texttt{sec}}` and we get:
         
     .. math::
-        \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} &\leq 2^{-sec} \cdot q^{m\cdot n} \\
-        B &\leq 2^{\frac{-sec}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}\\
+        \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} &\leq 2^{-\texttt{sec}} \cdot q^{m\cdot n} \\
+        B &\leq 2^{\frac{-\texttt{sec}}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}\\
     
     We convert the bound :math:`B` to a Gaussian over :math:`\ell_2`-norm by following the procedure described in :ref:`to_Lp <to_Lp>`:
 
     .. math::
-        s  \approx x \sqrt{\frac{\pi}{(sec + 1) \ln(2)}}
+        s  \approx x \sqrt{\frac{\pi}{(\texttt{sec} + 1) \ln(2)}}
 
     :ivar max_sigma: standard deviation :math:`\sigma`
     :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm

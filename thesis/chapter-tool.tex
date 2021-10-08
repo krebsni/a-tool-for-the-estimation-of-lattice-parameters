@@ -7,8 +7,10 @@ The tool can either estimate the bit security level of fixed parameter sets or g
 % automatische norm umwandlung,
 % sonstige features
 \section{Supported Distributions} \label{sec:supported-distributions}% TODO
+The secret distribution used in encryption schemes based on LWE or SIS can either distributed according to a Gaussian or a uniform distribution. The error distribution in LWE must be a Gaussian distribution with parameter $\alpha$. In general, if both error and secret are sampled in LWE are sampled according to Gaussian distributions their parameters may differ. Currently, however, the \textit{Estimator} only supports secrets that follow a uniform distributions or a Gaussian distribution with the same paramter as the error distribution.
+
 \subsection{Gaussian Distribution}
-In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $sec$. Note that a $n$-dimensional Gaussian $D_{\mathbf{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbf{Z}, s}$ \cite{GJS15}. %TODO check
+In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $\texttt{sec}$. Note that a $n$-dimensional Gaussian $D_{\mathbf{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbf{Z}, s}$ \cite{GJS15}. %TODO check
 
 For a Gaussian distribution and a random variable $X$ with $X \sim D_{\mathbf{Z}, s}$, the following holds: % put as theorem, also for norm inequalities
 
@@ -16,26 +18,39 @@ For a Gaussian distribution and a random variable $X$ with $X \sim D_{\mathbf{Z}
     \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \|\mathbf{v}\|^2/s^2}
 \end{equation}
 
-We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-sec}$ with $\beta = \|\mathbf{v}\|$  and obtain
+We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-\texttt{sec}}$ with $\beta = \|\mathbf{v}\|$  and obtain
 
 \begin{align*}
-    2 e^{-\pi \beta^2/s^2}   & \approx 2^{-sec}                               \\
-    -\pi \frac{\beta^2}{s^2} & \approx (-sec - 1)\ln (2)                      \\
-    \beta                    & \approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}.
+    2 e^{-\pi \beta^2/s^2}   & \approx 2^{-\texttt{sec}}                               \\
+    -\pi \frac{\beta^2}{s^2} & \approx (-\texttt{sec} - 1)\ln (2)                      \\
+    \beta                    & \approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
 \end{align*}
 
 \begin{theorem}[Gaussian to Bound]
-    Given a Gaussian distribution $D_{\mathbf{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $sec$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbf{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-sec}$ as follows:
+    Given a Gaussian distribution $D_{\mathbf{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $\texttt{sec}$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbf{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-\texttt{sec}}$ as follows:
     \begin{equation}
-        \beta  \approx s \sqrt{\frac{(sec + 1) \ln(2)}{\pi}}.
+        \beta  \approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
     \end{equation}
 \end{theorem}
 
 The resulting bound $\beta$ is an $\ell_2$-norm bound. % TODO: distributions is changes => thanks Marc! (also noticed that it doesn't make sense to have componentwise and L2)
 
+We provide the classes $\texttt{GaussianAlpha}$, $\texttt{GaussianSigma}$ and $\texttt{GaussianS}$ to allow for the most flexibility in specifying a Gaussian distribution.
 
 \subsection{Uniform Distribution}
-The secret distribution 
+For uniform distributions, we support all distributions that are supported by the \textit{Estimator}, namely, uniform $\mod q$, uniform in the interval $[a,\dots,b]$ and a sparse uniform distribution with parameters $((a,b), h)$, where exactly $h$ components are in the interval $[a,\dots,b] \backslash \{0\}$ and all other components are zero. Note that we only consider discrete distributions are over $\mathbb{Z}$.
+
+We can estimate the corresponding standard deviation for a Gaussian distribution by computing the variance of the uniform distribution. Given an lower and upper bound $(a, b)$, the variance for a discrete uniform distribution is defined as $\sigma^2 = \frac{(b - a + 1)^2 - 1}{12}$. For a uniform distirbution $\mod q$ we set $a = -\left\lfloor \frac{q}{2} \right\rfloor, b = \left\lfloor \frac{q}{2} \right\rfloor$.
+
+For a sparse discrete $n$-dimensional uniform distirbution $\mathcal{U}_h$ with an additional sparseness parameter $h$ and a random variabel $X \sim \mathcal{U}_h$, we can compute the expected values $\mathbb{E}(X^2)$ and $\mathbb{E}(X)^2$ as follows \cite{APS15}:
+% TODO maybe figure out why that is so
+
+\begin{align}
+    \mathbb{E}(X^2) & = \frac{h}{n} \cdot \frac{2b^3 + 3b^2 + b - 2a^3 + 3a^2 - a}{6(b - a)} \\
+    \mathbb{E}(X)^2 & = \frac{h}{n} \cdot \frac{b (b + 1) - a(a - 1)}{2(b - a)}
+\end{align}
+
+and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 
 
 
@@ -124,66 +139,42 @@ We thus reduce ring and Module instances as follows when calling $\texttt{get\_e
 \end{itemize}
 
 
-\paragraph{$\texttt{StatisticalGaussianMLWE}$.} For LWE, we define a statistically secure variant over a Gaussian distribution and over a uniform distribution. $\texttt{StatisticalGaussianMLWE}$ follows Corollary 7.5 and Theorem 7.4 in \cite{LPR13}. To avoid confusion we first specify the mapping for differing usage of parameters in \cite{LPR13} as compared to this work \cref{tab:mapping-LPR13} and obtain the following theorem:
+In addition to the base problem variants, we define some statistically secure variants for both LWE and SIS since some schemes depend on the unconditional hardness of either LWE or SIS. More precicely, we ask for parameters such an arbitrary powerful attacker can only break the scheme with probability less than $2^{-\texttt{sec}}$.
 
-\begin{table}
-    \centering
-    \begin{tabular}[h]{lll}
-        \toprule
-        Parameters in \cite{LPR13} & Use Here & Represents                    \\\hline
-        $l$                        & $m+d$    & width of matrix $\mathbf{A}$  \\
-        $k$                        & $m$      & height of matrix $\mathbf{A}$ \\
-        \bottomrule
-    \end{tabular}
-    \caption{Parameter Mapping from \cite{LPR13}}\label{tab:mapping-LPR13}
-\end{table}
+\paragraph{$\texttt{StatisticalGaussianMLWE}$.} For LWE, we define a statistically secure variant over a Gaussian distribution and over a uniform distribution. $\texttt{StatisticalGaussianMLWE}$ follows Corollary 7.5 and Theorem 7.4 in \cite{LPR13}. The mapping of the parameters in \cite{LPR13} to the usage in this work can be found in \cref{tab:mapping-LPR13}. We obtain the following theorem:
 
-\begin{theorem}{Statistically Secure MLWE Over a Gaussian Distribution \cite{LPR13}}
+\begin{theorem}[Statistically Secure MLWE Over a Gaussian Distribution \cite{LPR13}]
     Let $\mathcal{R}$ be the ring of integers in the $m'$th cyclotomic number field $K$ of degree $n$, and $q \geq 2$ an integer.
     For positive integers $m \leq m + d \leq \text{poly}(n)$, let $\mathbf{A} = [ \mathbf{I}_{[m]} \mid \bar{\mathbf{A}}] \in (\mathcal{R}_q)^{[m] \times [m+d]}$, where $\mathbf{I}_{[m]} \in (\mathcal{R}_q)^{[m] \times [m]}$ is the identity matrix and $\bar{\mathbf{A}} \in (\mathcal{R}_q)^{[m] \times [d]}$ is uniformly random.
     Then with probability $1 - 2^{-\Omega(n)}$ over the choice of $\bar{\mathbf{A}}$, the distribution of $\mathbf{A}\mathbf{x} \in (\mathcal{R}_q)^{[m]}$ where each coordinate of $\mathbf{x} \in (\mathcal{R}_q)^{[m+d]}$ is chosen from a discrete Gaussian distribution of parameter $s > 2n \cdot q^{m / (m+d) + 2/(n (m+d))}$ over $\mathcal{R}$, satisfies that the probability of each of the $q^{n m}$ possible outcomes is in the interval $(1 \pm 2^{-\Omega(n)}) q^{-n }$ (and in particular is within statistical distance $2^{-\Omega(n)}$ of the uniform distribution over $(\mathcal{R}_q)^{[m]}$). % TODO change [x]times[y] notation???
 \end{theorem}
 % TODO: anything more? can you provide an intuition?
 
-If a security parameter is passed and $sec > n$, we raise an exepction.
+If a security parameter is passed and $\texttt{sec} > n$, we raise an exepction.
 The resulting minimal standard deviation is stored in the instance variable $\texttt{min\_sigma}$ and the corresponding distribution can be obtained by calling $\texttt{get\_secret\_distribution\_min\_width()}$ on the class instance.
 
 
 
-\paragraph{$\texttt{StatisticalUniformMLWE}$.} The authors of \cite{BDLOP18} describe statistically secure MLWE instances over a Uniform distribution with invertible elements. The samples $(\mathbf{A}', h_{\mathbf{A}'}(y))$ of the resulting MLWE instance are within statistical distance $2^{-sec}$ of $(\mathbf{A}', \mathbf{u})$ for uniformly distributed $\mathbf{u}$. % TODO: check formulation
+\paragraph{$\texttt{StatisticalUniformMLWE}$.} The authors of \cite{BDLOP18} describe statistically secure MLWE instances over a Uniform distribution with invertible elements. The samples $(\mathbf{A}', h_{\mathbf{A}'}(y))$ of the resulting MLWE instance are within statistical distance $2^{-\texttt{sec}}$ of $(\mathbf{A}', \mathbf{u})$ for uniformly distributed $\mathbf{u}$. % TODO: check formulation
 
-In \cref{tab:mapping-BDLOP18} we specify the mapping of parameters used in \cite{BDLOP18} and obtain the following theorem: %TODO 
-
-\begin{table}
-    \centering
-    \begin{tabular}[h]{lll}
-        \toprule
-        Parameters in \cite{BDLOP18} & Use Here & Represents                                         \\\hline
-        $k$                          & $m+d$    & width of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$  \\
-        $n$                          & $m$      & height of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$ \\
-        $d$                          & $d_2$    & variable                                           \\
-        $N$                          & $n$      & degree of Ring polynomial                          \\
-        \bottomrule
-    \end{tabular}
-    \caption{Parameter Mapping from \cite{BDLOP18}}\label{tab:mapping-BDLOP18}
-\end{table}
-
+We obtain the following theorem (for a mapping of the parameters, see \cref{tab:mapping-BDLOP18}): %TODO 
 
 \begin{theorem}[Statistically Secure MLWE Over a Uniform Distribution \cite{BDLOP18}]
     Let $1 < d_2 < n$ be a power of 2. If $q$ is a prime congruent to $2d_2 + 1 \;(\text{mod } 4d_2)$ and
     \begin{equation}
-        q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
+        q^{m/(m+d)} \cdot 2^{2 \texttt{sec}/((m+d)\cdot n)} \leq 2 \beta < \frac{1}{\sqrt{d_2}} \cdot q^{1/d_2}
     \end{equation}
-    then any (all-powerful) algorithm $\mathcal{A}$ has advantage at most $2^{-sec}$ in solving $\text{DKS}_{m,m+d,\beta}^\infty$, where $\text{DKS}^\infty$ is the decisional knapsack problem in $\ell_\infty$-norm.
+    then any (all-powerful) algorithm $\mathcal{A}$ has advantage at most $2^{-\texttt{sec}}$ in solving $\text{DKS}_{m,m+d,\beta}^\infty$, where $\text{DKS}^\infty$ is the decisional knapsack problem in $\ell_\infty$-norm.
 \end{theorem}
 
 
 Hence, we have:
 \begin{align}
-    \beta_{min} & = \frac{q^{m/(m+d)} \cdot 2^{2 sec/((m+d)\cdot n)}}{2} \\
+    \beta_{min} & = \frac{q^{m/(m+d)} \cdot 2^{2 \texttt{sec}/((m+d)\cdot n)}}{2} \\
     \beta_{max} & = \frac{1}{2\sqrt{d_2}} \cdot q^{1/d_2} - 1
 \end{align}
-% TODO: explain ho to arrive at 2*sec instead of 256 
+% TODO: explain how to arrive at 2*\texttt{sec} instead of 256, für generellen \texttt{sec} parameter ...
+% proof zum Beispiel im Anhang ...
 
 The variable $d_2$ can be passed as an argument. If it is not passed, we try to find $d_2$ by iterating over all powers of $2$ that are smaller than $n$.
 The resulting bounds are converted to $\ell_\infty$ and stored in the instance variables $\texttt{min\_beta}$ and $\texttt{max\_beta}$. We also provide an instance method $\texttt{get\_beta\_bounds()}$ to obtain a tuple of both.
@@ -192,39 +183,23 @@ For both statistically secure MLWE variants, we include the corresponding ring v
 % TODO: explain why this doesn't work for LWE
 
 
-\paragraph{$\texttt{StatisticalMSIS}$.} We can find parameters for a statistically secure MSIS instance by following Section 4.1 of \cite{DOTT21}. More specifically, we ask to find a MLWE instance where the probability that non zero elements $\mathbf{r}$ in the Euclidean ball $B_{m}(0, 2B)$ satisfy $\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}$ is smaller than $2^{-sec}$. % TODO check that this is not a quote
+\paragraph{$\texttt{StatisticalMSIS}$.} We can find parameters for a statistically secure MSIS instance by following Section 4.1 of \cite{DOTT21}. The mapping of the parameters in \cite{DOTT21} is shown in \cref{tab:mapping-DOTT21}. More specifically, we ask to find a MLWE instance where the probability that non zero elements $\mathbf{r}$ in the Euclidean ball $B_{m}(0, 2B)$ satisfy $\hat{\mathbf{A}}_1 \cdot \mathbf{r} = \mathbf{0}$ is smaller than $2^{-\texttt{sec}}$. % TODO check that this is not a quote
 
-We give a mapping of the parameters in \cite{DOTT21} in \cref{tab:mapping-DOTT21}
+The number of elements in $B_{m+d}(0, 2B)$ can be estimated from above as $|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}$. The scheme is statistically binding if the probability that non zero elements in $B_{m+d}(0, 2B)$ of radius $2B$ in $\mathcal{R}_q^{m+d}$ map to $\mathbf{0}$ in $\mathcal{R}_q^{m}$ is negligible. Hence, it must hold that $|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-\texttt{sec}}$ and we get:
 
-\begin{table}
-    \centering
-    \begin{tabular}[h]{lll}
-        \toprule
-        Parameters in \cite{DOTT21} & Use Here & Represents                            \\\hline
-        $m'$                        & $m+d$    & width of matrix $\hat{\mathbf{A}}_1$  \\
-        $m$                         & $m$      & height of matrix $\hat{\mathbf{A}}_1$ \\
-        $B$                         & $B$      & norm-bound of secret                  \\
-        $s$                         & $s$      & Gaussian width (not stddev)           \\
-        $N$                         & $n$      & degree of polynomial                  \\
-        \bottomrule
-    \end{tabular}
-    \caption{Parameter Mapping from \cite{DOTT21}}\label{tab:mapping-DOTT21}
-\end{table}
-
-
-The number of elements in $B_{m+d}(0, 2B)$ can be estimated from above as $|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}$. The scheme is statistically binding if the probability that non zero elements in $B_{m+d}(0, 2B)$ of radius $2B$ in $\mathcal{R}_q^{m+d}$ map to $\mathbf{0}$ in $\mathcal{R}_q^{m}$ is negligible. Hence, it must hold that $|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-sec}$ and we get:
-
-% TODO: look for bound of ball without o(...) if change also change in docstring
+% TODO: look for bound of ball without o(...) if change also change in docstring, check out wikipedia => heuristic. maybe find version not heuristic?
+% add that this is approximation, see https://en.wikipedia.org/wiki/Volume_of_an_n-ball
+% for small n?
 
 \begin{align}
-    \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} & \leq 2^{-sec} \cdot q^{m\cdot n}                                                                       \\
-    B                                                                           & \leq 2^{\frac{-sec}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}
+    \left(\sqrt{\frac{2 \pi e}{(m+d) \cdot n}} \cdot 2 B\right)^{(m+d) \cdot n} & \leq 2^{-\texttt{sec}} \cdot q^{m\cdot n}                                                                       \\
+    B                                                                           & \leq 2^{\frac{-\texttt{sec}}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}
 \end{align}
 
 We convert the bound $B$ to a Gaussian over $\ell_2$-norm by following the procedure described in \cref{sec:norm}: % TODO: add appropriate reference
 
 \begin{equation}
-    s  \approx x \sqrt{\frac{\pi}{(sec + 1) \ln(2)}}
+    s  \approx x \sqrt{\frac{\pi}{(\texttt{sec} + 1) \ln(2)}}
 \end{equation}
 
 % TODO: rephrase to obtain a lemma?
@@ -238,18 +213,22 @@ As for statistically secure MLWE we again include a matrix version $\texttt{Stat
 \section{Parameter Search and Configuration Options}
 We now describe the main parameter search and estimate configuration options in our tool. The configuration can be customized by using the class $\texttt{algorithms.Configuration}$ and passed as an optional argument of $\texttt{param\_search.generic\_search()}$. It is also possible to directly estimate the cost of a list of parameter problems by calling the function $\texttt{problem.estimate()}$. For more details we again refer to the documentation.
 
-\paragraph{Cost Models.} Attacks that use BKZ for lattice reduction require a cost model to estimate the number of CPU cycles in the SVP subroutine. Default cost models are shown in \cref{tab:costmodels}. We distinguish between estimates for classical, quantum, sieving and enumeration and each of these categories can be deselected by setting the respective parameter to $\texttt{False}$. Note that at least one of classical and quantum and of sieving and enumeration respectively must be selected to make use of the default cost models. If all are unselected custom cost models must be specified and passed as an argument. We included an option of taking the most conservative estimate for each category combination for a more efficient parameter search or estimation. Furthermore, we assigned a priority value on an ordinal scale to each cost model which enables us to first run cost models that yield a lower cost and thus terminate the estimation process earlier for an insecure parameter set. The priority values of the default cost models are derived from \cref{fig:costmodels}.
+\paragraph{Cost Models.} Attacks that use BKZ for lattice reduction require a cost model to estimate the number of CPU cycles in the SVP subroutine. Default cost models are shown in \cref{tab:costmodels}. We distinguish between estimates for classical, quantum, sieving and enumeration and each of these categories can be deselected by setting the respective parameter to $\texttt{False}$. At least one of classical and quantum and of sieving and enumeration respectively must be selected to make use of the default cost models.
+
+Note that classical and quantum cost models cannot be directly compared with each other. The number of operations per second that can be executed by a quantum computer may be significantly smaller than for classical computers. % TODO add more?
+
+If all are unselected custom cost models must be specified and passed as an argument. We included an option of taking the most conservative estimate for each category combination for a more efficient parameter search or estimation. Furthermore, we assigned a priority value on an ordinal scale to each cost model which enables us to first run cost models that yield a lower cost and thus terminate the estimation process earlier for an insecure parameter set. The priority values of the default cost models are derived from \cref{fig:costmodels}.
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{graphics/cost_models.png}
     \caption{Cost Models}\label{fig:costmodels}
 \end{figure}
-The number of BKZ rounds can be configured by passing a function with parameters $\texttt{beta, d}$ where $\texttt{beta}$ is the block size and $\texttt{d}$ the lattice dimension. In the default configuration we use the more conservative ``Core''-SVP model $\texttt{algorithms.BKZ\_SVP\_repeat\_core}$ \cite{ADPS16} in which the polynomial factor of the runtime complexity of BKZ is completely ignored. In addition, we provide a model $\texttt{algorithms.BKZ\_SVP\_repeat\_8d}$ for a BKZ cost of $8 \cdot d \cdot t_k$ BKZ rounds where $d$ again referes to the lattice dimension (see \cref{sec:bkz-8d}).
+The number of BKZ rounds can be configured by passing a function with parameters $\texttt{beta, d}$ where $\texttt{beta}$ is the block size and $\texttt{d}$ the lattice dimension. In the default configuration we use the more conservative ``Core''-SVP model $\texttt{algorithms.BKZ\_SVP\_repeat\_core}$ \cite{ADPS16} in which the polynomial factor of the runtime complexity of BKZ is completely ignored. In addition, we provide a more realistic model $\texttt{algorithms.BKZ\_SVP\_repeat\_8d}$ for a BKZ cost of $8 \cdot d \cdot t_k$ BKZ rounds where $d$ again referes to the lattice dimension and $t_k$ is the number of clock cycles required for the SVP subroutine (see \cref{sec:bkz-8d}). % TODO maybe add a little more of evaluation here
 
 
 \subsection{Generic Search and Estimate Algorithms}
 The main functionality of our tool is encapsulated in the function $\texttt{param\_search.generic\_search()}$. The high-level idea of the search is presented in \cref{alg:generic-search}. We begin with an initial parameter set. We then create a list of problem instances generated by a $\texttt{parameter\_problem}$ function and estimate the cost of all instances in the list. If the list contains multiple SIS instances or multiple LWE instances, we attempt to reduce the instances to the easiest problem instance respectively. % TODO: include how, \cref{sec:problem-reduction} 
-Once the $\texttt{estimate}$ function finds an instance that is insecure (i.e. the estimated attack cost in clock cycles is smaller than $2^{sec}$), it terminates the estimation procedure and returns an insecure result. We then use the $\texttt{next\_parameters}$ function to generate a list L of (multiple) new parameter sets from our current parameter set and sort each of the new parameter sets into an ordered list (duplicates are not accepted). The order is defined by a $\texttt{parameter\_cost}$ function. In the next step we retrieve the parameter set with the lowest cost from L and repeat the procedure until the cost estimation step returns a secure result. The result includes the estimates for all cost models and algorithms.
+Once the $\texttt{estimate}$ function finds an instance that is insecure (i.e. the estimated attack cost in clock cycles is smaller than $2^{\texttt{sec}}$), it terminates the estimation procedure and returns an insecure result. We then use the $\texttt{next\_parameters}$ function to generate a list L of (multiple) new parameter sets from our current parameter set and sort each of the new parameter sets into an ordered list (duplicates are not accepted). The order is defined by a $\texttt{parameter\_cost}$ function. In the next step we retrieve the parameter set with the lowest cost from L and repeat the procedure until the cost estimation step returns a secure result. The result includes the estimates for all cost models and algorithms.
 
 \begin{algorithm2e} % TODO: check if block is not of dimension kxk
     \SetKwBlock{Begin}{function}{end function}
@@ -278,7 +257,7 @@ Once the $\texttt{estimate}$ function finds an instance that is insecure (i.e. t
 The $\texttt{estimate}$ function can be configured to run in parallel in the configuration which may speed up the search, in particular if many cost models need to be tested (e.g. with configuration setting $\texttt{conservative=False}$ and long running algorithms like $\texttt{ARORA\_GB}$, $\texttt{CODED\_BKW}$ and $\texttt{PRIMAL\_DECODE}$ are used. The list of used algorithms can be changed in the configuration. We recommend to include $\texttt{PRIMAL\_USVP}$ for LWE instances and $\texttt{LATTICE\_REDUCTION}$ for SIS instances to make full use of early termination since the estimate algorithms for these attacks have a short runtime and yield relatively low cost estimates.
 
 
-\cref{fig:SIS-algs}, \ref{fig:LWE-algs-small} and \ref{fig:LWE-algs-large} show the plots of runtime and performance tests for the various algorithms that can be used in our tool. In accordance with the results, we assigned priority values on an ordinal scale to the estimation algorithms. In \cref{tab:lwe-alg-prio} and \ref{tab:sis-alg-prio} we present the list of algorithms and their corresponding priority values and justify our choice. Algorithms with a smaller priority are expected to yield relatively good results quickly and can therefore be executed first. If the estimate result does not satisfy the specified security requirement we can terminate the estimation process early in order to maximize the efficiency of our search.
+\cref{fig:SIS-algs}, \ref{fig:LWE-algs-small} and \ref{fig:LWE-algs-large} show the plots of runtime and performance tests for the various algorithms that can be used in our tool. In accordance with the results, we assigned priority values on an ordinal scale to the estimation algorithms. In \cref{tab:lwe-alg-prio} and \ref{tab:sis-alg-prio} we present the list of algorithms and their corresponding priority values and justify our choice. Algorithms with a smaller priority are expected to yield relatively good results quickly and can therefore be executed first. If the estimate result does not satisfy the specified security requirement we can terminate the estimation process early in order to maximize the efficiency of our search. Note that directly comparing the results for different algorithms, while convenient, is not always admissible as the compared algorithms may rely on different assumptions. Some algorithms may compute a more realistic cost while others may return a more conservative or even paranoid cost estimate (e.g. BKZ is used with the Core-SVP paranoid lower bound). The results have to be weighted carefully in order to guarantee the security of a given scheme in the forseable future while trying to keep the cost of using the scheme as low as possible. % TODO maybe move to conclusion...
 
 \begin{figure}[]
     \centering
