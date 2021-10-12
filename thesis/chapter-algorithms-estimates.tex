@@ -37,12 +37,11 @@ for $0 < \alpha < 1$.
 If we combine \cref{eq:hermite} with \cref{eq:GSA}, we obtain  $\| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}$. Furthermore, we know that $\prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| = \det(\Lambda)$  % TODO: check
 and get
 \begin{align}
-   &      & \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| & \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n} \\
-   & \iff & \det(\Lambda)                            & \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1}    \\
-   & \iff & \delta^{-n^2}                            & \approx \alpha^{\frac{n(n-1)}{2}}                               \\
-   & \iff & \delta^{-2}                              & \approx \alpha^{(n-1)/n}                                        \\
+   &                 & \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| & \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}
+   & \Leftrightarrow & \det(\Lambda)                            & \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1}    \\
+   & \Leftrightarrow & \delta^{-n^2}                            & \approx \alpha^{\frac{n(n-1)}{2}}
+   & \Leftrightarrow & \delta^{-2}                              & \approx \alpha^{(n-1)/n}                                        \\
 \end{align}
-
 Hence, $\alpha \approx \delta^{-2}$ and
 \begin{equation}
   \| \tilde{\mathbf{b}}_i \| \approx \delta^{-2(i-1) + n} \det(\Lambda)^{1/n}
@@ -95,7 +94,7 @@ Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \frac{\left
 
 % Theoretical and experimental output quality
 
-The proven upper bound of the output quality of the LLL algorithm is $\delta^n = \left(\frac{4}{3}\right)^{\frac{n-1}{4}}$ or $\delta \approx 1.075$ \cite{LLL82}. In practice, on average we get much better results of $\delta \approx 1.021$ \cite{Chen13}. Given an input basis in which the length of all basis vectors is bounded by $B$, the runtime of LLL is proven to be in $\mathcal{O}\left(n^4m\log B(n+\log B)\right)$ \cite{NS05} and heuristically known to be $\mathcal{O}\left(n^{3}\log^2 B\right)$ \cite{APS15}.
+The proven upper bound of the output quality of the LLL algorithm is $\delta^n = \left(4/3\right)^{\frac{n-1}{4}}$ or $\delta \approx 1.075$ \cite{LLL82}. In practice, on average we get much better results of $\delta \approx 1.021$ \cite{Chen13}. Given an input basis in which the length of all basis vectors is bounded by $B$, the runtime of LLL is proven to be in $\mathcal{O}\left(n^4m\log B(n+\log B)\right)$ \cite{NS05} and heuristically known to be $\mathcal{O}\left(n^{3}\log^2 B\right)$ \cite{APS15}.
 
 
 
@@ -109,7 +108,7 @@ The Block Korkin-Zolotarev (BKZ) algorithm was proposed by Schnorr in 1987 and a
 
 \begin{algorithm2e} % TODO: check if block is not of dimension kxk
   \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{BKZ} {(} \mathbf{B} = \{\mathbf{b}_1, \dots, \mathbf{b}_{n}\}, k \in [n]\backslash\{1\} {)}$) % TODO nxn???
+  \Begin($\text{BKZ} {(} \mathbf{B} = \{\mathbf{b}_1, \dots, \mathbf{b}_{n}\}, k \in [n]\setminus \{1\} {)}$) % TODO nxn???
   {
       z = 0; j = 0\\
       $\mathbf{B} = \text{LLL}(\mathbf{B})$ \\% LLL reduce and update basis
@@ -582,7 +581,7 @@ It is evident that a lower quality of the reduced input basis can be compensated
 % TODO: add exact success probability? 
 Success probability of the Generalized Nearest Planes algorithm:
 \begin{equation}
-  \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{1/2}(\tilde{\mathbf{B}} \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i \sqrt{\pi}}{2\alpha q}\right)
+  \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{\frac{1}{2}}(\tilde{\mathbf{B}} \cdot \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i\| \sqrt{\pi}}{2\alpha q}\right)
 \end{equation} %TODO check, in particular m or n and explain
 
 % TODO: add the following:
@@ -634,7 +633,7 @@ In the primal attack, instead of directly solving BDD, we reduce BDD to uSVP, i.
 To do this we apply Kannan's embedding technique \cite{Kan87}. % TODO: quote theorem? For any $\gamma \geq 1, there is a polynomial time Cook-reduction from BDD$_{1/(2\gamma)}$ to $\gamma$-uSVP.
 Kannan's embedding creates a lattice with uSVP structure. We know that $\mathbf{A}^\intercal \mathbf{s}\mod q$ is the closest vector to the target $\mathbf{z} =\mathbf{A}^\intercal \mathbf{s} + \mathbf{e}^\intercal \mod q$ in $\Lambda(\mathbf{A}^\intercal)$. We now add a linearly indpenendent basis vector  $(\mathbf{z}, \mu)$ and append a zero coefficient to each basis vector of the original lattice (i.e. the rows of $\mathbf{A}$). Thereby, we ensure that the new lattice contains the vector $[-\mathbf{e}, -\mu]^\intercal$ as $[\mathbf{A} \mid \mathbf{0}]^\intercal \mathbf{s} - 1 \cdot [\mathbf{z}^\intercal, \mu] = [-\mathbf{e}, -\mu]^\intercal$.
 
-More formally, let $\mathbf{B} \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{s}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
+More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{s}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
 % TODO: we compute the reduced row echelon form $\mathbf{A}'' = \left[\mathbf{I}_n | \mathbf{A}'\right]$ of $\mathbf{A}$ and express the basis of $\Lambda(\mathbf{A}^\intercal)$ as
 % \begin{equation}
 %   \mathbf{B} = \begin{pmatrix}
@@ -654,23 +653,20 @@ If $\gamma \geq 1$ and $\mu < \frac{\lambda_1(\Lambda(\mathbf{B})}{2\gamma}$ (or
 The statement can be proven by showing by contradiction that all vectors $\mathbf{v} \in \Lambda(\mathbf{B}')$ that are independent of $\mathbf{z}'$ satisfy $\| \mathbf{v}\| \geq \lambda_1{\Lambda(\mathbf{B})}/\sqrt{2} > \sqrt{2}\gamma \mu = \gamma \|\mathbf{z}'\|$ (see Section 4 of \cite{LM09} for more details). Note that the reduction can be done in polynomial time (Theorem 4.1 in \cite{LM09}). % TODO possibly sketch the proof
 The length of $\mathbf{z}'$ is given by $\|\mathbf{z}'\| = \sqrt{\|\mathbf{e}\|^2 + | \mu |^2} = \sqrt{m\alpha^2 q^2/(2\pi) + | \mu |^2}$ \cite{BBGS19}. From $\mathbf{z}'$ we can recover the error vector $\mathbf{e}$ and thereby the secret vector $\mathbf{s} = \mathbf{z} - \mathbf{e} \mod q$.
 
-A solution to $\gamma$-uSVP can be found by reducing it to $\kappa$-HSVP where $\gamma = \kappa^2$ \cite{APS15}. Various algorithms, in particular, lattice reduction algorithms, exist to solve $\kappa$-HSVP. If we are able to solve a linear number of $\kappa$-HSVP instances that correspond to a $\kappa^2$-approximate SVP instance, we can construct a solution of the latter (see \cref{def:gammaSVP}, see Section 1.2.21 in \cite{Lov87} for more details).
+A solution to $\gamma$-uSVP can be found by reducing it to $\kappa$-HSVP where $\gamma = \kappa^2$ \cite{APS15}. Various algorithms, in particular, lattice reduction algorithms, exist to solve $\kappa$-HSVP. If we are able to solve a linear number of $\kappa$-HSVP instances that correspond to a $\kappa^2$-approximate SVP instance, we can construct a solution of the latter (see \cref{def:svp}, see Section 1.2.21 in \cite{Lov87} for more details).
 Consider any lattice with uSVP structure. In exactly one direction, that is, in the direction of its unique shortest vector, the lattice has vectors that are significantly smaller than in other directions. A lattice reduction algorithm that yields a sufficiently good output basis quality, therefore, must return some small vector in the desired direction.
 Let $\mathbf{v}$ be a solution to SVP$_\kappa^2$, i.e. $\|\mathbf{v}\| \leq \kappa^2 \lambda_1(\Lambda(\mathbf{B}'))$. All other vectors $\mathbf{w}\in \Lambda(\mathbf{B}')$ that are not multiples of a shortest vector have length $\|\mathbf{w}\| \geq \lambda_2(\Lambda(\mathbf{B}')) > \kappa^2\lambda_1(\Lambda(\mathbf{B}'))$. Thus, we obtain a solution to $\gamma$-uSVP and, as shown above, we can reconstruct the secret vector to solve LWE.
 
 % TODO: in practice: GN08
 The attack is successful with high probability if $\lambda_2(\Lambda(\mathbf{B}'))/\lambda_1(\Lambda(\mathbf{B}')) \geq \tau \delta^m$ \cite{AFG13}. Following \cite{Gop16} we assume that the determinant of $\Lambda_q(\mathbf{A}^\intercal)$ is given by $q^{m-n}$ (see \cref{eq:det-MR}). The length of the error is $\|\mathbf{e}\| \approx \sqrt{m\cdot \left(\frac{\alpha q}{\sqrt{2\pi}}\right)^2} \approx \sqrt{\frac{m}{2\pi}} \alpha q$. Furthermore, in practice $\mu=1$ is used \cite{APS15}. We then apply the simplified Gaussian heuristic on $\lambda_2(\Lambda(\mathbf{B}'))=\lambda_2(\Lambda(\mathbf{A}^\intercal))$ \cref{eq:simplified-gaussian-heuristic} to obtain
 \begin{align}
-  \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \\
-                & \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))}                        \\
-                & \leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|}                                            \\
-                & \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}}                                   \\
-                & \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
+  \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))} \leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|} \\
+                & \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
 \end{align}
 
 The success probability of the attack then is non-negligible if
 \begin{equation}
-  \delta \leq \frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}^{\frac{1}{m}}
+  \delta \leq \left(\frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}\right)^{\frac{1}{m}}
 \end{equation}
 Experiments show that $\tau \leq 0.4$ achieves a success rate of about $\epsilon = 0.1$ \cite{AFG13}. In order to increase the success probability to some fixed target $\epsilon' > \epsilon$, we can simply repeat the algorithm $\rho$ times and obtain a success probability of $\epsilon' \leq 1 - (1 - \epsilon)^\rho$ \cite{BBGS19}. Consequently, we need at least $\rho \geq \log(1-\epsilon')/\log(1-\epsilon)$ rounds for a successful attack.
 % TODO: Overall runtime - combination of \rho and t_{\text{BKZ}} where the runtime of BKZ depends on the block-size k, block-size k depends on required \delta => see BBGS19
@@ -695,17 +691,11 @@ Our first approach to solving SIS follows quite naturally. Given $\mathbf{A}$, w
 
 We can then apply a lattice reduction algorithm and obtain a basis with root Hermite factor $\delta$. The first basis $\mathbf{b}_1$ vector of the reduced basis has length $\|\mathbf{b}_1\| = \delta^m \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp})^{1/m}$. We can see that $\delta$ depends on the subdimension $m$ which we want to be ideal in order to minimize the cost of the lattice reduction by relaxing $\delta$.
 
-We further assume that $\text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = \text{Vol}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = q^n$ (see \cite{MR09} for more details). For $q$ prime and $m$ much larger than $n$ we have that the rank of $\mathbf{A}$ is $n$ as the rows of $\mathbf{A}$ are with high probability linearly independent. The nullity or the dimension of the kernel of $\mathbf{A}$ is $m-n$ and as a result the dual lattice has $q^{m-n}$ points in $\mathbb{Z}_q^m$. Consider the fundamental domain $D = \mathcal{P}(\Lambda(\mathbf{A}^\intercal)^{\perp})$ and the fact that $\Lambda(\mathbf{A}^\intercal)^{\perp} + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda(\mathbf{A}^\intercal)^{\perp}||D \mod q|$ and thus
-\begin{equation}\label{eq:det-MR}
-  \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = |D \mod q| = \frac{q^m}{|\Lambda(\mathbf{A}^\intercal)^{\perp}|} = \frac{q^{m}}{q^{m-n}} = q^n.
-\end{equation} % TODO maybe move to preliminaries. also used in uSVP
-
-
-We now have our first equation
+We further assume that $\text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = \text{Vol}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = q^n$ (see \cref{eq:det-MR-dual}). Our first equation then becomes
 \begin{equation}\label{eq:mr-delta}
   \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}},
 \end{equation}
-which becomes minimal for $m = \sqrt{n \log q / \log \delta}$.
+which is minimal for $m = \sqrt{n \log q / \log \delta}$.
 \begin{theorem}[Optimal subdimension $m$ \cite{MR09}]
   Given a $q$-ary scaled dual lattice  $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm yields an optimal output if performed in subdimension
   \begin{equation}

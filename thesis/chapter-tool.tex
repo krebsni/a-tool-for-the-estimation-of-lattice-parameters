@@ -38,7 +38,7 @@ The resulting bound $\beta$ is an $\ell_2$-norm bound. % TODO: distributions is 
 We provide the classes $\texttt{GaussianAlpha}$, $\texttt{GaussianSigma}$ and $\texttt{GaussianS}$ to allow for the most flexibility in specifying a Gaussian distribution.
 
 \subsection{Uniform Distribution}
-For uniform distributions, we support all distributions that are supported by the \textit{Estimator}, namely, uniform $\mod q$, uniform in the interval $[a,\dots,b]$ and a sparse uniform distribution with parameters $((a,b), h)$, where exactly $h$ components are in the interval $[a,\dots,b] \backslash \{0\}$ and all other components are zero. Note that we only consider discrete distributions are over $\mathbb{Z}$.
+For uniform distributions, we support all distributions that are supported by the \textit{Estimator}, namely, uniform $\mod q$, uniform in the interval $[a,\dots,b]$ and a sparse uniform distribution with parameters $((a,b), h)$, where exactly $h$ components are in the interval $[a,\dots,b] \setminus \{0\}$ and all other components are zero. Note that we only consider discrete distributions are over $\mathbb{Z}$.
 
 We can estimate the corresponding standard deviation for a Gaussian distribution by computing the variance of the uniform distribution. Given an lower and upper bound $(a, b)$, the variance for a discrete uniform distribution is defined as $\sigma^2 = \frac{(b - a + 1)^2 - 1}{12}$. For a uniform distirbution $\mod q$ we set $a = -\left\lfloor \frac{q}{2} \right\rfloor, b = \left\lfloor \frac{q}{2} \right\rfloor$.
 
@@ -54,7 +54,7 @@ and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 
 
 
-\section{Norms and Bounds} % TODO: check
+\section{Norms and Bounds} \label{sec:norm-bounds}% TODO: check
 %TODO: write some prose about why we need that
 % TODO: make sure that it is clear that these are bounds!!!
 Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. Following \cite{BDLOP18} we define the norms
@@ -196,7 +196,7 @@ The number of elements in $B_{m+d}(0, 2B)$ can be estimated from above as $|B_{m
     B                                                                           & \leq 2^{\frac{-\texttt{sec}}{(m+d)\cdot n} - 1} \cdot q^\frac{m}{m+d} \cdot \sqrt{\frac{(m+d)\cdot n}{2 \pi e}}
 \end{align}
 
-We convert the bound $B$ to a Gaussian over $\ell_2$-norm by following the procedure described in \cref{sec:norm}: % TODO: add appropriate reference
+We convert the bound $B$ to a Gaussian over $\ell_2$-norm by following the procedure described in \cref{sec:norm-bounds}: % TODO: add appropriate reference
 
 \begin{equation}
     s  \approx x \sqrt{\frac{\pi}{(\texttt{sec} + 1) \ln(2)}}
