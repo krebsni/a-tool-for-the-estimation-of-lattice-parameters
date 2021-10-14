@@ -66,7 +66,7 @@
 %
 % EN: Options must be passed this way, otherwise it does not work with glossaries
 % DE: fleqn (=Gleichungen linksbündig platzieren) funktioniert nicht direkt. Es muss noch ein Patch gemacht werden:
-\PassOptionsToPackage{fleqn,leqno}{amsmath}
+% \PassOptionsToPackage{fleqn,leqno}{amsmath}
 %
 % DE: amsmath Muss nicht mehr geladen werden, da es von newtxmath automatisch geladen wird
 % \usepackage{amsmath}
@@ -161,7 +161,7 @@
 %durch mathpazo ist das schon definiert
 
 %
-%\usepackage{amssymb}
+% \usepackage{amssymb}
 
 % EN: For \texttrademark{}
 \usepackage{textcomp}
@@ -417,10 +417,10 @@
 
 % EN: Enable typesetting values with SI units.
 \ifdeutsch
-  \usepackage[mode=text,group-four-digits]{siunitx}
+  \usepackage[mode=text,group-minimum-digits=4]{siunitx}
   \sisetup{locale=DE}
 \else
-  \usepackage[mode=text,group-four-digits,group-separator={,}]{siunitx}
+  \usepackage[mode=text,group-minimum-digits=4,group-separator={,}]{siunitx}
   \sisetup{locale=US}
 \fi
 
@@ -490,7 +490,6 @@
 %     FÜr if-then-else @ commands.tex
 \usepackage{ifthen}
 
-\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
 
 % EN: Code Listings
 % DE: Listings
@@ -794,7 +793,7 @@
 % DE: Abkürzungsverzeichnis - muss nach hyperref geladen werden
 %
 % DE: siehe http://www.dickimaw-books.com/cgi-bin/faq.cgi?action=view&categorylabel=glossaries#glsnewwriteexceeded
-\usepackage[acronym,indexonlyfirst,nomain]{glossaries}
+\usepackage[acronym,indexonlyfirst,nomain,nonumberlist,style=super]{glossaries}
 \ifdeutsch
   \addto\captionsngerman % DE: siehe https://tex.stackexchange.com/a/154566
   {%
@@ -1212,6 +1211,27 @@
   \setlength{\emergencystretch}{3em} % Silbentrennung reduzieren durch mehr frei Raum zwischen den Worten
 \fi
 
+% User Packages
+\usepackage{enumitem}
+\usepackage{todonotes}
+\usepackage{array,multirow}
+\usepackage{hhline}
+\usepackage{nicematrix}
+\usepackage{subfiles}
+\usepackage{makecell}
 \usepackage{chronology}
+\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
+
+
 \newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newcommand{\inst}[2]{\mathrel{\stackrel{\makebox[0pt]{\mbox{\normalfont\tiny{#1}}}}{{#2}}}}
+\newcommand{\qed}{\tag*{$\square$}}
+\newcommand{\QED}{\hfill{$\square$}}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+\definecolor{commentgreen}{RGB}{2,112,10}
+\renewcommand{\glsnamefont}[1]{\textbf{#1}}
+
 \DeclareMathOperator*{\argmin}{arg\,min}
+

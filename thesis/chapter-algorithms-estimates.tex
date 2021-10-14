@@ -22,31 +22,23 @@ First of all, we need to define a measure to evaluate the quality of a given bas
   \begin{equation} \label{eq:hermite}
     \| \mathbf{b}_1 \| \approx \delta^n \det(\Lambda)^{1/n}.
   \end{equation}
-\end{definition}
-
-% * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
-
-
-% * use Geometric Series Assumption (GSA) \cite{Sch03} to obtain estimates for $\mathbf{b}_i$: % TODO: necessary? replace m by n
-We will later use a result that follows from the Geometric Series Assumption (GSA) \cite{Gop16}. The GSA estimates the length of the Gram-Schmidt vectors $\tilde{\mathbf{b}}_i$ as follows \cite{Sch03}: \label{sec:GSA} % got this from Gop16
+\end{definition}% TODO * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
+We will later use a result that follows from the Geometric Series Assumption (GSA) as in \cite{Gop16}. The GSA estimates the length of the Gram-Schmidt vectors $\tilde{\mathbf{b}}_i$ as follows \cite{Sch03}: \label{sec:GSA} % got this from Gop16
 \begin{equation} \label{eq:GSA}
   \| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \| \mathbf{b}_1 \|,
 \end{equation}
-for $0 < \alpha < 1$.
-
-If we combine \cref{eq:hermite} with \cref{eq:GSA}, we obtain  $\| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}$. Furthermore, we know that $\prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| = \det(\Lambda)$  % TODO: check
+for $0 < \alpha < 1$. If we combine \cref{eq:hermite} with \cref{eq:GSA}, we obtain  $\| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}$. Furthermore, we know that $\prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| = \det(\Lambda)$  % TODO: check
 and get
-\begin{align}
-   &                 & \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| & \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}
-   & \Leftrightarrow & \det(\Lambda)                            & \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1}    \\
-   & \Leftrightarrow & \delta^{-n^2}                            & \approx \alpha^{\frac{n(n-1)}{2}}
-   & \Leftrightarrow & \delta^{-2}                              & \approx \alpha^{(n-1)/n}                                        \\
-\end{align}
+\begin{align*}
+  \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}
+  \iff & \det(\Lambda) \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1} \\
+  \iff & \delta^{-2n} \approx \alpha^{\frac{n(n-1)}{2}}                             \\
+  \iff & \delta^{-2} \approx \alpha^{(n-1)/n}
+\end{align*}
 Hence, $\alpha \approx \delta^{-2}$ and
 \begin{equation}
   \| \tilde{\mathbf{b}}_i \| \approx \delta^{-2(i-1) + n} \det(\Lambda)^{1/n}
 \end{equation}
-
 We can see that for smaller $i$ the length of the Gram-Schmidt vectors $\tilde{\mathbf{b}}_i$ decreases whereas the length increases for larger $i$ resulting in a long and skinny fundamental parallelipiped $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$.
 
 
@@ -89,7 +81,7 @@ Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \frac{\left
       Return $\mathbf{B}$\\
     }
   }
-  \caption{The $\delta$-LLL Algorithm \cite{LLL82}} \label{alg:LLL}
+  \caption{The $\delta$-LLL algorithm \cite{LLL82}} \label{alg:LLL}
 \end{algorithm2e}
 
 % Theoretical and experimental output quality
@@ -133,7 +125,7 @@ The Block Korkin-Zolotarev (BKZ) algorithm was proposed by Schnorr in 1987 and a
         }
       }
     }
-  \caption{The BKZ Algorithm \cite{SE91}} \label{alg:BKZ}
+  \caption{The BKZ algorithm \cite{SE91}} \label{alg:BKZ}
 \end{algorithm2e} % TODO: check, maybe also with ABLR21, Alg 2 or 4
 
 % TODO: explain how SVP oracle can be implemented => possibly outsource, section for cost models!!!
@@ -157,14 +149,14 @@ In addition, \cite{CN11} optimizes the \textit{enumeration radius} by using expe
 % - practical floating point version of LLL \cite{SE91} best practical results 
 
 It is difficult to find hard runtime bounds for BKZ. The upper bound on the number of rounds is superexponential in the dimension $n$ for a fixed block size \cite{HPS11a, GN08b} before BKZ terminates given that no early termination strategy is used. In addition, calls to the SVP oracle in all dimensions $k' \leq k$ must be taken into account.
-Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$ \citet{APS15}. The value $\rho$ is set to $8$ in the \textit{Estimator} and is derived from experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds. \label{sec:bkz-8d}
+Albrecht \textit{et al.} ignore these intricacies and estimate the cost of BKZ in clock cycles as $\rho \cdot n \cdot t_k$ where $\rho$ is the number of rounds needed and $t_k$ is the cost (in block cycles) of calling the SVP oracle on a block of dimension $k$ \citet{APS15}. The value $\rho$ is set to $8$ in the \textit{estimator} and is derived from experiments in \cite{Chen13} that indicate that the most significant progress happens in the first $7-9$ rounds. \label{sec:bkz-8d}
 
 % TODO: output quality: 
-The output quality of BKZ is closely related to the used block size $k$. The \textit{Estimator} uses a limiting value from \cite{Chen13} to estimate the root Hermite factor $\delta$ for a given $k$:
+The output quality of BKZ is closely related to the used block size $k$. The \textit{estimator} uses a limiting value from \cite{Chen13} to estimate the root Hermite factor $\delta$ for a given $k$:
 \begin{equation}
   \lim_{n\rightarrow \infty} \delta \approx \left( \frac{k (\pi k)^{\frac{1}{k}}}{2\pi e}\right)^{\frac{1}{2(k-1)}}
 \end{equation}
-For smaller block sizes $k\leq 40$ the \textit{Estimator} uses fixed experimental values for $\delta$.
+For smaller block sizes $k\leq 40$ the \textit{estimator} uses fixed experimental values for $\delta$.
 % TODO: include? \cite{LP11} runtime according Linder-Peikert model, GSA: suggest $t_{\text{BKZ}}=1.8/\log_2{\delta} - 110$
 
 
@@ -174,7 +166,7 @@ For smaller block sizes $k\leq 40$ the \textit{Estimator} uses fixed experimenta
 
 \subsection{Cost Models for Lattice Reduction} \label{sec:costmodels}
 % TODO. write little introduction
-In this section, we will look at various high level ideas to realize an SVP solver that can be used as a subroutine in BKZ and present up-to-date cost models from the literature. SVP is known to be NP-complete even for large constant approximation factors \cite{Ajt98, Khot05}. An exponential approximation factor can be achieved in polynomial time but is mostly insufficient for practical purposes \cite{LLL82}.  We will mainly focus on two classes of (nearly) exact SVP solvers, namely, enumeration algorithms and sieving algorithms. Enumeration algorithms can solve SVP in a lattice of dimension $k$ in $2^{\mathcal{O}(k \log k)}$ time and polynomial space. Sieving algorithms only need $2^{\mathcal{O}(k)}$ time, however, at the cost of exponential memory complexity. Only recently, progress in sieving strategies has given rise to BKZ implementations relying on sieving (e.g. the General Sieve Kernel (G6K) impelmentation \cite{ADHKPS19, DSW21}) that outperform enumeration implementations already in relatively small dimensions $\gtrsim 70$ in the classical setting \cite{ABLR21}. On the other hand, quantum speedups for enumeration are greater than for sieving. Aono \textit{et al.} show a quadratic cost reduction for enumeration \citet{ANS18}, while the cost sieving only decreases by a factor of $2^0.027$ with idealized assumptions \cite{Laa15}. The authors of \cite{ADPS16} argue that due of a lower bound $2^0.2075k$ on the required size of the building lists future quantum sieving algorithms are not expected to achieve an asymptotic runtime below $2^0.2075k$. % assuming no depth restriction and quantum accessible RAM (qRAM)
+In this section, we will look at various high level ideas to realize an SVP solver that can be used as a subroutine in BKZ and present up-to-date cost models from the literature. SVP is known to be NP-complete even for large constant approximation factors \cite{Ajt98, Khot05}. An exponential approximation factor can be achieved in polynomial time but is mostly insufficient for practical purposes \cite{LLL82}.  We will mainly focus on two classes of (nearly) exact SVP solvers, namely, enumeration algorithms and sieving algorithms. Enumeration algorithms can solve SVP in a lattice of dimension $k$ in $2^{\mathcal{O}(k \log k)}$ time and polynomial space. Sieving algorithms only need $2^{\mathcal{O}(k)}$ time, however, at the cost of exponential memory complexity. Only recently, progress in sieving strategies has given rise to BKZ implementations relying on sieving (e.g. the General Sieve Kernel (G6K) impelmentation \cite{ADHKPS19, DSW21}) that outperform enumeration implementations already in relatively small dimensions $\gtrsim 70$ in the classical setting \cite{ABLR21}. On the other hand, quantum speedups for enumeration are greater than for sieving. Aono \textit{et al.} show a quadratic cost reduction for enumeration \cite{ANS18}, while the cost sieving only decreases by a factor of $2^{0.027}$ with idealized assumptions \cite{Laa15}. The authors of \cite{ADPS16} argue that due of a lower bound $2^{0.2075k}$ on the required size of the building lists future quantum sieving algorithms are not expected to achieve an asymptotic runtime below $2^{0.2075k}$. % assuming no depth restriction and quantum accessible RAM (qRAM)
 
 A selection of the most relevant cost models for cryptographic purposes is shown \cref{tab:costmodels}. All these cost models are supported in our tool.
 
@@ -184,16 +176,16 @@ A selection of the most relevant cost models for cryptographic purposes is shown
 Enumeration aims to find the shortest vector by enumerating all lattice vectors within some bounded region. In general, we start with reducing the lattice basis to improve the basis quality. We then define a bound and iteratively project the lattice to the span of its Gram-Schmidt vectors beginning from $\tilde{\mathbf{b}}_n$ until we arrive at the lowest level of a one-dimensional subspace. We continue by enumerating all vectors of norm less than $r$ in the projected lattice and ``lift'' each of these vectors to the level above and repeat this process until we arive at the level from which we started. The search space can be thought of as a large tree of (projected) vectors on which we apply depth-first search. Note that the root of the tree here is at the lowest level and the leafs are the lattice vectors in our target lattice. %Consider a two-dimensional lattice with basis $\left\{\mathbf{b}_1, \mathbf{b}_2 \right\}$ and bound$r = \| \mathbf{b}_1 \|$. We project the lattice to the span of the Gram-Schmidt vector $\tilde{\mathbf{b}}_2$ and enumerate all the vectors within the  $r$... Not really needed
 The low memory cost of enumeration is due to its similarities to depth-first search.
 
-A very early but very efficient variant was suggested by \citet{Kan83} with a proven worst-case runtime of $2^{\mathcal{O}(k \log k)}$. BKZ$_k$ using Kannan's enumeration algorithm as SVP oracle yields a short lattice vector of norm approximately $\left(k^{\frac{1}{2k}}\right)^n\cdot \text{Vol}(\Lambda)^{1/n}$ or equivalently achieves a root Hermite factor of $k^{\frac{1}{2k}}$ \cite{HS07, ABFKSW20}. % TODO check if n or m
+A very early but very efficient variant was suggested by \citet{Kan83} with a proven worst-case runtime of $2^{\mathcal{O}(k \log k)}$. BKZ$_k$ using Kannan's enumeration algorithm as SVP oracle yields a short lattice vector of norm approximately $\left(k^{1/(2k)}\right)^n\cdot \text{Vol}(\Lambda)^{1/n}$ or equivalently achieves a root Hermite factor of $k^{1/(2k)}$ \cite{HS07, ABFKSW20}. % TODO check if n or m
 % TODO: write sth about root hermite factor, ... for the next sections or change next sections
 
-In \cite{ABFKSW20} we find a more concrete experimental cost model of $\text{poly}(n) \cdot 2^{\frac{k \log k}{2e}  - 0.995 k + 16.25}$ for BKZ 2.0 (see \cref{sec:BKZ}), where $\text{poly}(n)$ is the number of calls to the enumeration subroutine. BKZ 2.0 achieves a  root Hermite factor of $\left(\frac{k}{2\pi e} \cdot (\pi k)^{1/k}\right)^{\frac{1}{2(k-1)}}$ \cite{Chen13}.
+In \cite{ABFKSW20} we find a more concrete experimental cost model of $\text{poly}(n) \cdot 2^{(k \log k) / (2e)  - 0.995 k + 16.25}$ for BKZ 2.0 (see \cref{sec:BKZ}), where $\text{poly}(n)$ is the number of calls to the enumeration subroutine. BKZ 2.0 achieves a  root Hermite factor of $\left(k / (2\pi e) \cdot (\pi k)^{1/k}\right)^{1 / (2(k-1))}$ \cite{Chen13}.
 
 % TODO add to BKZ variants!!! => extended preprocessing and relaxing of search radius, 
 % also add G6K (General Sieve Kernel) from ADHKPS19 (see more in sieving), running time of 2^Theta(k) but also 2^Theta(k) memory
-The FastEnum algorithm in \citet{ABFKSW20} incorporates an idea called ``extended preprocessing'' and simulations achieve a root Hermite factor of $k^{\frac{1}{2k}(1 + o(1))}$ in $\text{poly}(n) \cdot 2^{0.125k \log k - 0.050k + 56}$ time. The corresponding quantum algorithm reduces the runtime from $2^{\frac{k \log k}{8} + o(k)}$ to $2^{\frac{k \log k}{16} + o(k)}$. In extended preprocessing, instead of preprocessing the current projected basis block of size $k$, the BKZ-reduction is applied to a block of higher dimension $\lceil (1+c)\cdot k\rceil$ for some constant $c$. Enumeration is faster on the first basis vectors as their Gram-Schmidt norms closely follow the Geometric Series Assumption \cite{MW16}. % TODO: move to BKZ ??? And perhaps switch BKZ with this section?
+The FastEnum algorithm in \citet{ABFKSW20} incorporates an idea called ``extended preprocessing'' and simulations achieve a root Hermite factor of $k^{(1 + o(1))/(2k)}$ in $\text{poly}(n) \cdot 2^{0.125k \log k - 0.050k + 56}$ time. The corresponding quantum algorithm reduces the runtime from $2^{(k \log k)/8 + o(k)}$ to $2^{(k \log k) / 16 + o(k)}$. In extended preprocessing, instead of preprocessing the current projected basis block of size $k$, the BKZ-reduction is applied to a block of higher dimension $\lceil (1+c)\cdot k\rceil$ for some constant $c$. Enumeration is faster on the first basis vectors as their Gram-Schmidt norms closely follow the Geometric Series Assumption \cite{MW16}. % TODO: move to BKZ ??? And perhaps switch BKZ with this section?
 
-A tradeoff of runtime and success probability for ``relaxing'' the approximation and extreme pruning turns out to exponentially speed up the search \cite{LN20} and was combined with extended preprocessing by Albrecht \textit{et al.} to further reduce the experimental runtime of BKZ to $\text{poly}(n) \cdot 2^{\frac{k \log k}{8} - 0.654k + 25.84}$ for a root Hermite factor of $k^{\frac{1}{2k}}$ \cite{ABFKSW20}.
+A tradeoff of runtime and success probability for ``relaxing'' the approximation and extreme pruning turns out to exponentially speed up the search \cite{LN20} and was combined with extended preprocessing by Albrecht \textit{et al.} to further reduce the experimental runtime of BKZ to $\text{poly}(n) \cdot 2^{(k \log k)/8 - 0.654k + 25.84}$ for a root Hermite factor of $k^{1/(2k)}$ \cite{ABFKSW20}.
 
 % TODO: what to do with poly(n)? just throw it away? 
 
@@ -214,20 +206,20 @@ The second group of SVP solvers are sieving algorithms \cite{ADHKPS19, MV10, NV0
 % nice overview and explanation in \cite{ADHKPS19}
 \begin{table}[h]
   \centering
-  \begin{tabular}{ll}
+  \begin{tabular}{lll}
     \toprule
-    Algorithm                                & Cost Estimate                                          \\\hline
-    List Sieve \cite{MV10}                   & $2^{0.3199n + o(n)}$ time, $2^{0.1325 + o(n)}$ memory  \\
-    NV-sieve \cite{NV08, ADHKPS19}           & $2^{0.415n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
-    NV-sieve (quantum) \cite{NV08, ADHKPS19} & $2^{0.311n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
-    Gauss sieve \cite{MV10, HK17}            & $2^{0.415n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
-    BGJ-sieve \cite{BGJ15}                   & $2^{0.311n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
-    3-sieve \cite{BLS16, HK17}               & $2^{0.3962n + o(n)}$ time, $2^{0.1887n + o(n)}$ memory \\
-    BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
-    BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$ time, $2^{0.2075n + o(n)}$ memory  \\
+    Algorithm                                & Runtime complexity   & Memory complexity    \\\hline
+    List Sieve \cite{MV10}                   & $2^{0.3199n + o(n)}$ & $2^{0.1325 + o(n)}$  \\
+    NV-sieve \cite{NV08, ADHKPS19}           & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+    NV-sieve (quantum) \cite{NV08, ADHKPS19} & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+    Gauss sieve \cite{MV10, HK17}            & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+    BGJ-sieve \cite{BGJ15}                   & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+    3-sieve \cite{BLS16, HK17}               & $2^{0.3962n + o(n)}$ & $2^{0.1887n + o(n)}$ \\
+    BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+    BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
     \bottomrule
   \end{tabular}
-  \caption{Overview of Popular Sieving Algorithms} % TODO: cite? from estimate all the?
+  \caption{Overview of popular sieving algorithms} % TODO: cite? from estimate all the?
   \label{tab:sieving}
 \end{table}
 
@@ -305,7 +297,7 @@ Finally, the Becker-Ducas-Gama-Laarhoven sieve \cite{BDGL16} applies locality se
 %     \event{2013}{Voronoi cell $2^{2n}$ time and $2^{n}$ space \cite{MV13}}
 %     \event{2014}{Gaussian sampling $2^{n}$ time and space \cite{ADRS14}}
 %   \end{chronology}
-%   \caption{Provable Algorithms for SVP}
+%   \caption{Provable algorithms for SVP}
 % \end{figure}
 
 \begin{table}
@@ -333,7 +325,7 @@ Finally, the Becker-Ducas-Gama-Laarhoven sieve \cite{BDGL16} applies locality se
     ABLR-Enum + O(1)                 & \cite{ABLR21}                   & $2^{0.125k \log k - 0.654k + 25.84}$  \\
     \bottomrule
   \end{tabular}
-  \caption{SVP Cost Models Overview (based on Table 4 in \cite{ACDDPPVW18})} % TODO: cite? from estimate all the?
+  \caption{SVP cost models overview (based on \cite[Table~4]{ACDDPPVW18})} % TODO: cite? from estimate all the?
   \label{tab:costmodels}
 \end{table} % TODO: add to tool, maybe change 8d thing to an optional parameter!!! => reduces number of lists, throw out silly ones...
 % TODO reference in text
@@ -349,41 +341,215 @@ Finally, the Becker-Ducas-Gama-Laarhoven sieve \cite{BDGL16} applies locality se
 
 
 \section{Algorithms for Solving LWE}
-\subsection{Overview}
-% OVerview in BBGS19
+In this section, we present a number of popular attacks on LWE. The \textit{estimator} includes cost estimate algorithms for each of these attacks. In our treatise, we will ignore special cases of LWE that can be exploited to obtain more efficient attack variants and only present the main algorithms. For more details we refer the reader to \cite{APS15} and \cite{BBGS19}.
 
-\subsubsection{Dual Attacks}
-BKW
+\subsection{Lattice Problems}
+Some of the following attacks rely on a reduction of LWE to different lattice problems. We first define three important lattice problems in the context of LWE.
+
+\begin{definition}[HSVP$_\delta$] \label{def:hsvp}
+  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, the (approximate)  Hermite Shortest Vector Problem (HSVP$_\delta$) is the problem of finding a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \delta \cdot \text{det}(\Lambda)^{\frac{1}{n}}$.
+\end{definition}
+
+\begin{definition}[uSVP$_\gamma$] \label{def:usvp}
+  Given a lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, the (approximate) Unique Shortest Vector Problem (uSVP$_\gamma$) is the problem of finding the shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$.
+\end{definition}
+% or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
+%NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
+
+\begin{definition}[BDD$_\gamma$] \label{def:bdd}
+  Given a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, the (approximate)  Bounded Distance Decoding (BDD$_\gamma$) is the problem of finding the closest lattice vector $\mathbf{v} \in \Lambda$, i.e. $\mathbf{v} = \argmin_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$.
+\end{definition}
+
+% or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
+% alternate NP hard for $\gamma > 1/\sqrt{2}$ \cite{LLM06}
 
 
+\subsection{Approaches}
+\cref{fig:algorithms} gives an overview of the three main approaches to solving LWE. The most natural approach is to recover the secret in LWE directly, e.g., by exhaustively searching the search space. In general, however, the search space is quite large resulting in high attack costs. The \textit{estimator} incorporate two direct attacks, the Meet-in-the-Middle attack \cite{BG14} and an attack due to Arora and Ge \cite{AG11}. % TODO Arora Ge is not exhaustive search.... 
+% Overview in BBGS19
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\textwidth]{graphics/algorithms_overview.pdf}
+  \caption{An overview of the problems and algorithms used in this work. The diamond shaped boxes represent problems and arrows reductions between problems. Rectangular boxes represent approaches, classes of algorithms or algorithms. A connection between a problem and a rectangular box indicates that the latter can be used as a solver for the respective problem. Bold names indicate algorithms that can be used in our tool.}\label{fig:algorithms}
+\end{figure}
+
+\subsubsection{Primal Attack}\label{sec:primal-attacks}
+The second approach aims to solve LWE in the ``primal'' LWE lattice by a reduction to the BDD problem. Consider an LWE instance with samples $\mathbf{A}, \mathbf{z}$ and the corresponding lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that for the secret vector $\mathbf{s}$ and error vector $\mathbf{e}$ it holds that $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \mod q = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} + q \mathbf{x}$ for some vector $\mathbf{x} \in \mathbb{Z}^m$. Obviously, $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$ is a lattice vector in the lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that $\text{dist}(\mathbf{z}, \Lambda_q(\mathbf{A}^\intercal) = \|\mathbf{e}\|$ and in general it holds that $\|\mathbf{e}\| < \gamma \lambda_1(\Lambda_q(\mathbf{A}^\intercal))$. We thus have a reduction from LWE to BDD. By finding closest lattice point to $\mathbf{z}$ or, in other words, solving BDD in the lattice $\Lambda_q(\mathbf{A}^\intercal)$ we obtain $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$  and can recover the secret $\mathbf{s}$.
+
+\subsubsection{Dual Attack}\label{sec:dual-attacks}
+Finally, we can take advantage of the close relationship of LWE and SIS and solve LWE by finding a short vector in the dual SIS lattice \cite{LP11}. More precicely, we want to find a short nonzero vector $\mathbf{v}\in \mathbb{Z}_q^{m}$ in the scaled $q$-ary lattice $\Lambda_q(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$. Obviously, we have that $\langle \mathbf{v}, \mathbf{z} \rangle = \langle \mathbf{v}, \mathbf{A}^\intercal \mathbf{s} \rangle = \langle \mathbf{v}, \mathbf{e} \rangle \mod q$ and $\langle \mathbf{v}, \mathbf{z} \rangle$ roughly corresponds to a sample drawn from a Gaussian with parameter $s' = \|\mathbf{v}\| \cdot s$ given that $\mathbf{e}$ is distributed according to a Gaussian with parameter $s$. We then test whether $\langle \mathbf{v}, \mathbf{z} \rangle \mod q$ approximates the Gaussian. If $\mathbf{z}$ is drawn from a uniform distribution instead, the test accepts exactly with probability $0.5$. If $s'$ is not much larger than $q$, the advantage of distinguishing uniform from LWE samples is very close to $\exp(-\pi (\| \mathbf{v} \| s/q)^2)$. An optimal attack cost can be achieved by balancing the advantage with the computational effort required to solve SVP$_\gamma$ on the SIS lattice, where $\gamma = \|\mathbf{v}\|$.
 % TODO from LP11, change
 % TODO: maybe include graphic of three approaches
 
-Distinguishing attacks (MR09, RS10): distinguish (with noticeable advantage) LWE instance from uniformly random (Decision-LWE) => break semantic security of LWE-based cryptosystem with same advantage (typically)
+% Distinguishing attacks (MR09, RS10): distinguish (with noticeable advantage) LWE instance from uniformly random (Decision-LWE) => break semantic security of LWE-based cryptosystem with same advantage (typically)
 
-find short nonzero integral vector $\mathbf{v}$ s.t. $\mathbf{A}^\intercal \mathbf{v} = 0 \mod q$ => short vector in (scaled) lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$ % for A mxn matrix else switch t
-
-basis reduction yields short vector => solution in SIS-problem
-
-then test whether $\langle \mathbf{v}, \mathbf{z} \rangle$ is close to zero mod q. If uniform test accepts with prob 1/2, if LWE with parameter s, $\langle \mathbf{v}, \mathbf{z} \rangle = \langle \mathbf{v}, \mathbf{A}^\intercal \mathbf{s} \rangle = \langle \mathbf{v}, \mathbf{e} \rangle \mod q$, Gaussian mod q with parameter $\| \mathbf{v} \| \cdot s$. If that's not much larger than q, advantage for distinguishing very close to $\exp(-\pi (\| \mathbf{v} \| s/q)^2)$. high confidence needs $\| \mathbf{v} \| \leq q/(2s)$
-
-advantage an computational effort need to be balanced (often inverse distinguising advantage is in total cost of attack)
-
-reduce LWE to SIS
-recover secret vector by finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$ generated by the rows of $\mathbf{A}$ and scaled by q.
-
-\subsubsection{Primal Attacks}
-BDD -> Decoding approach, uSVP embedding
-
-
-\subsubsection{Direct} % or combinatorial
-
-% TODO: based on GSJ15, rephrase
-- algebraic approach Arora and Ge with subexponential complexity when $\sigma \leq \sqrt{n}$, else fully exponential, mainly of asymptotic interest (higher complexity than others)
-- Exhaustive Search
+% advantage an computational effort need to be balanced (often inverse distinguising advantage is in total cost of attack)
 
 
 
+
+% \subsubsection{Direct} % or combinatorial
+
+% % TODO: based on GSJ15, rephrase
+% - algebraic approach Arora and Ge with subexponential complexity when $\sigma \leq \sqrt{n}$, else fully exponential, mainly of asymptotic interest (higher complexity than others)
+% - Exhaustive Search
+
+
+
+
+
+\subsection[Decoding Attack]{Decoding Attack \cite{LP11}} \label{sec:decoding}
+% TODO category?
+
+The decoding attack falls into the regime of primal attacks that solve LWE by solving BDD in the primal LWE lattice (as described in \cref{sec:primal-attacks}). In the decoding attack, we first apply a reduction algorithm to the input basis $\mathbf{A}^\intercal$ to improve the basis quality. We then enumerate a number of candidate lattice points close to our target $\mathbf{z}$ by running a variant of Babai's Nearest Planes algorithm and simply choose the closest point. % TODO
+% TODO: bounded distance decoding, explain more?
+
+% (bounded-distance decoding with preprocessing?) => time/success tradeoff
+% specifically for LWE, exploits structural properties of LWE
+
+
+% on search version of LWE problem, approach preferable to distinguishing attack on decision LWE in \cite{MR09, RS10}, same or better advantage than distinguishing attack using lattice vectors of lower quality => runtime is smaller % This is not true anymore. Primal uSVP has become comparable (\cite{Gop15}) 
+% post-reduction: simple extension of Babai's ``nearest-Planes'' algorithm \cite{Bab85} % TODO describe
+% => trade basis quality against decoding time
+% related to Klein's (de)randomized algorithm \cite{Kle00} for bounded-distance decoding
+
+% use entire reduced basis, post-reduction part is fully parallelizable
+% prerequisites: babai's nearest Planes algorithm (at least describe textually?), fundamental parallelipiped P_1/2
+
+
+
+We begin with the original Nearest Planes algorithm due to Babai \cite{Bab85} as shown in \cref{alg:babai}. Our algorithm follows the notation in\cite{NPReg04}. The goal of the algorithm is to find a lattice vector relatively close to target vector. The procedure used is similar to the procedure in the inner loop of LLL. We first project $\mathbf{t}$ to the span of all basis vectors $\text{span}(\mathbf{B})$, where $B$ denotes an LLL-reduced basis, to eliminate irrelevant dimensions and obtain a projected vector which we call $\mathbf{b}$. We then iterate over $i=n, \ldots, 1$. In each step, we want to find the closest hyperplane $c_i \tilde{\mathbf{b}}_i + \text{span}(\mathbf{b}_1, \dots, \mathbf{b}_{i-1})$ to the projected vector $\mathbf{b}$. We can compute $c_i$ by a simple projection of $b$ onto the Gram-Schmidt vector $\tilde{\mathbf{b}}_i$ and dividing by the square length of dividing by the length of $\tilde{\mathbf{b}}_i$. We subtract $c_i \mathbf{b}_i$ from $b$ and replace $\mathbf{b}$ with the result. Notice that in the last step the hyperplane is simply a point. We return $\mathbf{t} - \mathbf{b}$. If we indeed found the closest lattice vector for target $\mathbf{z}$, the vector $\mathbf{b}$ will be our error vector $\mathbf{e}$ and $\mathbf{t} - \mathbf{b}$ will be the desired lattice vector  $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$ from which we can recover our secret.
+
+\begin{algorithm2e}
+  \SetKwBlock{Begin}{function}{end function}
+  \Begin($\text{NearestPlanes} {(}\text{LLL-reduced basis }\mathbf{B} \in \mathbb{R}^{m \times n},\text{ target }\mathbf{t}\in \mathbb{R}^{m}{)}$)
+  {
+    $\mathbf{b} = \pi_{\text{span}(\mathbf{B})}(\mathbf{t})$\\
+    \For{$i = n, \dots, 1$}{
+      $c_i = \text{round}(\langle \mathbf{b}, \tilde{\mathbf{b}}_i\rangle /  \langle \tilde{\mathbf{b}}_i, \tilde{\mathbf{b}}_i\rangle)$\\
+      $\mathbf{b} = \mathbf{b} - c_i \mathbf{b}_i$\\
+    }
+    output $\mathbf{t} - \mathbf{b}$\\
+  }
+  \caption{Babai's Nearest Planes algorithm \cite{Bab85}}\label{alg:babai} % TODO change algorithm to match below or just take intuitive description
+\end{algorithm2e}
+
+In general, however, the output is a lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$ in the fundamental parallelipiped of the Gram-Schmidt basis $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ and we only get the guarantee of $\|\mathbf{v} - \mathbf{t}\| \leq 2^{n/2} \text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$. To apply the algorithm on LWE either $\mathbf{e}$ must be in $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ or we must increase our search radius. The former case is unlikely as the last Gram-Schmidt vectors in a reduced basis because of the long and skinny structure of $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ (see \cref{sec:GSA}. The latter case is exactly what the generalized algorithm by \cite{LP11} does.
+
+Instead of choosing only the nearest plane in each iteration step, the Lindner and Peikert's variant that can be seen in \cref{alg:GeneralizedNearestPlanes} selects a variable amount $d_k$ of distinct planes in each step. As a consequence, the fundamental parallelipiped of the Gram-Schmidt basis is stretched in the direction of $\tilde{\mathbf{b}}_k$. The values of $\mathbf{d}$ should be chosen such that the covered area is approximately the same in each direction (i.e. by maximizing $\min_i(d_i \cdot \|\tilde{\mathbf{b}}_i\|)$). In particular this implies that the $d_k$ are larger for larger $k$ as the Gram-Schmidt vectors have a smaller length. % TODO combine with section above 
+Compared to \cref{alg:babai} the runtime increases by a factor $\prod_{i \in \{1, \dots, d_k\}} d_i$, however, the recursion step can be fully parallelized.
+
+\begin{algorithm2e}
+  \SetKwBlock{Begin}{function}{end function}
+  \Begin($\text{GeneralizedNearestPlanes} {(} \mathbf{B} \in \mathbb{R}^{m \times k},\mathbf{t} \in \mathbb{R}^{m}, \mathbf{d} \in {(}\mathbb{Z}^+{)}^k {)}$)
+    { % TODO make sure that basis is always R^n, not Z^n
+    \If{k = 0}{
+      Return $\mathbf{0}$\\
+    }
+    \Else{
+    Compute projection $\mathbf{v}$ of $\mathbf{t}$ onto $\text{span}(\mathbf{B})$\\
+    Compute the $d_k$ distinct integers $c_1, \dots, c_{d_k}$ closest to $\langle \mathbf{v}, \tilde{\mathbf{b}}_k\rangle /  \langle \tilde{\mathbf{b}}_k, \tilde{\mathbf{b}}_k\rangle)$\\
+    Return $\bigcup_{i \in \{1, \dots, d_k\}} (c_i \cdot \mathbf{b}_k + \text{GeneralizedNearestPlanes}(\{\mathbf{b}_1, \dots, \mathbf{b}_{k-1}\}, (d_1, \dots, d_{k-1}), \mathbf{v} - c_i \cdot \mathbf{b}_k))$\\
+  }
+  }
+  \caption{Generalized Nearest Planes algorithm \cite{LP11}}\label{alg:GeneralizedNearestPlanes}
+\end{algorithm2e}
+
+It is evident that a lower quality of the reduced input basis can be compensated for by increasing the values of $\mathbf{d}$. The input parameters of the lattice reduction and the generalized Nearest Planes algorithm should hence be adjusted such that the overall runtime is minimized. % TODO perhaps reformulate
+% TODO: add exact success probability? 
+Success probability of the Generalized Nearest Planes algorithm:
+\begin{equation}
+  \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{\frac{1}{2}}(\tilde{\mathbf{B}} \cdot \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i\| \sqrt{\pi}}{2\alpha q}\right)
+\end{equation} %TODO check, in particular m or n and explain
+
+% TODO: add the following:
+% Runtime cannot be explicitly given as T = (T_BKZ + T_GNP)/\epsilon 
+%  T_GNP=t_node \prod_{i=0}^{m-1}d_i for  t_node time for one node
+% d_i are not fixed, => no closed formula for \delta_0 , d_0 has to be varied iteratively and values of d_i have to be stepwisely increased until epsilon is reached  to find minimum overall runtime
+
+% TODO: runtime?
+
+% => generalized version admitting time/success tradeoff
+% recurse on some $d_i \geq 1$ distinct planes in ith
+
+
+
+\subsection[Primal-uSVP]{Primal-uSVP \cite{ADPS16, BG14}} % => AFG14, Kan87
+% solve LWE by reducing to uSVP, create $m+1$-dimensional lattice containing the error vector
+
+
+
+
+% % TODO: taken from ADPS16, change
+% BKZ: reduce lattice basis using SVP oracle in smaller dimension $b$, known that number of calls to oracle polynomial
+% - enumeration algorithm as oracle: in super-exponential time
+% - sieve algorithms as oracle: exponential time but so far slower in practice for accesible dimensions $b\approx 130$
+
+% primal attack: construct unique-SVP instance from LWE instance % TODO check if u-SVP is defined
+% LWE instance $(\mathbf{A}, \mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e})$
+% construct lattice
+% \begin{equation}
+%   \Lambda = \left\{ \mathbf{x} \in \mathbb{Z}^{m+n+1} \mid (\mathbf{A}^\intercal | -\mathbf{I}_m | -\mathbf{b})\mathbf{x} = \mathbf{0} \mod q \right\}
+% \end{equation}
+% lattice has dimension $d=m+n+1$, volume $q^m$ % TODO show
+% and unique-SVP solution $\mathbf{v} = (\mathbf{s}, \mathbf{e}, 1)$ % TODO show
+
+% success condition:
+% - geometric series assumption known to be optimistic from attacker's point of view
+% => finds basis with Gram-Schmidt norms $\|\tilde{\mathbf{b}}_i\| = \delta^{d - 2i-1} \cdot \text{Vol}(\Lambda)^{1/d}$ and $\delta = ((\pi b)^{1/b} \cdot b/2\pi e)^{1/2(b-1)}$ % see APS15 and Chen13 thesis
+% unique short vector $\mathbf{v}$ is detected if projection of $\mathbf{v}$ onto span of last $b$ Gram-Schmidt vectors is shorter than $\tilde{\mathbf{b}}_{d-b}$, norm of projection is expected to be $\gamma \sqrt{b}$ => attack successful iff $\gamma \sqrt{b} \leq \delta^{d - 2i-1} \cdot q^{m/d}$
+% % TODO define span, e.g. vector space spanned by a number of vectors
+% % TODO check if einheitsmatrix is defined
+
+% LWE as inhomogeneous-SIS (ISIS)
+
+% FROM APS15:
+In the Primal uSVP attack, we again view the LWE$_{n, q, m, \chi}$ instance $(\mathbf{A}, \mathbf{z})$ as a BDD instance in the  $q$-ary lattice $\Lambda(\mathbf{A}^\intercal) = \{ \mathbf{y} \mid \exists \mathbf{x} \in \mathbb{Z}_q^n : \mathbf{y} = \mathbf{A}^\intercal \mathbf{x}  \mod q \}$ \cref{sec:lwe-bdd} generated by rows of LWE instance. The target vector is $\mathbf{z}$. % TODO add to lwe as BDD/combine
+
+Recall the $\gamma$-uSVP problem. Given a lattice $\Lambda$ where $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, we are asked to find shortest nonzero vector in $\Lambda$.
+In the primal attack, instead of directly solving BDD, we reduce BDD to uSVP, i.e., we reduce a BDD instance to a $\gamma$-uSVP instance. By solving $\gamma$-uSVP, we obtain a solution to BDD.
+To do this we apply Kannan's embedding technique \cite{Kan87}. % TODO: quote theorem? For any $\gamma \geq 1, there is a polynomial time Cook-reduction from BDD$_{1/(2\gamma)}$ to $\gamma$-uSVP.
+Kannan's embedding creates a lattice with uSVP structure. We know that $\mathbf{A}^\intercal \mathbf{s}\mod q$ is the closest vector to the target $\mathbf{z} =\mathbf{A}^\intercal \mathbf{s} + \mathbf{e}^\intercal \mod q$ in $\Lambda(\mathbf{A}^\intercal)$. We now add a linearly independent basis vector  $(\mathbf{z}, \mu)$ and append a zero coefficient to each basis vector of the original lattice (i.e. the rows of $\mathbf{A}$). Thereby, we ensure that the new lattice contains the vector $[-\mathbf{e}, -\mu]^\intercal$ as $[\mathbf{A} \mid \mathbf{0}]^\intercal \mathbf{s} - 1 \cdot [\mathbf{z}^\intercal, \mu] = [-\mathbf{e}, -\mu]^\intercal$.
+
+More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{s}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
+% TODO: we compute the reduced row echelon form $\mathbf{A}'' = \left[\mathbf{I}_n | \mathbf{A}'\right]$ of $\mathbf{A}$ and express the basis of $\Lambda(\mathbf{A}^\intercal)$ as
+% \begin{equation}
+%   \mathbf{B} = \begin{pmatrix}
+%     \mathbf{I}_n             & \mathbf{0}^\intercal \\
+%     (\mathbf{A}'')^\intercal & q\mathbf{I}_{m-n}
+%   \end{pmatrix}
+% \end{equation}
+
+We now embed $\Lambda(\mathbf{B})$ into $\Lambda(\mathbf{B}')$ with $\gamma$-uSVP structure as follows: % TODO: check if dist = \| \mathbf{z} - \mathbf{s}\| is correct, perhaps just a vector v such that equation is fulfilled???
+\begin{equation}
+  \mathbf{B}' = \begin{pmatrix}
+    \mathbf{B}           & \mathbf{z} \\
+    \mathbf{0}^\intercal & \mu
+  \end{pmatrix}
+\end{equation}
+If $\gamma \geq 1$ and $\mu < \frac{\lambda_1(\Lambda(\mathbf{B})}{2\gamma}$ (or equivalently, $(\Lambda(\mathbf{A}^\intercal), \mathbf{z})$ a BDD$_{1/(2\gamma)}$-instance), then $\Lambda(\mathbf{B}')$ contains a $\gamma$-unique shortest vector $\mathbf{z}' = \left[(\mathbf{A}^\intercal\mathbf{s} - \mathbf{z})^\intercal, -\mu\right]^\intercal = \left[-\mathbf{e}^\intercal, -\mu\right]^\intercal$.
+The statement can be proven by showing by contradiction that all vectors $\mathbf{v} \in \Lambda(\mathbf{B}')$ that are independent of $\mathbf{z}'$ satisfy $\| \mathbf{v}\| \geq \lambda_1{\Lambda(\mathbf{B})}/\sqrt{2} > \sqrt{2}\gamma \mu = \gamma \|\mathbf{z}'\|$ (see \cite[Section~4]{LM09} for more details). Note that the reduction can be done in polynomial time \cite[Theorem~4.1]{LM09}. % TODO possibly sketch the proof
+The length of $\mathbf{z}'$ is given by $\|\mathbf{z}'\| = \sqrt{\|\mathbf{e}\|^2 + | \mu |^2} = \sqrt{m\alpha^2 q^2/(2\pi) + | \mu |^2}$ \cite{BBGS19}. From $\mathbf{z}'$ we can recover the error vector $\mathbf{e}$ and thereby the secret vector $\mathbf{s} = \mathbf{z} - \mathbf{e} \mod q$.
+
+A solution to $\gamma$-uSVP can be found by reducing it to $\delta$-HSVP where $\gamma = \delta^2$ \cite{APS15}. Various algorithms, in particular, lattice reduction algorithms, exist to solve $\delta$-HSVP. If we are able to solve a linear number of $\delta$-HSVP instances that correspond to a $\delta^2$-approximate SVP instance, we can construct a solution of the latter (see \cite[Section~1.2.21]{Lov87} for more details).
+Consider any lattice with uSVP structure. In exactly one direction, that is, in the direction of its unique shortest vector, the lattice has vectors that are significantly smaller than in other directions. A lattice reduction algorithm that yields a sufficiently good output basis quality, therefore, must return some small vector in the desired direction.
+Let $\mathbf{v}$ be a solution to SVP$_\delta^2$, i.e. $\|\mathbf{v}\| \leq \delta^2 \lambda_1(\Lambda(\mathbf{B}'))$. All other vectors $\mathbf{w}\in \Lambda(\mathbf{B}')$ that are not multiples of a shortest vector have length $\|\mathbf{w}\| \geq \lambda_2(\Lambda(\mathbf{B}')) > \delta^2\lambda_1(\Lambda(\mathbf{B}'))$. Thus, we obtain a solution to $\gamma$-uSVP and, as shown above, we can reconstruct the secret vector to solve LWE.
+
+% TODO: in practice: GN08
+The attack is successful with high probability if $\lambda_2(\Lambda(\mathbf{B}'))/\lambda_1(\Lambda(\mathbf{B}')) \geq \tau \delta^m$ \cite{AFG13}. We assume that the determinant of $\Lambda_q(\mathbf{A}^\intercal)$ is given by $q^{m-n}$ (see \cref{eq:det-MR}). The length of the error is $\|\mathbf{e}\| \approx \sqrt{m\cdot \left(\alpha q / (\sqrt{2\pi})\right)^2} \approx \sqrt{m / (2\pi)} \alpha q$. Furthermore, in practice $\mu=1$ is used \cite{APS15}. We then apply the simplified Gaussian heuristic as in \cite{Gop16} on $\lambda_2(\Lambda(\mathbf{B}'))=\lambda_2(\Lambda(\mathbf{A}^\intercal))$ (see \cref{eq:simplified-gaussian-heuristic}) to obtain
+\begin{align*}
+  \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))} \leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|} \\
+                & \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
+\end{align*}
+
+The success probability of the attack is thus non-negligible if
+\begin{equation}
+  \delta \leq \left(\frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}\right)^{\frac{1}{m}}
+\end{equation}
+Experiments show that $\tau \leq 0.4$ achieves a success rate of about $\epsilon = 0.1$ \cite{AFG13}. In order to increase the success probability to some fixed target $\epsilon' > \epsilon$, we can simply repeat the algorithm $\rho$ times and obtain a success probability of $\epsilon' \leq 1 - (1 - \epsilon)^\rho$ \cite{BBGS19}. Consequently, we need at least $\rho \geq \log(1-\epsilon')/\log(1-\epsilon)$ rounds for a successful attack.
+% TODO: Overall runtime - combination of \rho and t_{\text{BKZ}} where the runtime of BKZ depends on the block-size k, block-size k depends on required \delta => see BBGS19
+
+% TODO: alternate estimate used in estimator: ADPS16 estimate 
 \subsection[The BKW Algorithm]{The BKW Algorithm \cite{BKW03}}
 The Blum, Kalai and Wasserman (BKW) algorithm was originially designed to solve the Learning Parity with Noise problem (LPN) \cite{BKW03}. In \cref{sec:lwe} we pointed out that LPN is a subproblem of LWE and Albrecht \textit{et al.} adapted BKW to LWE in \cite{ACFFP15a}. The runtime and memory complexity of BKW is in $2^{\mathcal{O}(n)}$ for an LWE instance with secret dimension $n$ prime modulus $q \in \text{poly}(n)$. The number of samples $m$ must be sufficiently large (in $\mathcal{\Omega}(n \log n)$). % TODO check number of samples, APS15 say they need unrestricted access to LWE oracle
 % TODO: 
@@ -447,15 +613,16 @@ For the algorithm, we use the matrix notation of LWE as in \cref{eq:lwe-decoding
 
 In each BKW step, the number of columns (and samples) decreases by at least $(q^b - 1)/2$ (size of the collision set) and the variance of the error distribution $\sigma^2$ increases by a factor of two. The algorithm terminates after $t = \lceil b / (n - d)\rceil$ steps returns a a set of observed symbols $\mathbf{z}^{(t)}$ and a corresponding reduced matrix $\mathbf{A}^{(t)}$ in which only the first $d$ rows have nonzero entries. Parameter $d$ should be set to $1$, as in the original BKW algorithm, or $2$ for the best performance \cite{ACFFP15a}.
 
-The remaining part $\mathbf{s}'$ of the secret vector $\mathbf{s}$ is then guessed by means of hypothesis testing. After $t$ steps the error term $\left(\mathbf{z}_j^{(t)} - \left\langle \mathbf{s}', \mathbf{a}_j^{(t)}\right\rangle\right)$ with $j \in [m']$ of the $m'$ remaining observed symbols follows a Gaussian distribution $\chi$ with noise $\sigma'^2 = 2^t\cdot \sigma^2$ (for more details see Lemma 1 in \cite{ACFFP15a}). % TODO: Lemma: Let $X_0, \dots, X_{m-1}$ be independent random variables with $X_i \sim \mathcal{N}(\mu, \sigma^2)$. Then their sum $X = \sum_{i=0}^{m-1} X_i$ is distributed according to $\mathcal{N}(m\mu, m\sigma^2)$.
+The remaining part $\mathbf{s}'$ of the secret vector $\mathbf{s}$ is then guessed by means of hypothesis testing. After $t$ steps the error term $\left(\mathbf{z}_j^{(t)} - \left\langle \mathbf{s}', \mathbf{a}_j^{(t)}\right\rangle\right)$ with $j \in [m']$ of the $m'$ remaining observed symbols follows a Gaussian distribution $\chi$ with noise $\sigma'^2 = 2^t\cdot \sigma^2$ (for more details, see \cite[Lemma~1]{ACFFP15a}). % TODO: Lemma: Let $X_0, \dots, X_{m-1}$ be independent random variables with $X_i \sim \mathcal{N}(\mu, \sigma^2)$. Then their sum $X = \sum_{i=0}^{m-1} X_i$ is distributed according to $\mathcal{N}(m\mu, m\sigma^2)$.
 We can test the noise of the error term for all $\mathbf{s}'' \in \mathbb{Z}_q^d$ against the hypothesized noise  $\sigma'^2$ by means of the log-likelihood ratio (for details we again refer to \cite{ACFFP15a}) and are thus able to determine $\mathbf{s}'$ given sufficiently many samples $m'$.
 
 % TODO: intuition!!! how is BKZ related
 
 Finally, we can apply back substitution to recover all elements of $\mathbf{s}$. We again apply a similar procedure as in \cref{alg:BKW} to reduce a number of columns from the colission tables computed in the Sample Reduction step and obtain $m'$ columns with $d+d'$ nonzero entries and their corresponding ``observed symbols''. We then substitute the part of $s$ that was recovered in the previous steps and recover the next part of $\mathbf{s}$ by hypothesis testing and repeat the process until we have found $\mathbf{s}$.
 
+
 % TODO: runtime complexity change to APS15 Theorem 3, 4 (DTV15) or Cor 4, or try to take complexity from GSJ15
-\begin{theorem}[BKZ Complexity \cite{ACFFP15a}, Corollary 2]
+\begin{theorem}[BKZ Complexity {\cite[Corollary~2]{ACFFP15a}}]
   Let $(\mathbf{a}_i, z_i)$ be samples following $\mathcal{A}_{\mathbf{s}, \chi}$, set $a = \lfloor \log_2(1/(2\alpha)^2)\rceil$, $b = n/a$ and $q$ a prime. Let $d$ be a small constant $0 < d < \log_2(n)$. Assume $\alpha$ is such that $q^b = q^{n/a} = q^{n/\lfloor \log_2(1/(2\alpha)^2)\rceil}$ is superpolynomial in $n$. Then, given these parameters the cost of the BKW algorithm to solve Search-LWE is
   \begin{equation}\label{eq:BKZ-complexity}
     \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
@@ -466,11 +633,11 @@ Finally, we can apply back substitution to recover all elements of $\mathbf{s}$.
   \end{equation}
 \end{theorem}
 
-The first summand of \cref{eq:BKZ-complexity} roughly corresponds to the cost of creating the colission tables and the second summand is the cost of backsubstitution. For a more detailed cost analysis, see Theorem 2 in \cite{ACFFP15a}.
+The first summand of \cref{eq:BKZ-complexity} roughly corresponds to the cost of creating the colission tables and the second summand is the cost of backsubstitution. For a more detailed cost analysis, see \cite[Theorem~2]{ACFFP15a}.
 
 
 \subsubsection*{Coded-BKW \cite{GJS15}}
-The \textit{Estimator} uses a more efficient variant of BKW, called Coded-BKW \cite{GJS15}, that makes use of coding theory. We will only present the high level idea of Coded-BKW.
+The \textit{estimator} uses a more efficient variant of BKW, called Coded-BKW \cite{GJS15}, that makes use of coding theory. We will only present the high level idea of Coded-BKW.
 
 The main advantage of the algorithm comes from an improved ``coded'' BKW step. The improved step removes more column entries at the cost of an additional noise term. To avoid that the noise increases too much, the final algorithm combines original BKW steps with the ``coded'' BKW step. Let $I$ be an index set and $\mathbf{x}_I$ the part of $\mathbf{x}$ with entries indexed by $I$.
 
@@ -505,189 +672,24 @@ In a ``coded'' step $i$, we set $I$ as the set of $b$ positions to be removed an
 
 
 \subsection[Dual Attack]{Dual Attack \cite{MR09}} % => AFG14, Kan87
-% TODO
-"Gama and Nguyen \cite{GN08b}: (in)feasibility of obtaining various Hermite factors
-natural distinguishing attack on LWE by finding one relatively short vector in associated lattice"
-% TODO: check out 6.4 in ADPS16
-% TODO: main description in SIS section
+The dual attack \cite{MR09} falls into the regime of solving LWE in the dual SIS lattice (see \cite{sec:dual-attacks}). We will present the attack and show how it can be applied to LWE in \cref{sec:mr-variant}.
 
-% TODO. change taken from BBGS19 4.1.1
-Success probability $\epsilon = e^{-\pi (\| \mathbf{v}\| \alpha)^2}$ is advantage of distinguishing $\langle \mathbf{v}, \mathbf{e}\rangle$ from random \cite{APS15}
-=> we need length $\|\mathbf{v}\| = \frac{1}{\alpha}\sqrt{\ln \left(\frac{1}{\epsilon}\right) / \pi}$ for fixed $\epsilon$
-
-apart from this same as attack described in \cref{sec:mr-variant}
-
-
-
-
-\subsection[Decoding Attack]{Decoding Attack \cite{LP11}} \label{sec:decoding}
-% TODO category?
-
-The decoding attack combines lattice basis reduction with an enumeration algorithm. Consider an LWE instance with samples $\mathbf{A}, \mathbf{z}$ and the corresponding lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that for the secret vector $\mathbf{s}$ and error vector $\mathbf{e}$ it holds that $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \mod q = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} + q \mathbf{x}$ for some vector $\mathbf{x} \in \mathbb{Z}^m$. Obviously, $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$ is a lattice vector in the lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that $\text{dist}(\mathbf{z}, \Lambda_q(\mathbf{A}^\intercal) = \|\mathbf{e}\|$ and in general it holds that $\|\mathbf{e}\| < \gamma \lambda_1(\Lambda_q(\mathbf{A}^\intercal))$. We thus have a reduction from LWE to BDD. By finding closest lattice point to $\mathbf{z}$ or, in other words, solving BDD in the lattice $\Lambda_q(\mathbf{A}^\intercal)$ we obtain $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$  and can recover the secret $\mathbf{s}$. In the decoding attack, we first apply a reduction algorithm to the input basis $\mathbf{A}^\intercal$ to improve the basis quality. We then enumerate a number of candidate lattice points close to our target $\mathbf{z}$ by running a variant of Babai's Nearest Planes algorithm and simply choose the closest point. % TODO
-% TODO: bounded distance decoding, explain more?
-
-% (bounded-distance decoding with preprocessing?) => time/success tradeoff
-% specifically for LWE, exploits structural properties of LWE
-
-
-% on search version of LWE problem, approach preferable to distinguishing attack on decision LWE in \cite{MR09, RS10}, same or better advantage than distinguishing attack using lattice vectors of lower quality => runtime is smaller % This is not true anymore. Primal uSVP has become comparable (\cite{Gop15}) 
-% post-reduction: simple extension of Babai's ``nearest-Planes'' algorithm \cite{Bab85} % TODO describe
-% => trade basis quality against decoding time
-% related to Klein's (de)randomized algorithm \cite{Kle00} for bounded-distance decoding
-
-% use entire reduced basis, post-reduction part is fully parallelizable
-% prerequisites: babai's nearest Planes algorithm (at least describe textually?), fundamental parallelipiped P_1/2
-
-
-
-We begin with the original Nearest Planes algorithm due to Babai \cite{Bab85} as shown in \cref{alg:babai}. Our algorithm follows the notation in\cite{NPReg04}. The goal of the algorithm is to find a lattice vector relatively close to target vector. The procedure used is similar to the procedure in the inner loop of LLL. We first project $\mathbf{t}$ to the span of all basis vectors $\text{span}(\mathbf{B})$, where $B$ denotes an LLL-reduced basis, to eliminate irrelevant dimensions and obtain a projected vector which we call $\mathbf{b}$. We then iterate over $i=n, \ldots, 1$. In each step, we want to find the closest hyperplane $c_i \tilde{\mathbf{b}}_i + \text{span}(\mathbf{b}_1, \dots, \mathbf{b}_{i-1})$ to the projected vector $\mathbf{b}$. We can compute $c_i$ by a simple projection of $b$ onto the Gram-Schmidt vector $\tilde{\mathbf{b}}_i$ and dividing by the square length of dividing by the length of $\tilde{\mathbf{b}}_i$. We subtract $c_i \mathbf{b}_i$ from $b$ and replace $\mathbf{b}$ with the result. Notice that in the last step the hyperplane is simply a point. We return $\mathbf{t} - \mathbf{b}$. If we indeed found the closest lattice vector for target $\mathbf{z}$, the vector $\mathbf{b}$ will be our error vector $\mathbf{e}$ and $\mathbf{t} - \mathbf{b}$ will be the desired lattice vector  $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$ from which we can recover our secret.
-
-\begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{NearestPlanes} {(}\text{LLL-reduced basis }\mathbf{B} \in \mathbb{R}^{m \times n},\text{ target }\mathbf{t}\in \mathbb{R}^{m}{)}$)
-  {
-    $\mathbf{b} = \pi_{\text{span}(\mathbf{B})}(\mathbf{t})$\\
-    \For{$i = n, \dots, 1$}{
-      $c_i = \text{round}(\langle \mathbf{b}, \tilde{\mathbf{b}}_i\rangle /  \langle \tilde{\mathbf{b}}_i, \tilde{\mathbf{b}}_i\rangle)$\\
-      $\mathbf{b} = \mathbf{b} - c_i \mathbf{b}_i$\\
-    }
-    output $\mathbf{t} - \mathbf{b}$\\
-  }
-  \caption{Babai's Nearest Planes Algorithm \cite{Bab85}}\label{alg:babai} % TODO change algorithm to match below or just take intuitive description
-\end{algorithm2e}
-
-In general, however, the output is a lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$ in the fundamental parallelipiped of the Gram-Schmidt basis $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ and we only get the guarantee of $\|\mathbf{v} - \mathbf{t}\| \leq 2^{n/2} \text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$. To apply the algorithm on LWE either $\mathbf{e}$ must be in $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ or we must increase our search radius. The former case is unlikely as the last Gram-Schmidt vectors in a reduced basis because of the long and skinny structure of $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ (see \cref{sec:GSA}. The latter case is exactly what the generalized algorithm by \cite{LP11} does.
-
-Instead of choosing only the nearest plane in each iteration step, the Lindner and Peikert's variant that can be seen in \cref{alg:GeneralizedNearestPlanes} selects a variable amount $d_k$ of distinct planes in each step. As a consequence, the fundamental parallelipiped of the Gram-Schmidt basis is stretched in the direction of $\tilde{\mathbf{b}}_k$. The values of $\mathbf{d}$ should be chosen such that the covered area is approximately the same in each direction (i.e. by maximizing $\min_i(d_i \cdot \|\tilde{\mathbf{b}}_i\|)$). In particular this implies that the $d_k$ are larger for larger $k$ as the Gram-Schmidt vectors have a smaller length. % TODO combine with section above 
-Compared to \cref{alg:babai} the runtime increases by a factor $\prod_{i \in \{1, \dots, d_k\}} d_i$, however, the recursion step can be fully parallelized.
-
-\begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{GeneralizedNearestPlanes} {(} \mathbf{B} \in \mathbb{R}^{m \times k},\mathbf{t} \in \mathbb{R}^{m}, \mathbf{d} \in {(}\mathbb{Z}^+{)}^k {)}$)
-    { % TODO make sure that basis is always R^n, not Z^n
-    \If{k = 0}{
-      Return $\mathbf{0}$\\
-    }
-    \Else{
-    Compute projection $\mathbf{v}$ of $\mathbf{t}$ onto $\text{span}(\mathbf{B})$\\
-    Compute the $d_k$ distinct integers $c_1, \dots, c_{d_k}$ closest to $\langle \mathbf{v}, \tilde{\mathbf{b}}_k\rangle /  \langle \tilde{\mathbf{b}}_k, \tilde{\mathbf{b}}_k\rangle)$\\
-    Return $\bigcup_{i \in \{1, \dots, d_k\}} (c_i \cdot \mathbf{b}_k + \text{GeneralizedNearestPlanes}(\{\mathbf{b}_1, \dots, \mathbf{b}_{k-1}\}, (d_1, \dots, d_{k-1}), \mathbf{v} - c_i \cdot \mathbf{b}_k))$\\
-  }
-  }
-  \caption{Generalized Nearest Planes Algorithm \cite{LP11}}\label{alg:GeneralizedNearestPlanes}
-\end{algorithm2e}
-
-It is evident that a lower quality of the reduced input basis can be compensated for by increasing the values of $\mathbf{d}$. The input parameters of the lattice reduction and the generalized Nearest Planes algorithm should hence be adjusted such that the overall runtime is minimized. % TODO perhaps reformulate
-% TODO: add exact success probability? 
-Success probability of the Generalized Nearest Planes algorithm:
-\begin{equation}
-  \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{\frac{1}{2}}(\tilde{\mathbf{B}} \cdot \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i\| \sqrt{\pi}}{2\alpha q}\right)
-\end{equation} %TODO check, in particular m or n and explain
-
-% TODO: add the following:
-% Runtime cannot be explicitly given as T = (T_BKZ + T_GNP)/\epsilon 
-%  T_GNP=t_node \prod_{i=0}^{m-1}d_i for  t_node time for one node
-% d_i are not fixed, => no closed formula for \delta_0 , d_0 has to be varied iteratively and values of d_i have to be stepwisely increased until epsilon is reached  to find minimum overall runtime
-
-% TODO: runtime?
-
-% => generalized version admitting time/success tradeoff
-% recurse on some $d_i \geq 1$ distinct planes in ith
-
-
-
-\subsection[Primal-uSVP]{Primal-uSVP \cite{ADPS16, BG14}} % => AFG14, Kan87
-% solve LWE by reducing to uSVP, create $m+1$-dimensional lattice containing the error vector
-
-
-
-
-% % TODO: taken from ADPS16, change
-% BKZ: reduce lattice basis using SVP oracle in smaller dimension $b$, known that number of calls to oracle polynomial
-% - enumeration algorithm as oracle: in super-exponential time
-% - sieve algorithms as oracle: exponential time but so far slower in practice for accesible dimensions $b\approx 130$
-
-% primal attack: construct unique-SVP instance from LWE instance % TODO check if u-SVP is defined
-% LWE instance $(\mathbf{A}, \mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e})$
-% construct lattice
-% \begin{equation}
-%   \Lambda = \left\{ \mathbf{x} \in \mathbb{Z}^{m+n+1} \mid (\mathbf{A}^\intercal | -\mathbf{I}_m | -\mathbf{b})\mathbf{x} = \mathbf{0} \mod q \right\}
-% \end{equation}
-% lattice has dimension $d=m+n+1$, volume $q^m$ % TODO show
-% and unique-SVP solution $\mathbf{v} = (\mathbf{s}, \mathbf{e}, 1)$ % TODO show
-
-% success condition:
-% - geometric series assumption known to be optimistic from attacker's point of view
-% => finds basis with Gram-Schmidt norms $\|\tilde{\mathbf{b}}_i\| = \delta^{d - 2i-1} \cdot \text{Vol}(\Lambda)^{1/d}$ and $\delta = ((\pi b)^{1/b} \cdot b/2\pi e)^{1/2(b-1)}$ % see APS15 and Chen13 thesis
-% unique short vector $\mathbf{v}$ is detected if projection of $\mathbf{v}$ onto span of last $b$ Gram-Schmidt vectors is shorter than $\tilde{\mathbf{b}}_{d-b}$, norm of projection is expected to be $\gamma \sqrt{b}$ => attack successful iff $\gamma \sqrt{b} \leq \delta^{d - 2i-1} \cdot q^{m/d}$
-% % TODO define span, e.g. vector space spanned by a number of vectors
-% % TODO check if einheitsmatrix is defined
-
-% LWE as inhomogeneous-SIS (ISIS)
-
-% FROM APS15:
-In the Primal uSVP attack, we again view the LWE$_{n, q, m, \chi}$ instance $(\mathbf{A}, \mathbf{z})$ as a BDD instance in the  $q$-ary lattice $\Lambda(\mathbf{A}^\intercal) = \{ \mathbf{y} \mid \exists \mathbf{x} \in \mathbb{Z}_q^n : \mathbf{y} = \mathbf{A}^\intercal \mathbf{x}  \mod q \}$ \cref{sec:lwe-bdd} generated by rows of LWE instance. The target vector is $\mathbf{z}$. % TODO add to lwe as BDD/combine
-
-Recall the $\gamma$-uSVP problem. Given a lattice $\Lambda$ where $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, we are asked to find shortest nonzero vector in $\Lambda$.
-In the primal attack, instead of directly solving BDD, we reduce BDD to uSVP, i.e., we reduce a BDD instance to a $\gamma$-uSVP instance. By solving $\gamma$-uSVP, we obtain a solution to BDD.
-To do this we apply Kannan's embedding technique \cite{Kan87}. % TODO: quote theorem? For any $\gamma \geq 1, there is a polynomial time Cook-reduction from BDD$_{1/(2\gamma)}$ to $\gamma$-uSVP.
-Kannan's embedding creates a lattice with uSVP structure. We know that $\mathbf{A}^\intercal \mathbf{s}\mod q$ is the closest vector to the target $\mathbf{z} =\mathbf{A}^\intercal \mathbf{s} + \mathbf{e}^\intercal \mod q$ in $\Lambda(\mathbf{A}^\intercal)$. We now add a linearly indpenendent basis vector  $(\mathbf{z}, \mu)$ and append a zero coefficient to each basis vector of the original lattice (i.e. the rows of $\mathbf{A}$). Thereby, we ensure that the new lattice contains the vector $[-\mathbf{e}, -\mu]^\intercal$ as $[\mathbf{A} \mid \mathbf{0}]^\intercal \mathbf{s} - 1 \cdot [\mathbf{z}^\intercal, \mu] = [-\mathbf{e}, -\mu]^\intercal$.
-
-More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{s}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
-% TODO: we compute the reduced row echelon form $\mathbf{A}'' = \left[\mathbf{I}_n | \mathbf{A}'\right]$ of $\mathbf{A}$ and express the basis of $\Lambda(\mathbf{A}^\intercal)$ as
-% \begin{equation}
-%   \mathbf{B} = \begin{pmatrix}
-%     \mathbf{I}_n             & \mathbf{0}^\intercal \\
-%     (\mathbf{A}'')^\intercal & q\mathbf{I}_{m-n}
-%   \end{pmatrix}
-% \end{equation}
-
-We now embed $\Lambda(\mathbf{B})$ into $\Lambda(\mathbf{B}')$ with $\gamma$-uSVP structure as follows: % TODO: check if dist = \| \mathbf{z} - \mathbf{s}\| is correct, perhaps just a vector v such that equation is fulfilled???
-\begin{equation}
-  \mathbf{B}' = \begin{pmatrix}
-    \mathbf{B}           & \mathbf{z} \\
-    \mathbf{0}^\intercal & \mu
-  \end{pmatrix}
-\end{equation}
-If $\gamma \geq 1$ and $\mu < \frac{\lambda_1(\Lambda(\mathbf{B})}{2\gamma}$ (or equivalently, $(\Lambda(\mathbf{A}^\intercal), \mathbf{z})$ a BDD$_{1/(2\gamma)}$-instance), then $\Lambda(\mathbf{B}')$ contains a $\gamma$-unique shortest vector $\mathbf{z}' = \left[(\mathbf{A}^\intercal\mathbf{s} - \mathbf{z})^\intercal, -\mu\right]^\intercal = \left[-\mathbf{e}^\intercal, -\mu\right]^\intercal$.
-The statement can be proven by showing by contradiction that all vectors $\mathbf{v} \in \Lambda(\mathbf{B}')$ that are independent of $\mathbf{z}'$ satisfy $\| \mathbf{v}\| \geq \lambda_1{\Lambda(\mathbf{B})}/\sqrt{2} > \sqrt{2}\gamma \mu = \gamma \|\mathbf{z}'\|$ (see Section 4 of \cite{LM09} for more details). Note that the reduction can be done in polynomial time (Theorem 4.1 in \cite{LM09}). % TODO possibly sketch the proof
-The length of $\mathbf{z}'$ is given by $\|\mathbf{z}'\| = \sqrt{\|\mathbf{e}\|^2 + | \mu |^2} = \sqrt{m\alpha^2 q^2/(2\pi) + | \mu |^2}$ \cite{BBGS19}. From $\mathbf{z}'$ we can recover the error vector $\mathbf{e}$ and thereby the secret vector $\mathbf{s} = \mathbf{z} - \mathbf{e} \mod q$.
-
-A solution to $\gamma$-uSVP can be found by reducing it to $\kappa$-HSVP where $\gamma = \kappa^2$ \cite{APS15}. Various algorithms, in particular, lattice reduction algorithms, exist to solve $\kappa$-HSVP. If we are able to solve a linear number of $\kappa$-HSVP instances that correspond to a $\kappa^2$-approximate SVP instance, we can construct a solution of the latter (see \cref{def:svp}, see Section 1.2.21 in \cite{Lov87} for more details).
-Consider any lattice with uSVP structure. In exactly one direction, that is, in the direction of its unique shortest vector, the lattice has vectors that are significantly smaller than in other directions. A lattice reduction algorithm that yields a sufficiently good output basis quality, therefore, must return some small vector in the desired direction.
-Let $\mathbf{v}$ be a solution to SVP$_\kappa^2$, i.e. $\|\mathbf{v}\| \leq \kappa^2 \lambda_1(\Lambda(\mathbf{B}'))$. All other vectors $\mathbf{w}\in \Lambda(\mathbf{B}')$ that are not multiples of a shortest vector have length $\|\mathbf{w}\| \geq \lambda_2(\Lambda(\mathbf{B}')) > \kappa^2\lambda_1(\Lambda(\mathbf{B}'))$. Thus, we obtain a solution to $\gamma$-uSVP and, as shown above, we can reconstruct the secret vector to solve LWE.
-
-% TODO: in practice: GN08
-The attack is successful with high probability if $\lambda_2(\Lambda(\mathbf{B}'))/\lambda_1(\Lambda(\mathbf{B}')) \geq \tau \delta^m$ \cite{AFG13}. Following \cite{Gop16} we assume that the determinant of $\Lambda_q(\mathbf{A}^\intercal)$ is given by $q^{m-n}$ (see \cref{eq:det-MR}). The length of the error is $\|\mathbf{e}\| \approx \sqrt{m\cdot \left(\frac{\alpha q}{\sqrt{2\pi}}\right)^2} \approx \sqrt{\frac{m}{2\pi}} \alpha q$. Furthermore, in practice $\mu=1$ is used \cite{APS15}. We then apply the simplified Gaussian heuristic on $\lambda_2(\Lambda(\mathbf{B}'))=\lambda_2(\Lambda(\mathbf{A}^\intercal))$ \cref{eq:simplified-gaussian-heuristic} to obtain
-\begin{align}
-  \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))} \leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|} \\
-                & \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
-\end{align}
-
-The success probability of the attack then is non-negligible if
-\begin{equation}
-  \delta \leq \left(\frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}\right)^{\frac{1}{m}}
-\end{equation}
-Experiments show that $\tau \leq 0.4$ achieves a success rate of about $\epsilon = 0.1$ \cite{AFG13}. In order to increase the success probability to some fixed target $\epsilon' > \epsilon$, we can simply repeat the algorithm $\rho$ times and obtain a success probability of $\epsilon' \leq 1 - (1 - \epsilon)^\rho$ \cite{BBGS19}. Consequently, we need at least $\rho \geq \log(1-\epsilon')/\log(1-\epsilon)$ rounds for a successful attack.
-% TODO: Overall runtime - combination of \rho and t_{\text{BKZ}} where the runtime of BKZ depends on the block-size k, block-size k depends on required \delta => see BBGS19
-
-% TODO: alternate estimate used in Estimator: ADPS16 estimate 
 
 
 \subsection{Other Approaches}
-In the previous subsections we gave an overview the most relevant algorithms in practice. The list is by no means exhaustive. We already noted that many improvements and variants have been suggested within the last two decades. In particular, for special cases LWE in which the components of the secret vector are sampled from a small set $\mathcal{S} \subset \mathbb{Z}$ it is possible to speed up the algorithms (for example by using a technique called modulus switching for BKW \cite{AFFP14}). % TODO remove if section on BKZ is changed
+In the previous subsections we gave an overview the most relevant algorithms in practice. The list is by no means exhaustive. We indicated that many improvements and variants have been suggested within the last two decades. In particular, for special cases LWE in which the components of the secret vector are sampled from a small set $\mathcal{S} \subset \mathbb{Z}$ it is possible to speed up the algorithms (for example by using a technique called modulus switching for BKW \cite{AFFP14}). % TODO remove if section on BKZ is changed
 Small secret variants also give rise to a different approach due to the fact of the drastically decreasing search space. In the Meet-In-The-Middle attack, we create a sorted list of $\mathbf{A}^\intercal \mathbf{s}'$ for for all $\mathbf{s}' \in \left\{ \mathbf{v} \in \mathcal{S}^n \mid v_i = 0 \text{ for } \frac{n}{2} < i \leq n\right\}$. We then iterate over all $\mathbf{s}'' \in \left\{ \mathbf{v} \in \mathcal{S}^n \mid v_i = 0 \text{ for } 0 \leq i \leq \frac{n}{2}\right\}$ and check if $\mathbf{z} - \mathbf{A}^\intercal \mathbf{s}''$ matches any value in the list. The basic version of this algorithm has a runtime and memory complexity of about $|\mathcal{S}|^{n/2}$.
 
-The \textit{Estimator} also includes estimates for an algorithm due to Arora and Ge \cite{AG11} that has sub-exponential runtime for a sufficiently narrow Gaussian distribution. In practical cryptographic scenarios however, the algorithm has a much higher cost than other algorithms and is thus irrelevant for our purposes.
+The \textit{estimator} also includes estimates for an algorithm due to Arora and Ge \cite{AG11} that has sub-exponential runtime for a sufficiently narrow Gaussian distribution. In practical cryptographic scenarios however, the algorithm has a much higher cost than other algorithms and is thus irrelevant for our purposes.
 
 
 \section{Algorithms for Solving SIS}
 Recall that the SIS$_{n, q, m, \beta}$ problem asks to find a short vector $\mathbf{s} \in \mathbb{Z}_q^m$ of norm $\|\mathbf{s}\| \leq \beta$ such that such that $\mathbf{A} \cdot \mathbf{s} = 0 \; \text{mod } q$ for some uniformly distributed matrix $\mathbf{A}^{n\times m}$. Solving SIS is equivalent to finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$.
 
 
-\subsection{Lattice Reduction}
+\subsection{Lattice Reduction}\label{sec:dual-attack}
 \subsubsection{MR variant \cite{MR09}} \label{sec:mr-variant}
-Our first approach to solving SIS follows quite naturally. Given $\mathbf{A}$, we can efficiently compute the basis $\mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ of the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ in polynomial time using Gauss-Jordan elimination or other more modern algorithms.
+Our first approach to solving SIS, sometimes referred to as the ``dual attack'', follows quite naturally. Given $\mathbf{A}$, we can efficiently compute the basis $\mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ of the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ in polynomial time using Gauss-Jordan elimination or other more modern algorithms.
 
 We can then apply a lattice reduction algorithm and obtain a basis with root Hermite factor $\delta$. The first basis $\mathbf{b}_1$ vector of the reduced basis has length $\|\mathbf{b}_1\| = \delta^m \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp})^{1/m}$. We can see that $\delta$ depends on the subdimension $m$ which we want to be ideal in order to minimize the cost of the lattice reduction by relaxing $\delta$.
 
@@ -705,14 +707,14 @@ which is minimal for $m = \sqrt{n \log q / \log \delta}$.
 
 Higher dimension increase the complexity of the reduction algorithms and lower dimensions may cause a lack of sufficiently short lattice vectors \cite{MR09}. In contexts in which \cref{eq:mr-delta} does not hold, we may still choose $m$ as in \cref{eq:mr-m} heuristically. Removing columns from $\mathbf{A}$ does not greatly impact our results since we can just set the corresponding components of the secret vector $s$ to zero. We reformulate \cref{eq:mr-delta} a bit:
 \begin{align}
-  \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}} \iff & \log \beta = m \log \delta + \frac{n \log q}{m}                                   \\
-  \iff                                             & \log \delta = \frac{\log \beta}{m} - \frac{n \log q}{m^2} \label{eq:mr-log-delta}
+  \qquad\|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}} \iff & \log \beta = m \log \delta + \frac{n \log q}{m}   \nonumber                       \\
+  \iff                                                   & \log \delta = \frac{\log \beta}{m} - \frac{n \log q}{m^2} \label{eq:mr-log-delta}
 \end{align}
 
 We continue by plugging \cref{eq:mr-m} into \cref{eq:mr-log-delta}:
 \begin{align}
-  \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \frac{n \log q}{\left(\sqrt{\frac{n \log q}{\log \delta}}\right)^2} \iff & \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \log \delta \\
-  \iff                                                                                                                                            & 2\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}}              \\
+  \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \frac{n \log q}{\left(\sqrt{\frac{n \log q}{\log \delta}}\right)^2} \iff & \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \log \delta \nonumber \\
+  \iff                                                                                                                                            & 2\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}}              \nonumber \\
   \iff                                                                                                                                            & \log \delta = \frac{\log^2 \beta}{4n \log q}
 \end{align}
 
@@ -723,10 +725,10 @@ We continue by plugging \cref{eq:mr-m} into \cref{eq:mr-log-delta}:
   \end{equation}
 \end{theorem}
 
-To estimate the cost of the lattice reduction for SIS, we call a function from the \textit{Estimator} to find the required block size $k$ such that BKZ achieves root Hermite factor $\delta$ and apply a cost model with the optimal subdimension $m'$ and block size $k$.
+To estimate the cost of the lattice reduction for SIS, we call a function from the \textit{estimator} to find the required block size $k$ such that BKZ achieves root Hermite factor $\delta$ and apply a cost model with the optimal subdimension $m'$ and block size $k$.
 % TODO: describe how k is computed?
 
-Note that for LWE we have $\alpha, q$ as input parameters instead of a bound. We can convert $\alpha$ to a required bound $\beta = \frac{1}{\alpha} \sqrt{\ln (\frac{1}{\epsilon})/ \pi}$ such that the success probability of solving an LWE instance is given by $\epsilon$ (Corollary 2 in \cite{APS15}). The \textit{Estimator} uses a rinse and repeat strategy to find the best tradeoff between runtime and success probability.
+Note that for LWE we have $\alpha, q$ as input parameters instead of a bound. The advantage of distinguishing $\langle \mathbf{v}, \mathbf{e}\rangle$ from random is given by  $\epsilon = e^{-\pi (\| \mathbf{v}\| \alpha)^2}$. We can thus convert $\alpha$ to a required bound $\beta = \frac{1}{\alpha} \sqrt{\ln (\frac{1}{\epsilon})/ \pi}$ such that the success probability of solving an LWE instance is given by $\epsilon$ \cite[Corollary~2]{APS15}. The \textit{estimator} uses a rinse and repeat strategy to find the best tradeoff between runtime and success probability.
 
 % TODO: fall unterscheidungen, m' > m oder delta zu klein
 
@@ -739,14 +741,14 @@ Note that for LWE we have $\alpha, q$ as input parameters instead of a bound. We
 
 A similar approach is described in \cite{RS10}. The optimal subdimension and required root Hermite factor are given by a slightly different expression. Apart from that the attack works as described in \cref{sec:mr-variant}.
 
-\begin{theorem}[Optimal subdimension $m$ (\cite{RS10}, Conjecture 2)]
+\begin{theorem}[Optimal subdimension $m$ {\cite[Conjecture~2]{RS10}})]
   For every $n \geq 128,$ constant $c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))$ and $\beta < q$, the best known approach to solve SIS with parameters ($n, m, q, \beta$) involves solving $\delta$-HSVP in dimension $m' = \min(x : q^{2n/x} \leq \beta)$ with $\delta = \sqrt{d}{\beta / q^{n/m'}}$.
 \end{theorem}
 
 We reformulate the expression for $m'$
 \begin{align}
-  q^{2n / m'}           & \leq \beta                          \\
-  \frac{2n}{m' \log(q)} & \leq \beta                          \\
+  q^{2n / m'}           & \leq \beta                          \nonumber \\
+  \frac{2n}{m' \log(q)} & \leq \beta                          \nonumber \\
   m'                    & \geq \frac{2n \log(q)}{\log(\beta)}
 \end{align}
 and obtain $m' = \left\lceil \frac{2n \log(q)}{\log(\beta)} \right\rceil$. If $m' > m$, we take $m' = m$.
@@ -757,10 +759,10 @@ The root Hermite factor $\delta$ must be larger than $1$ for the reduction to be
 % TODO: give intuition about the conjecture???
 
 
-\subsection[Combinatorial Attack]{Combinatorial Attack \cite{MR09}}
-Micciancio and Regev also describe a combinatorial method for solving SIS \cite{MR09}.
+\subsection[Combinatorial Attack]{Combinatorial Attack \cite{MR09}}\label{sec:combinatorial}
+Micciancio and Regev also describe a combinatorial method for solving SIS \cite{MR09} that is similar to BKW.
 
-Given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n \times m}$ and the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$, we want to find a lattice vector $\mathbf{v} \in \Lambda(\mathbf{A}^\intercal)^{\perp}$ with coefficients bounded by $b$. Expressed differently, we want to find $\mathbf{v}$ such that $\mathbf{A}\mathbf{v} = 0 \mod q$ and $\|\mathbf{v}_i\| \leq b$ for all $i \in [m]$.
+Given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n \times m}$ and the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$, we want to find a lattice vector $\mathbf{v} \in \Lambda(\mathbf{A}^\intercal)^{\perp}$ with coefficients bounded by $\beta$. Expressed differently, we want to find $\mathbf{v}$ such that $\mathbf{A}\mathbf{v} = 0 \mod q$ and $\|\mathbf{v}_i\| \leq b$ for all $i \in [m]$.
 
 We begin by dividing the columns of $\mathbf{A}$ into $2^k$ for some $k$. Each set contains $m/2^k$ column vectors. We now compute all linear combinations $c_1 \mathbf{b}_1 + \cdots + c_{m/2^k}\mathbf{b}_{m/2^k}$, where $\mathbf{b}_i$ denote the indexed column vectors in each set, such that $|c_i| \leq b$ and obtain $2^k$ new sets $\mathbf{A}_j^{(k)}$ of $L=(2b+1)^{m/2^k}$ vectors, $j\in \left[2^k\right]$. Remember that each $c_i$ represents a coeffient of the lattice vector. By means of these new sets we satisfy the shorteness criteria of the output vector.
 
@@ -769,10 +771,10 @@ After the merge now $2^{i-1}$ sets.
 
 We choose $k$ such that
 \begin{equation}
-  n \approx (k+1) \log_q L = (k+1) \log_q (2b+1)^{m/2^k} \iff \frac{2^k}{k+1} \approx \frac{m \log(2\beta + 1)}{n \log(q)}
+  n \approx (k+1) \log_q L = (k+1) \log_q (2\beta+1)^{m/2^k} \iff \frac{2^k}{k+1} \approx \frac{m \log(2\beta + 1)}{n \log(q)}
 \end{equation}
 
-After $k$ steps the first $k \log_q L$ entries of the columns in the result set are cancelled out. We expect that of the remaining $\approx \log_q L$ entries in result set that we should find at least one zero vector as at there are most $L$ different vectors (see above). The zero vector represents the linear combination with entries bounded by $b$ and we can easily reconstruct the short lattice vector $\mathbf{v}$.
+After $k$ steps the first $k \log_q L$ entries of the columns in the result set are cancelled out. We expect that of the remaining $\approx \log_q L$ entries in result set that we should find at least one zero vector as at there again are most $L$ different vectors. The zero vector represents the linear combination with entries bounded by $\beta$ and we can easily reconstruct the short lattice vector $\mathbf{v}$ with $\|\mathbf{v}\|_\infty \leq \beta$.
 
 To find an optimal $k$, we iterate over $k$ starting from $k=1$ and calculate $\text{diff}$ as follows:
 

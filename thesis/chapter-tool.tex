@@ -7,7 +7,7 @@ The tool can either estimate the bit security level of fixed parameter sets or g
 % automatische norm umwandlung,
 % sonstige features
 \section{Supported Distributions} \label{sec:supported-distributions}% TODO
-The secret distribution used in encryption schemes based on LWE or SIS can either distributed according to a Gaussian or a uniform distribution. The error distribution in LWE must be a Gaussian distribution with parameter $\alpha$. In general, if both error and secret are sampled in LWE are sampled according to Gaussian distributions their parameters may differ. Currently, however, the \textit{Estimator} only supports secrets that follow a uniform distributions or a Gaussian distribution with the same paramter as the error distribution.
+The secret distribution used in encryption schemes based on LWE or SIS can either distributed according to a Gaussian or a uniform distribution. The error distribution in LWE must be a Gaussian distribution with parameter $\alpha$. In general, if both error and secret are sampled in LWE are sampled according to Gaussian distributions their parameters may differ. Currently, however, the \textit{estimator} only supports secrets that follow a uniform distributions or a Gaussian distribution with the same paramter as the error distribution.
 
 \subsection{Gaussian Distribution}
 In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $\texttt{sec}$. Note that a $n$-dimensional Gaussian $D_{\mathbf{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbf{Z}, s}$ \cite{GJS15}. %TODO check
@@ -38,7 +38,7 @@ The resulting bound $\beta$ is an $\ell_2$-norm bound. % TODO: distributions is 
 We provide the classes $\texttt{GaussianAlpha}$, $\texttt{GaussianSigma}$ and $\texttt{GaussianS}$ to allow for the most flexibility in specifying a Gaussian distribution.
 
 \subsection{Uniform Distribution}
-For uniform distributions, we support all distributions that are supported by the \textit{Estimator}, namely, uniform $\mod q$, uniform in the interval $[a,\dots,b]$ and a sparse uniform distribution with parameters $((a,b), h)$, where exactly $h$ components are in the interval $[a,\dots,b] \setminus \{0\}$ and all other components are zero. Note that we only consider discrete distributions are over $\mathbb{Z}$.
+For uniform distributions, we support all distributions that are supported by the \textit{estimator}, namely, uniform $\mod q$, uniform in the interval $[a,\dots,b]$ and a sparse uniform distribution with parameters $((a,b), h)$, where exactly $h$ components are in the interval $[a,\dots,b] \setminus \{0\}$ and all other components are zero. Note that we only consider discrete distributions are over $\mathbb{Z}$.
 
 We can estimate the corresponding standard deviation for a Gaussian distribution by computing the variance of the uniform distribution. Given an lower and upper bound $(a, b)$, the variance for a discrete uniform distribution is defined as $\sigma^2 = \frac{(b - a + 1)^2 - 1}{12}$. For a uniform distirbution $\mod q$ we set $a = -\left\lfloor \frac{q}{2} \right\rfloor, b = \left\lfloor \frac{q}{2} \right\rfloor$.
 
@@ -54,43 +54,93 @@ and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 
 
 
-\section{Norms and Bounds} \label{sec:norm-bounds}% TODO: check
+\section{Norms bound estimates} \label{sec:norm-bounds}% TODO: check
 %TODO: write some prose about why we need that
 % TODO: make sure that it is clear that these are bounds!!!
-Let $\mathcal{R}_q$ be a ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. Following \cite{BDLOP18} we define the norms
-\begin{align}
-    \ell_1 : \| f| \|_1           & = \sum_i |f_i|,                                           \\
-    \ell_2 : \| f| \|_2           & = \left(\sum_i |f_i|^2\right) ^{\frac{1}{2}}, \text{ and} \\
-    \ell_\infty : \| f| \|_\infty & = \max_i |f_i|.
-\end{align}
+In practical scenarios, oftentimes we require that the bound of a result does not exceed a certain value to guarantee correctness. In addition, we have seen that estimation algorithms rely on bounds in different $\ell_p$-norms. For example, the combinatorial attack in \cref{sec:combinatorial} needs a bound in $\ell_\infty$ norm, whereas the dual attack in \cref{sec:dual-attack} uses bounds in the Euclidean norm. We thus need a way to bound a value of a bound in one norm by a value in a different norm. In our tool, we define a norm class with parameter $p$ and provide a  method $\texttt{to\_lp()}$ for conversions into all other norms mentioned here. Recall the norm definitions in \cref{sec:norms}.
 
-Then the following inequations hold \cite{BDLOP18}:
+It is easy to see that for any $\infty \geq p \geq q \geq 1$ the following two inequations hold
 \begin{align}
-    \| f \|_1      & \leq \sqrt{n} \| f \|_2 \label{norm1}                                                                    \\
-    \| f \|_1      & \leq n \| f \|_\infty \label{norm2}                                                                      \\
-    \| f \|_2      & \leq \sqrt{n} \| f \|_\infty \;\;(\text{since }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \\
-    \| f \|_\infty & \leq \| f \|_1 \label{norm4}
-\end{align}
+    \| f \|_p & \leq \| f \|_q \label{eq:norm-inf-leq-1}.
+\end{align} % maybe replace norm4 with this one % maybe replace norm4 with this one
+In addition, if we apply Hölder's inequality to finite vector spaces as in \cite{norm-relations} we obtain the following Lemma:
+\begin{lemma}
+    For $1 \leq p \leq q \leq \infty$ it holds that
+    \begin{align}
+        \lim_{q' \rightarrow q}\| f \|_p & \leq n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q' \label{eq:norm-1-leq-inf}
+    \end{align} % TODO: show full proof https://math.stackexchange.com/questions/218046/relations-between-p-norms
+\end{lemma}
 
-Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, following \cite{DPSZ12} for $f \in \mathcal{O}_K$ it holds the following inequations hold (we assume that $C_m = 1$): % TODO: why?
+
+% \begin{proof}
+%     Folowing \cite{norm-relations}, we apply Hölder's inequality on $n$ dimensional vector spaces. For $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$ Hölder's inequality states that
+%     \begin{align*}
+%         \sum_{i=1}^n |x_i| |y_i| \leq \left(\sum_{i=1}^n |a_i|^s\right)^{\frac{1}{s}}.
+%     \end{align*}
+% \end{proof}
+
+% \begin{align}
+%     \| f \|_1      & \leq \sqrt{n} \| f \|_2 \label{norm1}                                                                         \\
+%     \| f \|_1      & \leq n \| f \|_\infty \label{norm2}                                                                           \\
+%     \| f \|_2      & \leq \sqrt{n} \| f \|_\infty \;\;(\text{because of }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \\
+%     \| f \|_\infty & \leq \| f \|_1 \label{norm4}
+% \end{align}
+
+Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, according to \cite[Theorem~7]{DPSZ12} for $f \in \mathcal{O}_K$  the following inequations hold: % TODO: why?
 \begin{align}
     \| f \|_\infty         & \leq \| \sigma(f) \|_\infty \label{norm5}, \\
     \| \sigma(f) \|_\infty & \leq \| f \|_1 \label{norm6}.
 \end{align}
-
-From the above inequations, we obtain the following theorems.
+(We assume that the constant $C_m$ used in the original Theorem is $1$ for $m$ a power of $2$ \cite[Lemma~3]{DPSZ12}.) From the above inequations, we obtain the following theorems that we use in the method $\texttt{to\_lp()}$.
 \begin{theorem}[Relationships Between Norm Bounds \cite{BDLOP18,DPSZ12}]\label{th:norm-rel}
     Given a ring element $f \in \mathcal{O}_K$ as defined above, then we can bound norms by $\ell_p$-norms as follows:
     \begin{itemize}
-        \item From \cref{norm1}, it follows that $\| f \|_1 \leq \sqrt{n} \| f \|_2$ and from \cref{norm2}, $\| f \|_1 \leq n \| f \|_\infty$.
-        \item From \cref{norm3} and \cref{norm4}, it follows that $\| f \|_2 \leq \sqrt{n}  \| f \|_1$ and from \cref{norm3}, $\| f \|_2 \leq \sqrt{n}  \| f \|_\infty$.
-        \item From \cref{norm4}, it follows that $\| f \|_\infty \leq  \| f \|_1$ and from \cref{norm1} and \cref{norm4}, $\| f \|_\infty \leq \sqrt{n}  \| f \|_2$.
-        \item From \cref{norm6}, it follows that $\| \sigma(f) \|_\infty \leq  \| f \|_1$, from \cref{norm1} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2$, and from \cref{norm2} and \cref{norm6}, $\| \sigma(f) \|_\infty \leq n  \| f \|_\infty$.
+        \item From \cref{eq:norm-1-leq-inf}, it follows that
+              \begin{equation}\label{eq:l1-to-p}
+                  \begin{aligned}
+                      \| f \|_1 & \leq n^{1 - \frac{1}{2}} \| f \|_2 = \sqrt{n} \| f \|_2, \\
+                      \| f \|_1 & \leq n^{1 - \frac{1}{p}} \| f \|_p,                      \\
+                      \| f \|_1 & \leq n^{1 - 0} \| f \|_\infty = n \| f \|_\infty.
+                  \end{aligned}
+              \end{equation}
+        \item From \cref{eq:norm-inf-leq-1}, it follows that
+              \begin{align}
+                  \| f \|_2 & \leq \sqrt{n}  \| f \|_1.
+              \end{align}
+              From \cref{eq:norm-1-leq-inf} and with $2\leq p < \infty$, we get that
+              \begin{equation}\label{norm2}
+                  \begin{aligned}
+                      \| f \|_2 & \leq n^{\frac{1}{2} - \frac{1}{p}} \| f \|_p,                      \\
+                      \| f \|_2 & \leq n^{\frac{1}{2} - 0} \| f \|_\infty =\sqrt{n}  \| f \|_\infty.
+                  \end{aligned}
+              \end{equation}
+        \item From \cref{eq:norm-1-leq-inf,eq:norm-inf-leq-1} and with $p\geq 2$, it holds that
+              \begin{equation}\label{norm1}
+                  \begin{aligned}
+                      \| f \|_p & \leq  \| f \|_1,               \\
+                      \| f \|_p & \leq  \| f \|_2,               \\
+                      \| f \|_p & \leq \sqrt{n}  \| f \|_\infty.
+                  \end{aligned}
+              \end{equation}
+        \item From \cref{eq:norm-inf-leq-1}, it follows that
+              \begin{align*}
+                  \| f \|_\infty & \leq  \| f \|_1, \\
+                  \| f \|_\infty & \leq  \| f \|_2, \\
+                  \| f \|_\infty & \leq \| f \|_p.
+              \end{align*}
+        \item From \cref{norm6,eq:l1-to-p} it follows that
+              \begin{align*}
+                  \| \sigma(f) \|_\infty \leq \| f \|_1,                     \\
+                  \| \sigma(f) \|_\infty \leq \sqrt{n} \| f \|_2,            \\
+                  \| \sigma(f) \|_\infty \leq n^{1 - \frac{1}{p}} \| f \|_p, \\
+                  \| \sigma(f) \|_\infty \leq n \| f \|_\infty.
+              \end{align*}
     \end{itemize}
-    Likewise, we get the following bounds for the $\mathcal{C}_\infty$-norm:
+    Likewise, we get the following bounds for the $\ell_\infty$-norm on the canonical embedding which we call $\mathcal{C}_\infty$:
     \begin{itemize}
-        \item From \cref{norm2} and \cref{norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
-        \item From \cref{norm3} and \cref{norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+        \item From \cref{eq:l1-to-p,norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
+        \item From \cref{norm2,norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+        \item From \cref{norm1,norm5}, it follows that $\| f \|_p \leq  \sqrt{n} \| \sigma(f) \|_\infty$ for $2 < p < \infty$.
         \item From \cref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
     \end{itemize}
 \end{theorem}
@@ -105,11 +155,11 @@ We also want to be able to add and multiply bounds from different norms. Note th
         \item If $\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
     \end{itemize}
 
-    Let $x, y \in \mathcal{O}_K$. Again, we assume that $C_m = 1$. Then, the following inequation holds according to \cite{DPSZ12}:
-    \begin{align}
-        \| x \cdot y \|_\infty \leq C_m \cdot n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty \\
-        \| \sigma(x \cdot y) \|_\infty \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
-    \end{align}
+    Let $x, y \in \mathcal{O}_K$. (Again, we assume that $C_m = 1$ in the original theorem.) Then, the following inequation holds according to \cite{DPSZ12}:
+    \begin{align*}
+        \| x \cdot y \|_\infty         & \leq n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty         \\
+        \| \sigma(x \cdot y) \|_\infty & \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
+    \end{align*}
 \end{theorem}
 
 
@@ -121,7 +171,7 @@ We now present the problem classes in $\texttt{lattice\_parameter\_estimation/pr
 \begin{figure}[h]
     \centering
     \includegraphics[width=1\textwidth]{graphics/problem_classes.pdf}
-    \caption{Problem Classes}\label{fig:problem-classes}
+    \caption{Problem classes}\label{fig:problem-classes}
 \end{figure}
 
 $\texttt{LWE}$ and $\texttt{SIS}$ inherit from the base class $\texttt{BaseProblem}$ respectively. All instances provide a method $\texttt{get\_estimate\_algorithms()}$ that returns a list of algorithm instances that can be executed by the function $\texttt{estimate()}$. Furthermore, any instance of $\texttt{BaseProblem}$ can be compared to a bit security level (for more details, we refer the reader to the documentation). The $\texttt{LWE}$ class is initialized by the secret dimension $n$, a modulus $q$, the number of samples $m$, a $\texttt{secret\_distribution}$ and a $\texttt{error\_distribution}$. Both $\texttt{secret\_distribution}$ and $\texttt{error\_distribution}$ must be instances of the class $\texttt{distributions.Distribution}$. Instead of $\texttt{secret\_distribution}$ and $\texttt{error\_distribution}$, a bound of type $\texttt{norm.BaseNorm}$ must be set for $\texttt{SIS}$. Note that both {distributions.Uniform} and {distributions.Gaussian} are instances of $\texttt{norm.BaseNorm}$ and can thus be used as a bound. We compute the bound for a given distribution instance as described in \cref{sec:supported-distributions}.
@@ -129,8 +179,7 @@ $\texttt{LWE}$ and $\texttt{SIS}$ inherit from the base class $\texttt{BaseProbl
 For ring and module variants $\texttt{RLWE}$, $\texttt{RSIS}$ and $\texttt{MLWE}$, $\texttt{MSIS}$ respectively $n$ denotes the degree of the polynomial of the underlying ring $\mathcal{R}_q$. The module variants $\texttt{MLWE}$ and $\texttt{MSIS}$ take an addition parameter $d$ for the rank of the module.
 
 While there exist special cases where the ring structure of problem instances can be exploited in an attack on LWE or SIS, % TODO: find examples
-in general, the hardness of ring and Module variants is estimated by interpreting the coefficients of elements of $\mathcal{R}_q$ as vectors in $\mathbb{Z}_q^n$ \cite{ACDDPPVW18}.
-We thus reduce ring and Module instances as follows when calling $\texttt{get\_estimate\_algorithms()}$ on the ring and module variant of $\texttt{LWE}$ and $\texttt{SIS}$:
+in general, the hardness of ring and Module variants is estimated by interpreting the coefficients of elements of $\mathcal{R}_q$ as vectors in $\mathbb{Z}_q^n$ \cite{ACDDPPVW18}. If we take into account the considerations we presented in \cref{sec:ring-module}, we can thus reduce ring and Module instances as follows when calling $\texttt{get\_estimate\_algorithms()}$ on the ring and module variant of $\texttt{LWE}$ and $\texttt{SIS}$:
 \begin{itemize}
     \item RLWE$_{n, q, m, \chi} \longrightarrow$ LWE$_{n, q, m \cdot n, \chi}$
     \item MLWE$_{n, d, q, m, \chi} \longrightarrow$ LWE$_{n \cdot d, q, m \cdot n, \chi}$
@@ -221,9 +270,9 @@ If all are unselected custom cost models must be specified and passed as an argu
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{graphics/cost_models.png}
-    \caption{Cost Models}\label{fig:costmodels}
+    \caption{Cost models}\label{fig:costmodels}
 \end{figure}
-The number of BKZ rounds can be configured by passing a function with parameters $\texttt{beta, d}$ where $\texttt{beta}$ is the block size and $\texttt{d}$ the lattice dimension. In the default configuration we use the more conservative ``Core''-SVP model $\texttt{algorithms.BKZ\_SVP\_repeat\_core}$ \cite{ADPS16} in which the polynomial factor of the runtime complexity of BKZ is completely ignored. In addition, we provide a more realistic model $\texttt{algorithms.BKZ\_SVP\_repeat\_8d}$ for a BKZ cost of $8 \cdot d \cdot t_k$ BKZ rounds where $d$ again referes to the lattice dimension and $t_k$ is the number of clock cycles required for the SVP subroutine (see \cref{sec:bkz-8d}). % TODO maybe add a little more of evaluation here
+The number of BKZ rounds can be configured by passing a function with parameters $\texttt{beta, d}$ where $\texttt{beta}$ is the block size and $\texttt{d}$ the lattice dimension. In the default configuration we use the more conservative Core-SVP model $\texttt{algorithms.BKZ\_SVP\_repeat\_core}$ \cite{ADPS16} in which the polynomial factor of the runtime complexity of BKZ is completely ignored. In addition, we provide a more realistic model $\texttt{algorithms.BKZ\_SVP\_repeat\_8d}$ for a BKZ cost of $8 \cdot d \cdot t_k$ BKZ rounds where $d$ again referes to the lattice dimension and $t_k$ is the number of clock cycles required for the SVP subroutine (see \cref{sec:bkz-8d}). % TODO maybe add a little more of evaluation here
 
 
 \subsection{Generic Search and Estimate Algorithms}
@@ -251,7 +300,7 @@ Once the $\texttt{estimate}$ function finds an instance that is insecure (i.e. t
         }
 
     }
-    \caption{Generic Search} \label{alg:generic-search}
+    \caption{Generic search} \label{alg:generic-search}
 \end{algorithm2e}
 
 The $\texttt{estimate}$ function can be configured to run in parallel in the configuration which may speed up the search, in particular if many cost models need to be tested (e.g. with configuration setting $\texttt{conservative=False}$ and long running algorithms like $\texttt{ARORA\_GB}$, $\texttt{CODED\_BKW}$ and $\texttt{PRIMAL\_DECODE}$ are used. The list of used algorithms can be changed in the configuration. We recommend to include $\texttt{PRIMAL\_USVP}$ for LWE instances and $\texttt{LATTICE\_REDUCTION}$ for SIS instances to make full use of early termination since the estimate algorithms for these attacks have a short runtime and yield relatively low cost estimates.
@@ -294,7 +343,7 @@ The $\texttt{estimate}$ function can be configured to run in parallel in the con
                                   &          & does not always yield results                       \\
         \bottomrule
     \end{tabular}
-    \caption{LWE Estimate Algorithm Priorities}\label{tab:lwe-alg-prio}
+    \caption{LWE estimate algorithm priorities}\label{tab:lwe-alg-prio}
     \vspace{1cm}
     \begin{tabular}[]{lll}
         \toprule
@@ -305,7 +354,7 @@ The $\texttt{estimate}$ function can be configured to run in parallel in the con
         Combinatorial Attack          & 10       & fast, often slightly higher cost results \\
         \bottomrule
     \end{tabular}
-    \caption{SIS Estimate Algorithm Priorities}\label{tab:sis-alg-prio}
+    \caption{SIS estimate algorithm prioritie}\label{tab:sis-alg-prio}
 \end{table}
 
 % TODO first finish section on algorithms

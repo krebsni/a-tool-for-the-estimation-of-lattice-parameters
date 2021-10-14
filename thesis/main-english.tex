@@ -251,7 +251,7 @@
 
 * lack in the past: no unified/easy to use tool => thesis aims to solve this problem
 tool we call \textit{Lattice Parameter Estimation} % TODO: too long. Maybe just "tool"?
-LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{Estimator}.
+LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{estimator}.
 
 
 - overview of chapters/how to read
@@ -269,6 +269,17 @@ LWE instances are estimated by calling various estimation functions from the LWE
 In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.
 % TODO: anything else? Inner product, negation in ring
 
+\section{Norms}\label{sec:norms}
+We can define the standard $\ell_p$-norms on the vector space $\mathbb{R}^n$. In this work we will also consider rings and modules (see \cref{sec:ring-module}) and require a way to bound the length of ring and module elements. Let $\mathcal{R}_q=\mathbf{Z}_q[X]/\langle X^n + 1 \rangle$ be a quotient ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. Following \cite{BDLOP18} we define the norms
+\begin{equation}
+  \begin{aligned}
+    \ell_1 : \| f \|_1           & = \sum_i |f_i|,                                         \\
+    \ell_2 : \| f \|_2           & = \sqrt{\sum_i |f_i|^2} \text{ and}                     \\
+    \ell_p : \| f \|_p           & = \left(\sum_i |f_i|^p\right)^{\frac{1}{p}} \text{ and} \\
+    \ell_\infty : \| f \|_\infty & = \max_i |f_i|.
+  \end{aligned}
+\end{equation}
+For standard vector spaces, the definitions are essentially equivalent to the above, except that $f$ is a vector in $\mathbb{R}^n$ with coefficients $f_i$. For a module element $\mathbf{f} \in \mathcal{R}_q^d$, we can simply view $\mathbf{f}$ as a $n\cdot d$-dimensional vector.
 
 \section{Lattices}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -364,11 +375,10 @@ The dual $\Lambda^{\perp}$ of a lattice $\Lambda(\mathbf{B})$ is defined as the 
 
 In cryptography, we are mainly interested in modular integer (or $q$-ary) lattices. A $q$-ary lattice is a lattice $\Lambda_q$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}\setminus \{0\}$. This means that a vector $\mathbf{x} \in \mathbb{Z}^m$ is in $\Lambda$ if and only if $\mathbf{x} \mod q$ also is in $\Lambda$.
 
-We now look at two important ways of specifying a $q$-ary lattice given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$ \cite{BBGS19}.
-\begin{equation}\label{eq:lwe-lattice}
+We now look at two important ways of specifying a $q$-ary lattice given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$ \cite{BBGS19}.\begin{equation}\label{eq:lwe-lattice}
   \Lambda_q(\mathbf{A}^\intercal) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid \exists \mathbf{y} \in \mathbb{Z}^n : \mathbf{v} = \mathbf{A}^\intercal \mathbf{y} \mod q \right\}
 \end{equation}
-$\Lambda_q(\mathbf{A}^\intercal)$ is commonly referred to as the \textit{LWE lattice} as finding a short vector in $\Lambda_q(\mathbf{A}^\intercal)$ corresponds to solving LWE. The second, referred to as the \textit{(dual) SIS lattice}, is given by
+$\Lambda_q(\mathbf{A}^\intercal)$ is commonly referred to as the \textit{(primal) LWE lattice} as finding a short vector in $\Lambda_q(\mathbf{A}^\intercal)$ corresponds to solving LWE. The second, referred to as the \textit{(dual) SIS lattice}, is given by
 \begin{equation}\label{eq:sis-lattice}
   \Lambda_q^\perp(\mathbf{A}) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid  \mathbf{A}\mathbf{v} = \mathbf{0} \mod q \right\}.
 \end{equation}
@@ -377,7 +387,7 @@ Finding a short vector in $\Lambda_q^\perp(\mathbf{A})$ corresponds to solving t
 % TODO: find basis of $\Lambda_q(\mathbf{A})$ \cite{AFG13}
 
 In many scenarios, it is convenient to have an explicit formula that descibes the relationship between the determinant of the above two lattices and the dimensions of $\mathbf{A}$. For $q$ prime and $m$ sufficiently larger than $n$ we have that the rank of $\mathbf{A}$ is $n$ as the rows of $\mathbf{A}$ are linearly independent with high probability. As a result, the lattice $\Lambda_q(\mathbf{A}^\intercal)$ has $q^n$ points in $\mathbf{Z}_q^m$.
-Consider the fundamental domain $D = \mathcal{P}(\Lambda_q(\mathbf{A}^\intercal))$ and the fact that $\Lambda_q(\mathbf{A}^\intercal) + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda_q(\mathbf{A}^\intercal)||D \mod q|$ and thus
+Consider the fundamental domain $D = \mathcal{P}(\Lambda_q(\mathbf{A}^\intercal))$ and the fact that $\Lambda_q(\mathbf{A}^\intercal) + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition as described in \cite{volume-lattice}. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda_q(\mathbf{A}^\intercal)||D \mod q|$ and thus
 \begin{equation}\label{eq:det-MR}
   \text{det}(\Lambda_q(\mathbf{A}^\intercal)) = |D \mod q| = \frac{q^m}{|\Lambda_q(\mathbf{A}^\intercal)|} = \frac{q^{m}}{q^{n}} = q^{m-n}.
 \end{equation}
@@ -410,28 +420,15 @@ We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$ where $\Lambda(\mathbf{
 % * smoothing lemma
 
 
-\subsection{Linear Code} \label{sec:linear-code} % TODO maybe move to Coded BKW, maybe too much...
-Let $\mathbb{F}_q^n$ be the $n$-dimensional vector space over the field $\mathbb{F}_q$. A $q$-ary linear code $\mathcal{C}$ or $[n, k]$-code \cite{VanLint12} is a $k$-dimensional linear subspace of $\mathbb{F}_q^n$ such that $\mathbf{0} \in \mathcal{C}$, $\mathbf{x} + \mathbf{y} \in \mathcal{C}$ for all $\mathbf{x}, \mathbf{y} \in \mathcal{C}$ and $\gamma \mathbf{x} \in \mathcal{C}$ for $\mathbf{x} \in \mathcal{C}, \gamma \in \mathbb{F}_q$. There are $q^k$ different codewords in $\mathcal{C}$.
-
-Let $\mathcal{C}$ be a $q$-ary linear $[n, k]$-code. The lattice over $\mathcal{C}$ \cite{GJS15} is defined as
-\begin{equation}
-  \Lambda(\mathcal{C}) = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \exists \mathbf{y} \in \mathcal{C} : \mathbf{x} = \mathbf{y} \mod q  \right\}.
-\end{equation} % TODO check
-Similarly, for a lattice $\Lambda(\mathbf{B})$ a lattice code $\mathcal{C}$ defined by $\Lambda(\mathbf{B})$ and a shaping region $\mathcal{V} \subset \mathbb{R}^n$ (e.g. the Voronoi region, see \cref{eq:voronoi-region}) is a subspace of $\mathbb{R}^n$ such that all codewords are lattice vectors in $\Lambda(\mathbf{B})$ within the region $\mathcal{V}$ \cite{SFS08}:
-\begin{equation}
-  \mathcal{C} = \left\{ x \in \Lambda(\mathbf{B}) \mid x \in \mathcal{V} \right\}.
-\end{equation} % TODO check
-
-
 
 \subsection{Lattice Problems}\label{sec:lattice-problems}
-In the previous section, we already mentioned the Shortest Vector Problem or short SVP. In this section, we want to briefly list a number of lattice problems used in this work. The definitions are based on \cite{MG02} and \cite{LM09}.
+In the previous section, we already mentioned the Shortest Vector Problem or short SVP. In this section, we want to briefly list a number of lattice problems used in this work.
 
 \begin{definition}[SVP$_\gamma$] \label{def:svp}
   Given a basis $\mathbf{B}$ of a lattice $\Lambda$, the (approximate) Shortest Vector Problem (SVP$_\gamma$) is the problem of finding a short lattice vector $v\in \Lambda$ such that $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$.
 \end{definition}
 
-The corresponding decision version is the \textsc{GapSVP}$_\gamma$ problem in which we are asked to decide whether $\lambda_1(\Lambda) \leq d$ or $\lambda_1(\Lambda) \geq \gamma d$ given a basis $\mathbf{B}$ of $\Lambda$ and a real number $d$. If neither is the case, any answer is correct \cite{LM09}.
+The corresponding decision version is the \textsc{GapSVP}$_\gamma$ problem in which we are asked to decide whether $\lambda_1(\Lambda) \leq 1$ or $\lambda_1(\Lambda) \geq \gamma$ given a basis $\mathbf{B}$ of $\Lambda$. If neither is the case, any answer is accepted. In an alternative version of \textsc{GapSVP}$_\gamma$ we have to decide between $\lambda_1(\Lambda) \leq d$ and $\lambda_1(\Lambda) \geq \gamma d$ for some positive real number $d$ \cite{LM09}.
 
 \begin{definition}[SIVP$_\gamma$] \label{def:sivp}
   Given a basis $\mathbf{B}$ of a lattice $\Lambda$ of rank $n$, the (approximate) Shortest Independent Vector Problem (SIVP) is the problem of finding $n$ linearly independent lattice vectors $\mathbf{v}_1, \ldots, \mathbf{v}_n \in \Lambda$ such that $\|\mathbf{v}_i\| \leq \gamma \cdot \lambda_n(\Lambda)$ for all $i \in \{1, \ldots, n\}$.
@@ -442,27 +439,11 @@ Both \textsc{GapSVP}$_\gamma$ and \textsc{SIVP}$_\gamma$ are NP-hard for any con
 % fastest algorithm for $1\leq \gamma \leq \text{poly}(n)$ has runtime complexity of $2^{O(n)}$
 In \cref{ch:algorithms}, we will look at some selected algorithms that rely on reductions to the following problems.
 
-\begin{definition}[HSVP$_\kappa$] \label{def:hsvp}
-  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, the (approximate)  Hermite Shortest Vector Problem (HSVP$_\kappa$) is the problem of finding a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \kappa \cdot \text{det}(\Lambda)^{\frac{1}{n}}$.
-\end{definition}
-
-\begin{definition}[uSVP$_\gamma$] \label{def:usvp}
-  Given a lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, the (approximate) Unique Shortest Vector Problem (uSVP$_\gamma$) is the problem of finding the shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$.
-\end{definition}
-% or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
-%NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
-
 % \begin{definition}[CVP$_\gamma$] \label{def:gamma-CVP}
 %   Given a basis $\mathbf{B}$ of a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$, the (approximate)  Closest Vector Problem (CVP$_\gamma$) is the problem of finding a lattice vector $\mathbf{v} \in \Lambda$ with $\|\mathbf{t} - \mathbf{v}\| < \gamma \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{v}\|$.
 % \end{definition}
 % NP hard in any $\ell_p$-norm for approximation factor $\gamma=1$ \cite{vEB81}
 
-\begin{definition}[BDD$_\gamma$] \label{def:bdd}
-  Given a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, the (approximate)  Bounded Distance Decoding (BDD$_\gamma$) is the problem of finding the closest lattice vector $\mathbf{v} \in \Lambda$, i.e. $\mathbf{v} = \argmin_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$.
-\end{definition}
-
-% or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
-% alternate NP hard for $\gamma > 1/\sqrt{2}$ \cite{LLM06}
 
 % TODO: add some kind of discussion, e.g. see 1.2 in LM09 or better overview from bootcamp
 
@@ -485,7 +466,7 @@ Oftentimes in lattice cryptography, we work with samples or vectors drawn from a
 \begin{definition}[Discrete Gaussian Distribution \cite{GJS15}]
   The discrete Gaussian distribution $D_{\Lambda, s, \mathbf{c}}$ over an $m$-dimensional lattice $\Lambda$ with width parameter $s > 0$ and center $\mathbf{c}$ is the probability distribution we obtain by assigning each vector $\mathbf{x}\in \Lambda$ a probability proportional to $e^{-\pi \|\mathbf{x} - \mathbf{c}\|^2/s^2}$. If $\mathbf{c} = \mathbf{0}$ we simply write  $D_{\Lambda, s}$.
 \end{definition}
-A discrete Gaussian sampler over a lattice can be efficiently realized (see \cite{GPV08}). In order to avoid confusion, throughout this work we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$, and define $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
+A discrete Gaussian sampler over a lattice can be efficiently realized (see for example \cite{GPV08}). In order to avoid confusion, throughout this work we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$, and define $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
 
 % * better definition in GPV08 => different definition needed for LWE??? % TODO
 % * how to do this? => variant of Babai's ``nearest-plane'' algorithm, see \cite{GPV08} % TODO
@@ -499,10 +480,8 @@ A discrete Gaussian sampler over a lattice can be efficiently realized (see \cit
 
 
 
-\section{Two Important Problems}\label{sec:problems}
-In \cref{sec:intro} we informally introduced two important problems, namely, the Learning with Errors and the Short Integer Solution problems, that constitute the main focus of this work. We will now describe them in more detail.
-
-
+\section{LWE and SIS}\label{sec:problems}
+In \cref{sec:intro} we informally introduced the Learning with Errors (LWE) problem and the Short Integer Solution (SIS) problem that constitute the main focus of this work. Both problems have given rise to a great variety of cryptosystems, in particular, in the context of the imminent advent of quantum computing. Hence, their importance in modern cryptography cannot be understated. We will now continue to describe them in more detail.
 
 \subsection{Learning with Errors (LWE)} \label{sec:lwe}
 The \textit{Learning with Errors} (LWE) problem asks us to recover some secret vector $\mathbf{s} \in \mathbb{Z}_q^n$ from a sequence of perturbed random linear equations on $\mathbf{s}$. The perturbed linear equations, also called samples, are of form $\langle\mathbf{a}_i, \mathbf{s}\rangle + e_i \mod q$, where $\mathbf{a}_i \in \mathbb{Z}_q^n$ are $e_i$ are an error term. We obtain a total of $m$ samples and can thus also express the equation system that is to be solved as $\mathbf{z} = \mathcal{A}^\intercal \mathbf{s} + \mathbf{e} \mod q$, where $\mathcal{A} \in \mathbb{Z}^{n \times m}$ and $\mathbf{e} \in \mathbb{Z}^m$. Note that we only know $\mathbf{z}$ and $\mathbf{A}$. A formal definition follows.
@@ -514,7 +493,7 @@ The \textit{Learning with Errors} (LWE) problem asks us to recover some secret v
   \end{equation}
 \end{definition}
 
-Additions are performed in $\mathbb{Z}_q$. In the case that $q=2$, LWE corresponds to the \textit{Learning Parity with Noise} (LPN) problem. % TODO still needed with Search-LWE\ldots???
+Additions are performed in $\mathbb{Z}_q$. In the case of $q=2$ the LWE problem corresponds to the \textit{Learning Parity with Noise} (LPN) problem. % TODO still needed with Search-LWE\ldots???
 We distinguish between two versions of LWE.
 
 % TODO: error distribution => gaussian, paramter alpha, define?
@@ -545,7 +524,7 @@ We request $m$ samples $(\mathbf{a}_1, z_1), \ldots, (\mathbf{a}_m, z_m)$ where 
 \begin{equation} \label{eq:lwe-decoding}
   \mathbf{z} =  \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}
 \end{equation}
-with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word (see \cref{sec:linear-code}). Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$.
+with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word (see \cref{sec:linear-code} for more details about linear codes). Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$.
 
 We can transform an LWE$_{n, q, m, \chi}$ instance with a secret vector $\mathbf{s}$ chosen according to a uniform distribution into an LWE$_{n, q, m-n, \chi}$ instance with a secret vector $\hat{\mathbf{s}}$ chosen according to the error distribution $\chi$ at a loss of $n$ samples as follows \cite{GJS15}: Let $\mathbf{A}_0 = \left[ \mathbf{a}_1 \cdots \mathbf{a}_n\right]$ where $\mathbf{a}_1, \ldots, \mathbf{a}_n$ are the first $n$ columns of $\mathbf{A}$. We introduce new variables $\hat{\mathbf{s}} = \mathbf{A}^\intercal_0 \mathbf{s}  - \left[z_1, \ldots, z_n\right]^\intercal = \left[e_0, \ldots, e_n\right]^\intercal$ and $\hat{\mathbf{A}} = \mathbf{A}_0^{-1} \mathbf{A} = \left[\mathbf{I} \; \hat{\mathbf{a}}_{n+1} \cdots \hat{\mathbf{a}}_{m}\right]$ and compute $\hat{\mathbf{z}} = \mathbf{z} -  \hat{\mathbf{A}}^\intercal \left[z_1, \ldots, z_n\right]^\intercal  = \left[\mathbf{0}, \hat{z}_{n+1} \cdots \hat{z}_{m} \right]^\intercal$. Our new LWE instance has samples $(\hat{\mathbf{a}}_{n+1}, \hat{z}_{n+1}), \dots, (\hat{\mathbf{a}}_{m}, \hat{z}_{m})$. \label{sec:lwe-transform-distro}
 % TODO: where do we need that? maybe move there, cite somewhere \e.g. KF15, ACPS, BLPRS13 classical hardness of learning with errors
@@ -583,7 +562,7 @@ We obtain similar hardness results as for LWE. Micciancio and Regev show a reduc
 % TODO: application, perhaps something as in file:///C:/Users/Nico/OneDrive/Studium/Informatik/6BA/Supplemental%20Material/[BC%20Micciancio]%20The%20Short%20Integer%20Solutions%20Problem%20and%20Cryptographic%20Applications.pdf would be nice
 
 
-\subsection{Ring and Module Variants}
+\subsection{Ring and Module Variants}\label{sec:ring-module}
 In practice, the base variants of LWE and SIS are not used due to large key sizes required for secure cryptoschemes. Consider the matrix $\mathbf{A} \in \mathbb{Z}_q^{m \times n}$. We usually require $m \in \Omega(n)$ which gives us at least a quadratic space complexity. We therefore want to decrease our key sizes. A way to do this is by using rings and modules as the underlying structure of LWE and SIS. Explaining the details regarding the ring and module variants of both problems would go beyond the scope of this work. Hence we will only provide a rough intuition following \cite{Reg10} and define the various problem variants of LWE and SIS. All of them are included in our tool.
 
 Consider the following choice for $\mathbf{A}$ . We set $n=2^k$ for some $k > 0$ and choose the column vectors $\mathbf{a}$ of $\mathbf{A}$ in groups of size $n$. In each group we sample $\mathbf{a}_1 = [a_1, \ldots, a_n]^\intercal$ from the uniform distirbution over $\mathbb{Z}_q^{n}$. The remaining columns are rotations $\mathbf{a}_i = [a_i, \ldots, a_n, -a_1, \ldots, -a_{i-1}]^\intercal$ of the first vector in the group. Hence, a block of $n\times n$ only needs $O(n)$ memory reducing the size of $\mathbf{A}$ by a factor of $n$. In addition, it is possible to achieve speedups in the operations by means of the Fast Fourier Transformation.

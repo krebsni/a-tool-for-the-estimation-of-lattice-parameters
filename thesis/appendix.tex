@@ -1,38 +1,51 @@
+\chapter{Additional Math}
+\section{Linear Codes} \label{sec:linear-code} % TODO maybe move to Coded BKW, maybe too much...
+Let $\mathbb{F}_q^n$ be the $n$-dimensional vector space over the field $\mathbb{F}_q$. A $q$-ary linear code $\mathcal{C}$ or $[n, k]$-code \cite{VanLint12} is a $k$-dimensional linear subspace of $\mathbb{F}_q^n$ such that $\mathbf{0} \in \mathcal{C}$, $\mathbf{x} + \mathbf{y} \in \mathcal{C}$ for all $\mathbf{x}, \mathbf{y} \in \mathcal{C}$ and $\gamma \mathbf{x} \in \mathcal{C}$ for $\mathbf{x} \in \mathcal{C}, \gamma \in \mathbb{F}_q$. There are $q^k$ different codewords in $\mathcal{C}$.
+
+Let $\mathcal{C}$ be a $q$-ary linear $[n, k]$-code. The lattice over $\mathcal{C}$ \cite{GJS15} is defined as
+\begin{equation}
+    \Lambda(\mathcal{C}) = \left\{ \mathbf{x} \in \mathbb{R}^n \mid \exists \mathbf{y} \in \mathcal{C} : \mathbf{x} = \mathbf{y} \mod q  \right\}.
+\end{equation} % TODO check
+Similarly, for a lattice $\Lambda(\mathbf{B})$ a lattice code $\mathcal{C}$ defined by $\Lambda(\mathbf{B})$ and a shaping region $\mathcal{V} \subset \mathbb{R}^n$ (e.g. the Voronoi region, see \cref{eq:voronoi-region}) is a subspace of $\mathbb{R}^n$ such that all codewords are lattice vectors in $\Lambda(\mathbf{B})$ within the region $\mathcal{V}$ \cite{SFS08}:
+\begin{equation}
+    \mathcal{C} = \left\{ x \in \Lambda(\mathbf{B}) \mid x \in \mathcal{V} \right\}.
+\end{equation} % TODO check
+
 \chapter{Tables}
 \section{Mapping of Parameters in Referenced Papers}
 \begin{table}
     \centering
     \begin{tabular}[h]{lll}
         \toprule
-        Parameters in \cite{LPR13} & Use Here & Represents                    \\\hline
-        $l$                        & $m+d$    & width of matrix $\mathbf{A}$  \\
-        $k$                        & $m$      & height of matrix $\mathbf{A}$ \\
+        Parameters in \cite{LPR13} & Noation here & Represents                    \\\hline
+        $l$                        & $m+d$        & width of matrix $\mathbf{A}$  \\
+        $k$                        & $m$          & height of matrix $\mathbf{A}$ \\
         \bottomrule
     \end{tabular}
-    \caption{Parameter Mapping from \cite{LPR13}}\label{tab:mapping-LPR13}
+    \caption{Parameter mapping from \cite{LPR13}}\label{tab:mapping-LPR13}
     \vspace{1cm}
     \centering
     \begin{tabular}[h]{lll}
         \toprule
-        Parameters in \cite{BDLOP18} & Use Here & Represents                                         \\\hline
-        $k$                          & $m+d$    & width of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$  \\
-        $n$                          & $m$      & height of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$ \\
-        $d$                          & $d_2$    & variable                                           \\
-        $N$                          & $n$      & degree of Ring polynomial                          \\
+        Parameters in \cite{BDLOP18} & Noation Here & Represents                                         \\\hline
+        $k$                          & $m+d$        & width of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$  \\
+        $n$                          & $m$          & height of matrix $[ \mathbf{I}_n \; \mathbf{A}' ]$ \\
+        $d$                          & $d_2$        & variable                                           \\
+        $N$                          & $n$          & degree of Ring polynomial                          \\
         \bottomrule
     \end{tabular}
-    \caption{Parameter Mapping from \cite{BDLOP18}}\label{tab:mapping-BDLOP18}
+    \caption{Parameter mapping from \cite{BDLOP18}}\label{tab:mapping-BDLOP18}
     \vspace{1cm}
     \centering
     \begin{tabular}[h]{lll}
         \toprule
-        Parameters in \cite{DOTT21} & Use Here & Represents                            \\\hline
-        $m'$                        & $m+d$    & width of matrix $\hat{\mathbf{A}}_1$  \\
-        $m$                         & $m$      & height of matrix $\hat{\mathbf{A}}_1$ \\
-        $B$                         & $B$      & norm-bound of secret                  \\
-        $s$                         & $s$      & Gaussian width (not stddev)           \\
-        $N$                         & $n$      & degree of polynomial                  \\
+        Parameters in \cite{DOTT21} & Noation Here & Represents                            \\\hline
+        $m'$                        & $m+d$        & width of matrix $\hat{\mathbf{A}}_1$  \\
+        $m$                         & $m$          & height of matrix $\hat{\mathbf{A}}_1$ \\
+        $B$                         & $B$          & norm-bound of secret                  \\
+        $s$                         & $s$          & Gaussian width (not stddev)           \\
+        $N$                         & $n$          & degree of polynomial                  \\
         \bottomrule
     \end{tabular}
-    \caption{Parameter Mapping from \cite{DOTT21}}\label{tab:mapping-DOTT21}
+    \caption{Parameter mapping from \cite{DOTT21}}\label{tab:mapping-DOTT21}
 \end{table}
