@@ -338,7 +338,7 @@ Similar to a quotient ring $\mathbb{Z}/q\mathbb{Z}$ of integers modulo some posi
 \end{equation}
 where $\mathbf{c} \in \mathbb{R}^m$ \cite{Pei16}. % TODO: maybe add plot
 
-An important concept is the \textit{fundamental domain} of a lattice. The fundamental domain is a subset of $\mathbb{R}^m$ that contains exactly one representative of every coset of $\mathbf{R}^m/\mathbf{\Lambda}$. The most commonly considered fundamental domain of a lattice with basis $\mathbf{B}$ is the (shifted) \textit{fundamental parallelipiped}
+An important concept is the \textit{fundamental domain} of a lattice. The fundamental domain is a subset of $\mathbb{R}^m$ that contains exactly one representative of every coset of $\mathbb{R}^m/\mathbf{\Lambda}$. The most commonly considered fundamental domain of a lattice with basis $\mathbf{B}$ is the (shifted) \textit{fundamental parallelipiped}
 \begin{equation} \label{eq:fundamental-parallelipiped}
   \mathcal{P}_{\frac{1}{2}}(\mathbf{B}) = \mathbf{B} \cdot \left[ - \frac{1}{2}, \frac{1}{2}\right)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \;\middle|\; \mathbf{x} = \sum_{i=1}^n c_i \mathbf{b}_i, \; c_i \in  \left[ - \frac{1}{2}, \frac{1}{2}\right) \right\}
 \end{equation}
@@ -365,7 +365,7 @@ The \textit{Gaussian heuristic} is commonly used to estimate the minimum distanc
 \begin{equation}\label{eq:gaussian-heuristic}
   \lambda_1(\Lambda) \approx \frac{\Gamma(1 + n/2)^{1/n}}{\sqrt{\pi}} \det(\Lambda)^{1/n}
 \end{equation}
-By applying Stirling's approximation as described in \cite{Gop16}, we can simply the estimate to
+By applying Stirling's formula to estimate the $\Gamma$-function as described in \cite{Gop16}, we can simply the estimate to
 \begin{equation}\label{eq:simplified-gaussian-heuristic}
   \lambda_1(\Lambda) \approx \sqrt{\frac{n}{2\pi e}} \det(\Lambda)^{1/n}
 \end{equation}
@@ -386,7 +386,7 @@ Finding a short vector in $\Lambda_q^\perp(\mathbf{A})$ corresponds to solving t
 
 % TODO: find basis of $\Lambda_q(\mathbf{A})$ \cite{AFG13}
 
-In many scenarios, it is convenient to have an explicit formula that descibes the relationship between the determinant of the above two lattices and the dimensions of $\mathbf{A}$. For $q$ prime and $m$ sufficiently larger than $n$ we have that the rank of $\mathbf{A}$ is $n$ as the rows of $\mathbf{A}$ are linearly independent with high probability. As a result, the lattice $\Lambda_q(\mathbf{A}^\intercal)$ has $q^n$ points in $\mathbf{Z}_q^m$.
+In many scenarios, it is convenient to have an explicit formula that descibes the relationship between the determinant of the above two lattices and the dimensions of $\mathbf{A}$. For $q$ prime and $m$ sufficiently larger than $n$ we have that the rank of $\mathbf{A}$ is $n$ as the rows of $\mathbf{A}$ are linearly independent with high probability. As a result, the lattice $\Lambda_q(\mathbf{A}^\intercal)$ has $q^n$ points in $\mathbb{Z}_q^m$.
 Consider the fundamental domain $D = \mathcal{P}(\Lambda_q(\mathbf{A}^\intercal))$ and the fact that $\Lambda_q(\mathbf{A}^\intercal) + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition as described in \cite{volume-lattice}. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda_q(\mathbf{A}^\intercal)||D \mod q|$ and thus
 \begin{equation}\label{eq:det-MR}
   \text{det}(\Lambda_q(\mathbf{A}^\intercal)) = |D \mod q| = \frac{q^m}{|\Lambda_q(\mathbf{A}^\intercal)|} = \frac{q^{m}}{q^{n}} = q^{m-n}.

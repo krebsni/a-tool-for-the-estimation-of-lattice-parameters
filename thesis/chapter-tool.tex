@@ -27,7 +27,7 @@ We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-\texttt{sec}}$ with $\beta = \|\ma
 \end{align*}
 
 \begin{theorem}[Gaussian to Bound]
-    Given a Gaussian distribution $D_{\mathbf{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $\texttt{sec}$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbf{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-\texttt{sec}}$ as follows:
+    Given a Gaussian distribution $D_{\mathbb{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $\texttt{sec}$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbb{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-\texttt{sec}}$ as follows:
     \begin{equation}
         \beta  \approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
     \end{equation}
@@ -59,7 +59,7 @@ and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 % TODO: make sure that it is clear that these are bounds!!!
 In practical scenarios, oftentimes we require that the bound of a result does not exceed a certain value to guarantee correctness. In addition, we have seen that estimation algorithms rely on bounds in different $\ell_p$-norms. For example, the combinatorial attack in \cref{sec:combinatorial} needs a bound in $\ell_\infty$ norm, whereas the dual attack in \cref{sec:dual-attack} uses bounds in the Euclidean norm. We thus need a way to bound a value of a bound in one norm by a value in a different norm. In our tool, we define a norm class with parameter $p$ and provide a  method $\texttt{to\_lp()}$ for conversions into all other norms mentioned here. Recall the norm definitions in \cref{sec:norms}.
 
-It is easy to see that for any $\infty \geq p \geq q \geq 1$ the following two inequations hold
+It is easy to see that for any $p, q \in \mathbb{N}$ with $\infty \geq p \geq q \geq 1$ the following two inequations hold
 \begin{align}
     \| f \|_p & \leq \| f \|_q \label{eq:norm-inf-leq-1}.
 \end{align} % maybe replace norm4 with this one % maybe replace norm4 with this one
@@ -95,7 +95,7 @@ Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\the
 \begin{theorem}[Relationships Between Norm Bounds \cite{BDLOP18,DPSZ12}]\label{th:norm-rel}
     Given a ring element $f \in \mathcal{O}_K$ as defined above, then we can bound norms by $\ell_p$-norms as follows:
     \begin{itemize}
-        \item From \cref{eq:norm-1-leq-inf}, it follows that
+        \item From \cref{eq:norm-1-leq-inf} it follows that
               \begin{equation}\label{eq:l1-to-p}
                   \begin{aligned}
                       \| f \|_1 & \leq n^{1 - \frac{1}{2}} \| f \|_2 = \sqrt{n} \| f \|_2, \\
@@ -103,18 +103,18 @@ Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\the
                       \| f \|_1 & \leq n^{1 - 0} \| f \|_\infty = n \| f \|_\infty.
                   \end{aligned}
               \end{equation}
-        \item From \cref{eq:norm-inf-leq-1}, it follows that
+        \item From \cref{eq:norm-inf-leq-1} it follows that
               \begin{align}
                   \| f \|_2 & \leq \sqrt{n}  \| f \|_1.
               \end{align}
-              From \cref{eq:norm-1-leq-inf} and with $2\leq p < \infty$, we get that
+              From \cref{eq:norm-1-leq-inf} and with $2\leq p < \infty$ it follows that
               \begin{equation}\label{norm2}
                   \begin{aligned}
                       \| f \|_2 & \leq n^{\frac{1}{2} - \frac{1}{p}} \| f \|_p,                      \\
                       \| f \|_2 & \leq n^{\frac{1}{2} - 0} \| f \|_\infty =\sqrt{n}  \| f \|_\infty.
                   \end{aligned}
               \end{equation}
-        \item From \cref{eq:norm-1-leq-inf,eq:norm-inf-leq-1} and with $p\geq 2$, it holds that
+        \item From \cref{eq:norm-1-leq-inf,eq:norm-inf-leq-1} and with $p\geq 2$ it follows that
               \begin{equation}\label{norm1}
                   \begin{aligned}
                       \| f \|_p & \leq  \| f \|_1,               \\
@@ -122,7 +122,7 @@ Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\the
                       \| f \|_p & \leq \sqrt{n}  \| f \|_\infty.
                   \end{aligned}
               \end{equation}
-        \item From \cref{eq:norm-inf-leq-1}, it follows that
+        \item From \cref{eq:norm-inf-leq-1} it follows that
               \begin{align*}
                   \| f \|_\infty & \leq  \| f \|_1, \\
                   \| f \|_\infty & \leq  \| f \|_2, \\
@@ -138,10 +138,10 @@ Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\the
     \end{itemize}
     Likewise, we get the following bounds for the $\ell_\infty$-norm on the canonical embedding which we call $\mathcal{C}_\infty$:
     \begin{itemize}
-        \item From \cref{eq:l1-to-p,norm5}, it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
-        \item From \cref{norm2,norm5}, it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
-        \item From \cref{norm1,norm5}, it follows that $\| f \|_p \leq  \sqrt{n} \| \sigma(f) \|_\infty$ for $2 < p < \infty$.
-        \item From \cref{norm5}, it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
+        \item From \cref{eq:l1-to-p,norm5} it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
+        \item From \cref{norm2,norm5} it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+        \item From \cref{norm1,norm5} it follows that $\| f \|_p \leq  \sqrt{n} \| \sigma(f) \|_\infty$ for $2 < p < \infty$.
+        \item From \cref{norm5} it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
     \end{itemize}
 \end{theorem}
 
