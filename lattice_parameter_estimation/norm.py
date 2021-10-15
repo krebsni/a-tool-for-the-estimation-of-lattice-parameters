@@ -1,23 +1,30 @@
 r"""
-Module for norms and norm transformation.
+Module for norms and norm bound conversions.
 
-From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f \in \mathcal{R}_q` with :math:`f = \sum_i f_i X^i`. Then the following inequations hold:
+Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f \in \mathcal{R}_q` with :math:`f = \sum_i f_i X^i`. 
+
+It is easy to see that for any :math:`p, q \in \mathbb{N}` with :math:`\infty \geq p \geq q \geq 1` the following inequation holds:
 
 .. math::
     \begin{align}
-        \| f \|_1 &\leq \sqrt{n} \| f \|_2 \label{norm1} \tag{1}\\
-        \| f \|_1 &\leq n \| f \|_\infty \label{norm2} \tag{2}\\
-        \| f \|_2 &\leq \sqrt{n} \| f \|_\infty \;\;(\text{since }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \tag{3}\\
-        \| f \|_\infty& \leq \| f \|_1 \label{norm4} \tag{4}
+        \| f \|_p & \leq \| f \|_q \label{norm1}. \tag{1}
+    \end{align}
+In addition, if we apply Hölder's inequality to finite vector spaces as in `Relations between p-norms<https://math.stackexchange.com/questions/218046/relations-between-p-norms>`_, the following holds:
+
+For :math:`1 \leq p \leq q \leq \infty` it holds that
+
+.. math::
+    \begin{align}
+        \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q'. \label{norm2} \tag{2}
     \end{align}
 
 
-And from :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number and :math:`\sigma` denote the canonical embedding as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1`):
+From :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number and :math:`\sigma` denote the canonical embedding as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1` due to :math:`m` power of :math:`2`):
 
 .. math::
     \begin{align}
-        \| f \|_\infty &\leq \| \sigma(f) \|_\infty \label{norm5} \tag{5}\\
-        \| \sigma(f) \|_\infty &\leq \| f \|_1 \label{norm6} \tag{6}
+        \| f \|_p \leq n^{\frac{1}{p}} \| f \|_\infty &\leq n^{\frac{1}{p}} \| \sigma(f) \|_\infty \label{norm3} \tag{3}\\
+        \| \sigma(f) \|_\infty &\leq \| f \|_1 \leq n^{1 - \frac{1}{p}}\| f \|_p \label{norm4} \tag{4}
     \end{align}
 """
 
@@ -29,16 +36,19 @@ from abc import abstractmethod
 import sage.all
 from sage.functions.other import sqrt
 import estimator as est
+
 oo = est.PlusInfinity()
+
 
 class BaseNorm(ABC):
     """
     Provides norm transformations and property access to value in norm and dimension.
     """
+
     @abstractmethod
     def to_L1(self, dimension=None):
         pass
-    
+
     @abstractmethod
     def to_L2(self, dimension=None):
         pass
@@ -53,7 +63,6 @@ class BaseNorm(ABC):
 
 
 class Lp(BaseNorm):
-    
     def __init__(self, value, p, dimension):
         """
         :param value: value of :math:`L_p`-norm of a vector
@@ -66,72 +75,113 @@ class Lp(BaseNorm):
             raise ValueError("Dimension must be specified.")
         self.dimension = dimension
 
-    def to_L1(self, dimension=None):
+    def to_Lp(self, p, dimension=None):
         r"""
-        From :math:`\ref{norm1}`, it follows that :math:`\| f \|_1 \leq \sqrt{n} \| f \|_2` and from :math:`\ref{norm2}`, :math:`\| f \|_1 \leq n \| f \|_\infty`.
-            
-        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_1`-norm of the vector
-        """
-        if dimension is None:
-            dimension = self.dimension
-            if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension")
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm1}` and :math:`\ref{norm2}`.
 
-        if self.p == 1:
-            return Lp(value=self.value, p=1, dimension=dimension)
-        elif self.p == 2:
-            return Lp(value=self.value * sqrt(dimension), p=1, dimension=dimension)
-        elif self.p == oo:
-            return Lp(value=self.value * dimension, p=1, dimension=dimension)
-        else:
-            raise ValueError(f"L{self.p}-norm not supported")
-
-    def to_L2(self, dimension=None):
-        r"""
-        From :math:`\ref{norm3}` and :math:`\ref{norm4}`, it follows that :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_1` and from :math:`\ref{norm3}`, :math:`\| f \|_2 \leq \sqrt{n}  \| f \|_\infty`.
-
+        :param p: norm parameter of target norm
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
         if dimension is None:
             dimension = self.dimension
             if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
 
-        if self.p == 1:
-            return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
-        elif self.p == 2:
-            return Lp(value=self.value, p=2, dimension=dimension)
-        elif self.p == oo:
-            return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
+        if p >= self.p:
+            return Lp(value=self.value, p=p, dimension=dimension)
         else:
-            raise ValueError(f"L{self.p}-norm not supported")
+            return Lp(
+                value=self.value * dimension ** (1 / p - 1 / self.p),
+                p=p,
+                dimension=dimension,
+            )
+
+    def to_L1(self, dimension=None):
+        r"""
+        Calculate norm bound in :math:`\ell_1`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm1}` and :math:`\ref{norm2}`.
+
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`L_1`-norm of the vector
+        """
+        return self.to_Lp(self, p=1, dimension=dimension)
+        # TODO
+        # if dimension is None:
+        #     dimension = self.dimension
+        #     if self.dimension is None:
+        #         raise ValueError(
+        #             "Dimension must be specified as the object has not be initialized with a dimension"
+        #         )
+
+        # if self.p == 1:
+        #     return Lp(value=self.value, p=1, dimension=dimension)
+        # elif self.p == 2:
+        #     return Lp(value=self.value * sqrt(dimension), p=1, dimension=dimension)
+        # elif self.p > 2 and self.p < oo:
+        #     return Lp(
+        #         value=self.value * dimension ** (1 - 1 / self.p),
+        #         p=1,
+        #         dimension=dimension,
+        #     )
+        # elif self.p == oo:
+        #     return Lp(value=self.value * dimension, p=1, dimension=dimension)
+        # else:
+        #     raise ValueError(f"L{self.p}-norm not supported")
+
+    def to_L2(self, dimension=None):
+        r"""
+        Calculate norm bound in :math:`\ell_2`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm1}` and :math:`\ref{norm2}`.
+
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`L_2`-norm of the vector
+        """
+        return self.to_Lp(self, p=2, dimension=dimension)
+        # TODO
+        # if dimension is None:
+        #     dimension = self.dimension
+        #     if self.dimension is None:
+        #         raise ValueError(
+        #             "Dimension must be specified as the object has not be initialized with a dimension."
+        #         )
+
+        # if self.p == 1:
+        #     return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
+        # elif self.p == 2:
+        #     return Lp(value=self.value, p=2, dimension=dimension)
+        # elif self.p > 2 and self.p < oo:
+        #     return Lp(
+        #         value=self.value * dimension ** (0.5 - 1 / self.p),
+        #         p=2,
+        #         dimension=dimension,
+        #     )
+        # elif self.p == oo:
+        #     return Lp(value=self.value * sqrt(dimension), p=2, dimension=dimension)
+        # else:
+        #     raise ValueError(f"L{self.p}-norm not supported")
 
     def to_Loo(self, dimension=None):
         r"""
-        From :math:`\ref{norm4}`, it follows that :math:`\| f \|_\infty \leq  \| f \|_1` and from :math:`\ref{norm1}` and :math:`\ref{norm4}`, :math:`\| f \|_\infty \leq \sqrt{n}  \| f \|_2`.
+        Calculate norm bound in :math:`\ell_\infty`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm1}` and :math:`\ref{norm2}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
+        return self.to_Lp(self, p=2, dimension=dimension)
+        # TODO
         if dimension is None:
             dimension = self.dimension
             if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
-                
-        if self.p == 1:
-            return Lp(value=self.value, p=oo, dimension=dimension)
-        elif self.p == 2:
-            return Lp(value=self.value * sqrt(dimension), p=oo, dimension=dimension)
-        elif self.p == oo:
-            return Lp(value=self.value, p=oo, dimension=dimension)
-        else:
-            raise ValueError(f"L_{self.p}-norm not supported")
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
+
+        return Lp(value=self.value, p=oo, dimension=dimension)
 
     def to_Coo(self, dimension=None):
         r"""
-        From :math:`\ref{norm6}`, it follows that :math:`\| \sigma(f) \|_\infty \leq  \| f \|_1`, from :math:`\ref{norm1}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq \sqrt{n}  \| f \|_2`, and from :math:`\ref{norm2}` and :math:`\ref{norm6}`, :math:`\| \sigma(f) \|_\infty \leq n  \| f \|_\infty`.
+        Calculate norm bound in :math:`\ell_\infty`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm3}`:
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`C_\infty`-norm of the vector
@@ -139,36 +189,28 @@ class Lp(BaseNorm):
         if dimension is None:
             dimension = self.dimension
             if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
-                
-        if self.p == 1:
-            return Coo(value=self.value, dimension=dimension)
-        elif self.p == 2:
-            return Coo(value=self.value * sqrt(dimension), dimension=dimension)
-        elif self.p == oo:
-            return Coo(value=self.value * dimension, dimension=dimension)
-        else:
-            raise ValueError(f"L{self.p}-norm not supported")
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
 
-    def to(self, target_norm : BaseNorm):
-        """ 
-        Transform norm instance into same norm as ``target_norm``.
-        
+        return Coo(
+            value=self.value * dimension ** (1 - 1 / self.p), dimension=dimension
+        )
+
+    def to(self, target_norm: BaseNorm):
+        """
+        Convert norm bound in given :math:`\ell_p`-norm into same norm as ``target_norm``.
+
         :param target_norm: instance with target norm of norm transformation
         """
         if isinstance(target_norm, Lp):
-            if target_norm.p == 1:
-                return self.to_L1(self.dimension)
-            if target_norm.p == 2:
-                return self.to_L2(self.dimension)
-            if target_norm.p == oo:
-                return self.to_Loo(self.dimension)
+            return self.to_Lp(target_norm.p, self.dimension)
         elif isinstance(target_norm, Coo):
             return self.to_Coo(self.dimension)
         else:
             ValueError("target_norm could not be identified (not Lp or Coo).")
-    
-    def __add__(self, other : BaseNorm):
+
+    def __add__(self, other: BaseNorm):
         """
         Addition of two norm instances by converting ``other`` to norm of ``self``.
         """
@@ -176,26 +218,23 @@ class Lp(BaseNorm):
             TypeError(f"Cannot add {type(self)} to {type(other)}")
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
-        if isinstance(other, Coo):
-            return NotImplemented # use __add__ of Coo
+        if isinstance(other, Coo):  # TODO: remove
+            return NotImplemented  # use __add__ of Coo
 
         if self.p == other.p:
-            return Lp(value=self.value + other.value, p=self.p, dimension=self.dimension)
+            return Lp(
+                value=self.value + other.value, p=self.p, dimension=self.dimension
+            )
         else:
-            if self.p == 1:
-                val = other.to_L1().value
-            if self.p == 2:
-                val = other.to_L2().value
-            if self.p == oo:
-                val = other.to_Loo().value
+            val = other.to_Lp(self.p, self.dimension)  # TODO: add to_Lp to Coo norm
             return Lp(value=self.value + val, p=self.p, dimension=self.dimension)
 
     def __sub__(self, other):
         return self.__add__(other)
 
     def __mul__(self, other):
-        r""" 
-        Multiply :math:`L_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`. 
+        r"""
+        Multiply :math:`L_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`.
 
         From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f, g \in \mathcal{R}_q`
 
@@ -204,9 +243,9 @@ class Lp(BaseNorm):
 
         And from :cite:`DPSZ12`: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number. Then, for :math:`x, y \in \mathcal{O}_K` it holds that
 
-        3. :math:`\| x \cdot y \|_\infty \leq C_m \cdot n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty`
-            
-        We assume that :math:`C_m = 1`.
+        3. :math:`\| \sigma(x \cdot y) \|_\infty \leq \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty`
+
+        (We assume that :math:`C_m = 1` in the original statement from the paper.)
         """
         if not isinstance(other, BaseNorm):
             try:
@@ -216,10 +255,16 @@ class Lp(BaseNorm):
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
         if self.p == oo and other.p == oo:
-            return Lp(value=self.dimension * self.value * other.value, p=oo, dimension=self.dimension)
-        elif (self.p == 1 and other.p == oo) \
-                or (self.p == oo and other.p == 1) \
-                or (self.p == 2 and other.p == 2):
+            return Lp(
+                value=self.dimension ** 2 * self.value * other.value,
+                p=oo,
+                dimension=self.dimension,
+            )
+        elif (
+            (self.p == 1 and other.p == oo)
+            or (self.p == oo and other.p == 1)
+            or (self.p == 2 and other.p == 2)
+        ):
             return Lp(value=self.value * other.value, p=oo, dimension=self.dimension)
         else:
             return self.to_Coo() * other.to_Coo()
@@ -230,13 +275,16 @@ class Lp(BaseNorm):
     def __str__(self) -> str:
         return f"{self.value} (L{self.p}-norm)"
 
+
 def L1(value, dimension) -> Lp:
     r"""Alias for Lp-norm with p=1. See :class:`Lp`."""
     return Lp(value=value, p=1, dimension=dimension)
 
+
 def L2(value, dimension) -> Lp:
     r"""Alias for Lp-norm with p=2. See :class:`Lp`."""
     return Lp(value=value, p=2, dimension=dimension)
+
 
 def Loo(value, dimension) -> Lp:
     r"""Alias for Lp-norm with p=oo. See :class:`Lp`."""
@@ -247,6 +295,7 @@ class Coo(BaseNorm):
     """
     Infinity norm of canonical embedding.
     """
+
     def __init__(self, value, dimension):
         r"""
         :param value: value of :math:`C_\infty`-norm of a vector
@@ -257,66 +306,65 @@ class Coo(BaseNorm):
         self.value = value
         self.dimension = dimension
 
-    def to_L1(self, dimension=None):
+    def to_Lp(self, p, dimension=None):
         r"""
-        From :math:`\ref{norm2}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_1 \leq  n \| \sigma(f) \|_\infty`.
-            
-        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_1`-norm of the vector
-        """
-        if dimension is None:
-            dimension = self.dimension
-            if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
-                
-        return Lp(value=self.value * self.dimension, p=1, dimension=dimension)
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_\infty`-norm by using Equations :math:`\ref{norm4}`.
 
-    def to_L2(self, dimension=None):
-        r"""
-        From :math:`\ref{norm3}` and :math:`\ref{norm5}`, it follows that :math:`\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty`.
-        
+        :param p: norm parameter of target norm
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_2`-norm of the vector
         """
         if dimension is None:
             dimension = self.dimension
             if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
-                
-        return Lp(value=self.value * sqrt(self.dimension), p=2, dimension=dimension)
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
+        return Lp(
+            value=self.value * dimension ** (1 / p),
+            p=p,
+            dimension=dimension,
+        )
+
+    def to_L1(self, dimension=None):
+        r"""
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_\infty`-norm by using Equations :math:`\ref{norm4}`.
+
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`L_1`-norm of the vector
+        """
+        return self.to_Lp(1, dimension=dimension)
+
+    def to_L2(self, dimension=None):
+        r"""
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_\infty`-norm by using Equations :math:`\ref{norm4}`.
+
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`L_2`-norm of the vector
+        """
+        return self.to_Lp(1, dimension=dimension)
 
     def to_Loo(self, dimension=None):
         r"""
-        From :math:`\ref{norm5}`, it follows that :math:`\| f \|_\infty \leq  \| \sigma(f) \|_\infty`.
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_\infty`-norm by using Equations :math:`\ref{norm4}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`L_\infty`-norm of the vector
         """
-        if dimension is None:
-            dimension = self.dimension
-            if self.dimension is None:
-                raise ValueError("Dimension must be specified as the object has not be initialized with a dimension.")
-                
-        return Lp(value=self.value, p=oo, dimension=dimension)
-    
-    def to(self, target_norm : BaseNorm):
-        """ 
+        return self.to_Lp(1, dimension=dimension)
+
+    def to(self, target_norm: BaseNorm):
+        """
         Transform norm instance into same norm as ``target_norm``.
-        
+
         :param target_norm: instance with target norm of norm transformation
         """
         if isinstance(target_norm, Lp):
-            if target_norm.p == 1:
-                return self.to_L1(self.dimension)
-            if target_norm.p == 2:
-                return self.to_L2(self.dimension)
-            if target_norm.p == oo:
-                return self.to_Loo(self.dimension)
+            return self.to_Lp(target_norm.p, dimension=self.dimension)
         elif isinstance(target_norm, Coo):
             return self.to_Coo(self.dimension)
         else:
             ValueError("target_norm could not be identified (not Lp or Coo).")
-            
 
     def to_Coo(self, dimension=None):
         r"""
@@ -324,14 +372,14 @@ class Coo(BaseNorm):
         :returns: upper bound of :math:`C_\infty`-norm of the vector
         """
         return self
-    
+
     def __add__(self, other):
         r"""Add two norms. Converts ``other`` to :math:`C_\infty`-norm."""
         if not isinstance(other, BaseNorm):
             raise TypeError(f"Cannot add {type(self)} to {type(other)}")
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
-        
+
         return Coo(value=self.value + other.to_Coo().value, dimension=self.dimension)
 
     def __radd__(self, other):
@@ -344,7 +392,7 @@ class Coo(BaseNorm):
         return self + other
 
     def __mul__(self, other):
-        r""" 
+        r"""
         Multiply :math:`C_\infty`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`. In the latter case ``other``is transformed to :math:`C_\infty`-norm.
 
         From :cite:`DPSZ12`: For :math:`x, y \in \mathcal{O}_K` it holds that
@@ -360,7 +408,7 @@ class Coo(BaseNorm):
                 TypeError(f"Cannot add {type(self)} to {type(other)}")
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
-        
+
         return Coo(value=self.value * other.to_Coo().value, dimension=self.dimension)
 
     def __rmul__(self, other):

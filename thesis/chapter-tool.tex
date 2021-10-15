@@ -57,22 +57,18 @@ and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 \section{Norms bound estimates} \label{sec:norm-bounds}% TODO: check
 %TODO: write some prose about why we need that
 % TODO: make sure that it is clear that these are bounds!!!
-In practical scenarios, oftentimes we require that the bound of a result does not exceed a certain value to guarantee correctness. In addition, we have seen that estimation algorithms rely on bounds in different $\ell_p$-norms. For example, the combinatorial attack in \cref{sec:combinatorial} needs a bound in $\ell_\infty$ norm, whereas the dual attack in \cref{sec:dual-attack} uses bounds in the Euclidean norm. We thus need a way to bound a value of a bound in one norm by a value in a different norm. In our tool, we define a norm class with parameter $p$ and provide a  method $\texttt{to\_lp()}$ for conversions into all other norms mentioned here. Recall the norm definitions in \cref{sec:norms}.
-
-It is easy to see that for any $p, q \in \mathbb{N}$ with $\infty \geq p \geq q \geq 1$ the following two inequations hold
-\begin{align}
-    \| f \|_p & \leq \| f \|_q \label{eq:norm-inf-leq-1}.
-\end{align} % maybe replace norm4 with this one % maybe replace norm4 with this one
-In addition, if we apply Hölder's inequality to finite vector spaces as in \cite{norm-relations} we obtain the following Lemma:
-\begin{lemma}
-    For $1 \leq p \leq q \leq \infty$ it holds that
+In practical scenarios, oftentimes we require that the bound of a result does not exceed a certain value to guarantee correctness. In addition, we have seen that estimation algorithms rely on bounds in different $\ell_p$-norms. For example, the combinatorial attack in \cref{sec:combinatorial} needs a bound in $\ell_\infty$ norm, whereas the dual attack in \cref{sec:dual-attack} uses bounds in the Euclidean norm. We thus need a way to bound a value of a bound in one norm by a value in a different norm. In our tool, we define a norm class with parameter $p$ and provide a  method $\texttt{to\_Lp()}$ for conversions into all other norms mentioned here. We begin by the following Theorem.
+\begin{theorem}\label{th:norm-rel1}
+    Let $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$ as in in \cite{BDLOP18} and $p, q \in \mathbb{N}$ with $\infty \geq p \geq q \geq 1$. Then the following inequation holds:
     \begin{align}
-        \lim_{q' \rightarrow q}\| f \|_p & \leq n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q' \label{eq:norm-1-leq-inf}
-    \end{align} % TODO: show full proof https://math.stackexchange.com/questions/218046/relations-between-p-norms
-\end{lemma}
-
-
-% \begin{proof}
+        \| f \|_p & \leq \| f \|_q \label{eq:norm-inf-leq-1}.
+    \end{align}
+    Let $p, q \in \mathbb{N}$ with $1 \leq p \leq q \leq \infty$. Then the following inequation holds:
+    \begin{align}
+        \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q' \label{eq:norm-1-leq-inf}.
+    \end{align}
+\end{theorem}
+% \begin{proof}% TODO: show full proof https://math.stackexchange.com/questions/218046/relations-between-p-norms
 %     Folowing \cite{norm-relations}, we apply Hölder's inequality on $n$ dimensional vector spaces. For $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$ Hölder's inequality states that
 %     \begin{align*}
 %         \sum_{i=1}^n |x_i| |y_i| \leq \left(\sum_{i=1}^n |a_i|^s\right)^{\frac{1}{s}}.
@@ -85,67 +81,78 @@ In addition, if we apply Hölder's inequality to finite vector spaces as in \cit
 %     \| f \|_2      & \leq \sqrt{n} \| f \|_\infty \;\;(\text{because of }  \sqrt{n} \| f \|_2 \leq n \| f \|_\infty) \label{norm3} \\
 %     \| f \|_\infty & \leq \| f \|_1 \label{norm4}
 % \end{align}
+It is easy to see from the definition of the norms in \cref{sec:norms} that \cref{eq:norm-inf-leq-1} is true. \cref{eq:norm-1-leq-inf} follows if we apply Hölder's inequality to finite vector spaces as in \cite{norm-relations}.
 
-Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, according to \cite[Theorem~7]{DPSZ12} for $f \in \mathcal{O}_K$  the following inequations hold: % TODO: why?
+In addition, oftentimes we consider norms in the canonical embedding. Let $\mathcal{O}_K$ be the ring of integers of a number field $K=\mathbb{Q}(\theta)$, where $\theta$ is an algebraic number and $\sigma$ denote the canonical embedding as defined in \cite{DPSZ12}. Then, according to \cite[Theorem~7]{DPSZ12} for $f \in \mathcal{O}_K$  the following inequations hold: % TODO: why?
 \begin{align}
     \| f \|_\infty         & \leq \| \sigma(f) \|_\infty \label{norm5}, \\
     \| \sigma(f) \|_\infty & \leq \| f \|_1 \label{norm6}.
 \end{align}
-(We assume that the constant $C_m$ used in the original Theorem is $1$ for $m$ a power of $2$ \cite[Lemma~3]{DPSZ12}.) From the above inequations, we obtain the following theorems that we use in the method $\texttt{to\_lp()}$.
-\begin{theorem}[Relationships Between Norm Bounds \cite{BDLOP18,DPSZ12}]\label{th:norm-rel}
-    Given a ring element $f \in \mathcal{O}_K$ as defined above, then we can bound norms by $\ell_p$-norms as follows:
-    \begin{itemize}
-        \item From \cref{eq:norm-1-leq-inf} it follows that
-              \begin{equation}\label{eq:l1-to-p}
-                  \begin{aligned}
-                      \| f \|_1 & \leq n^{1 - \frac{1}{2}} \| f \|_2 = \sqrt{n} \| f \|_2, \\
-                      \| f \|_1 & \leq n^{1 - \frac{1}{p}} \| f \|_p,                      \\
-                      \| f \|_1 & \leq n^{1 - 0} \| f \|_\infty = n \| f \|_\infty.
-                  \end{aligned}
-              \end{equation}
-        \item From \cref{eq:norm-inf-leq-1} it follows that
-              \begin{align}
-                  \| f \|_2 & \leq \sqrt{n}  \| f \|_1.
-              \end{align}
-              From \cref{eq:norm-1-leq-inf} and with $2\leq p < \infty$ it follows that
-              \begin{equation}\label{norm2}
-                  \begin{aligned}
-                      \| f \|_2 & \leq n^{\frac{1}{2} - \frac{1}{p}} \| f \|_p,                      \\
-                      \| f \|_2 & \leq n^{\frac{1}{2} - 0} \| f \|_\infty =\sqrt{n}  \| f \|_\infty.
-                  \end{aligned}
-              \end{equation}
-        \item From \cref{eq:norm-1-leq-inf,eq:norm-inf-leq-1} and with $p\geq 2$ it follows that
-              \begin{equation}\label{norm1}
-                  \begin{aligned}
-                      \| f \|_p & \leq  \| f \|_1,               \\
-                      \| f \|_p & \leq  \| f \|_2,               \\
-                      \| f \|_p & \leq \sqrt{n}  \| f \|_\infty.
-                  \end{aligned}
-              \end{equation}
-        \item From \cref{eq:norm-inf-leq-1} it follows that
-              \begin{align*}
-                  \| f \|_\infty & \leq  \| f \|_1, \\
-                  \| f \|_\infty & \leq  \| f \|_2, \\
-                  \| f \|_\infty & \leq \| f \|_p.
-              \end{align*}
-        \item From \cref{norm6,eq:l1-to-p} it follows that
-              \begin{align*}
-                  \| \sigma(f) \|_\infty \leq \| f \|_1,                     \\
-                  \| \sigma(f) \|_\infty \leq \sqrt{n} \| f \|_2,            \\
-                  \| \sigma(f) \|_\infty \leq n^{1 - \frac{1}{p}} \| f \|_p, \\
-                  \| \sigma(f) \|_\infty \leq n \| f \|_\infty.
-              \end{align*}
-    \end{itemize}
-    Likewise, we get the following bounds for the $\ell_\infty$-norm on the canonical embedding which we call $\mathcal{C}_\infty$:
-    \begin{itemize}
-        \item From \cref{eq:l1-to-p,norm5} it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
-        \item From \cref{norm2,norm5} it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
-        \item From \cref{norm1,norm5} it follows that $\| f \|_p \leq  \sqrt{n} \| \sigma(f) \|_\infty$ for $2 < p < \infty$.
-        \item From \cref{norm5} it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
-    \end{itemize}
+(We assume that the constant $C_m$ used in the original Theorem is $1$ for $m$ a power of $2$ \cite[Lemma~3]{DPSZ12}.) If we combine \cref{norm5,norm6} respectively with \label{eq:norm-1-leq-inf} we obtain the following theorem.
+\begin{theorem}\label{th:norm-rel2}
+    Let $f \in \mathcal{O}_K$ as in in \cite{DPSZ12}. Then, the following two inequations hold:
+    \begin{align}
+        \| \sigma(f) \|_\infty & \leq \| f \|_1 \leq n^{1 - \frac{1}{p}} \| f \|_p, \text{ and } \label{eq:Coo-norm}             \\
+        \| f \|_p              & \leq  n^{\frac{1}{p}} \| f \|_\infty \leq n^{\frac{1}{p}}  \| \sigma(f) \|_\infty \label{norm6}
+    \end{align}
 \end{theorem}
+We can thus bound a given bound in the norm $\ell_q$ for some $q$ by a bound in some $\ell_p$ norm using the above inequalities and analogously in the embedding norm, which we call $\mathcal{C}_\infty$. We combine both results in the method $\texttt{to\_lp()}$ in the norm classes $\texttt{Lp}$ and $\texttt{Coo}$.
 
-We also want to be able to add and multiply bounds from different norms. Note that the degree of the polynomial of the underlying ring to which we apply the norms must match. To add two bounds we simply bound the second addend by the used norm of the first as described in \cref{th:norm-rel} and add both bounds to obtain a bound in the norm of the first addend. It is slightly more complicated for multiplication and we state the results in the next theorem.
+% From the above inequations, we obtain the following theorems that we use in the method $\texttt{to\_lp()}$.
+% \begin{theorem}[Relationships Between Norm Bounds \cite{BDLOP18,DPSZ12}]\label{th:norm-rel}
+%     Given a ring element $f \in \mathcal{O}_K$ as defined above, then we can bound norms by $\ell_p$-norms as follows:
+%     \begin{itemize}
+%         \item From \cref{eq:norm-1-leq-inf} it follows that
+%               \begin{equation}\label{eq:l1-to-p}
+%                   \begin{aligned}
+%                       \| f \|_1 & \leq n^{1 - \frac{1}{2}} \| f \|_2 = \sqrt{n} \| f \|_2, \\
+%                       \| f \|_1 & \leq n^{1 - \frac{1}{p}} \| f \|_p,                      \\
+%                       \| f \|_1 & \leq n^{1 - 0} \| f \|_\infty = n \| f \|_\infty.
+%                   \end{aligned}
+%               \end{equation}
+%         \item From \cref{eq:norm-inf-leq-1} it follows that
+%               \begin{align}
+%                   \| f \|_2 & \leq \sqrt{n}  \| f \|_1.
+%               \end{align}
+%               From \cref{eq:norm-1-leq-inf} and with $2\leq p < \infty$ it follows that
+%               \begin{equation}\label{norm2}
+%                   \begin{aligned}
+%                       \| f \|_2 & \leq n^{\frac{1}{2} - \frac{1}{p}} \| f \|_p,                      \\
+%                       \| f \|_2 & \leq n^{\frac{1}{2} - 0} \| f \|_\infty =\sqrt{n}  \| f \|_\infty.
+%                   \end{aligned}
+%               \end{equation}
+%         \item From \cref{eq:norm-1-leq-inf,eq:norm-inf-leq-1} and with $p\geq 2$ it follows that
+%               \begin{equation}\label{norm1}
+%                   \begin{aligned}
+%                       \| f \|_p & \leq  \| f \|_1,                          \\
+%                       \| f \|_p & \leq  \| f \|_2,                          \\
+%                       \| f \|_p & \leq n^{\frac{1}{p} - 0}  \| f \|_\infty.
+%                   \end{aligned}
+%               \end{equation}
+%         \item From \cref{eq:norm-inf-leq-1} it follows that
+%               \begin{align*}
+%                   \| f \|_\infty & \leq  \| f \|_1, \\
+%                   \| f \|_\infty & \leq  \| f \|_2, \\
+%                   \| f \|_\infty & \leq \| f \|_p.
+%               \end{align*}
+%         \item From \cref{norm6,eq:l1-to-p} it follows that
+%               \begin{align*}
+%                   \| \sigma(f) \|_\infty \leq \| f \|_1,                     \\
+%                   \| \sigma(f) \|_\infty \leq \sqrt{n} \| f \|_2,            \\
+%                   \| \sigma(f) \|_\infty \leq n^{1 - \frac{1}{p}} \| f \|_p, \\
+%                   \| \sigma(f) \|_\infty \leq n \| f \|_\infty.
+%               \end{align*}
+%     \end{itemize}
+%     Likewise, we get the following bounds for the $\ell_\infty$-norm on the canonical embedding which we call $\mathcal{C}_\infty$:
+%     \begin{itemize}
+%         \item From \cref{eq:l1-to-p,norm5} it follows that $\| f \|_1 \leq  n \| \sigma(f) \|_\infty$.
+%         \item From \cref{norm2,norm5} it follows that $\| f \|_2 \leq  \sqrt{n} \| \sigma(f) \|_\infty$.
+%         \item From \cref{norm1,norm5} it follows that $\| f \|_p \leq  \sqrt{n} \| \sigma(f) \|_\infty$ for $2 < p < \infty$.
+%         \item From \cref{norm5} it follows that $\| f \|_\infty \leq  \| \sigma(f) \|_\infty$.
+%     \end{itemize}
+% \end{theorem}
+
+We also want to be able to add and multiply bounds from different norms. Note that the degree of the polynomial of the underlying ring to which we apply the norms must match. To add two bounds we simply bound the second addend by the used norm of the first as described in \cref{th:norm-rel1,th:norm-rel2} and add both bounds to obtain a bound in the norm of the first addend. It is slightly more complicated for multiplication and we state the results in the next theorem.
 
 \begin{theorem}[Multiplication of Norm Bounds \cite{BDLOP18, DPSZ12}]
     Let $f$ be defined as above and let $g \in \mathcal{R}_q$ where $g = \sum_i \overline{g}_i X^i$ where $g_i \in \left[-(q-1)/2, (q-1)/2\right]$ and $\overline{g}_i = g_i \mod q$ as in \cite{BDLOP18}. We then can define the following inequations for multiplication according to \cite{BDLOP18}:
@@ -155,12 +162,15 @@ We also want to be able to add and multiply bounds from different norms. Note th
         \item If $\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
     \end{itemize}
 
-    Let $x, y \in \mathcal{O}_K$. (Again, we assume that $C_m = 1$ in the original theorem.) Then, the following inequation holds according to \cite{DPSZ12}:
+    Let $x, y \in \mathcal{O}_K$. Then, the following inequation holds according to \cite{DPSZ12}:
     \begin{align*}
         \| x \cdot y \|_\infty         & \leq n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty         \\
         \| \sigma(x \cdot y) \|_\infty & \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty.
     \end{align*}
+    (Again, we assume that $C_m = 1$ in the original statement.)
 \end{theorem}
+
+If the two norms bounds that we want to multiply are given in a different norm, we simply convert the bounds to the $\mathcal{C}_\infty$ norm as described in \cref{eq:Coo-norm}.
 
 
 
