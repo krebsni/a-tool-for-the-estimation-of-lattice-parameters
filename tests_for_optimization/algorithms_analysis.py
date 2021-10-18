@@ -135,7 +135,7 @@ def alg_results_plotter(
 
 
 def alg_tests(test_lwe=True, test_sis=True):
-    long = True
+    long = False
     problem.REDUCE_PROBLEMS = False
     import time
 

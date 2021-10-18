@@ -261,7 +261,7 @@ We noted that the $\texttt{estimate()}$ function can be configured to run in par
 Note that classical and quantum cost models cannot be directly compared with each other. The number of operations per second that can be executed by a quantum computer may be significantly smaller than for classical computers. % TODO add more?
 
 If all are unselected custom cost models must be specified and passed as an argument. We included an option of taking the most conservative estimate for each category combination for a more efficient parameter search or estimation. Furthermore, we assigned a priority value on an ordinal scale to each cost model which enables us to first run cost models that yield a lower cost and thus terminate the estimation process earlier for an insecure parameter set. The priority values of the default cost models are derived from \cref{fig:costmodels}.
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering
     \begin{subfigure}{0.5\textwidth}
         \includegraphics[width=1\textwidth]{graphics/cost_models.pdf}
@@ -285,38 +285,42 @@ The number of BKZ rounds can be configured by passing a function with parameters
 
 
 \paragraph{Algorithms.} \label{sec:tool-algorithms} \cref{fig:SIS-algs}, \ref{fig:LWE-algs-small} and \ref{fig:LWE-algs-large} show the plots of runtime and performance tests for the various algorithms that can be used in our tool. In accordance with the results, we assigned priority values on an ordinal scale to the estimation algorithms. In \cref{tab:lwe-alg-prio} and \ref{tab:sis-alg-prio} we present the list of algorithms and their corresponding priority values and justify our choice. Algorithms with a smaller priority are expected to yield relatively good results quickly and can therefore be executed first. If the estimate result does not satisfy the specified security requirement we can terminate the estimation process early in order to maximize the efficiency of our search. Note that, while convenient, directly comparing the results for different algorithms is not always admissible as the compared algorithms may rely on different assumptions. Some algorithms may compute a more realistic cost while others may return a more conservative or even paranoid cost estimate (e.g. BKZ is used with the Core-SVP paranoid lower bound). The results have to be weighted carefully in order to guarantee the security of a given scheme in the forseable future while trying to keep the cost of using the scheme as low as possible. % TODO maybe move to conclusion...
-
-\begin{figure}[]
-    \centering
-    \begin{subfigure}{1\textwidth}
-        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_200s.pdf}
-    \end{subfigure}
-    \begin{subfigure}{1\textwidth}
-        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_1s.pdf}
-    \end{subfigure}
-    \caption{LWE instance with $\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-small}
-\end{figure}
-\begin{figure}[]
-    \centering
-    \begin{subfigure}{1\textwidth}
-        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.pdf}
-    \end{subfigure}
-    \begin{subfigure}{1\textwidth}
-        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.pdf}
-    \end{subfigure}
-    \caption{LWE instance with $\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-large}
-\end{figure}
-
-\begin{figure}[]
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{graphics/SIS_stddev=2,828_plots_1s.pdf}
     \caption{SIS instance with $\sigma=2.828,\; m=n^2, \; 2^{2n} < q < 2^{2n+1}$}\label{fig:SIS-algs}
 \end{figure}
 
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_200s.pdf}
+    \end{subfigure}
+    \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_1s.pdf}
+    \end{subfigure}
+    \caption{LWE instance with $\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-small}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.pdf}
+    \end{subfigure}
+    \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_1s.pdf}
+    \end{subfigure}
+    \caption{LWE instance with $\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-large}
+\end{figure}
+
+
 
 
 % TODO: how does dual attack without LLL work???
-\begin{table}
+\begin{table}[h!]
     \centering
     \begin{tabular}[]{lll}
         \toprule
