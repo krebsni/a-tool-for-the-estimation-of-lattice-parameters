@@ -88,12 +88,12 @@ In addition, oftentimes we consider norms in the canonical embedding. Let $\math
     \| f \|_\infty         & \leq \| \sigma(f) \|_\infty \label{norm5}, \\
     \| \sigma(f) \|_\infty & \leq \| f \|_1 \label{norm6}.
 \end{align}
-(We assume that the constant $C_m$ used in the original Theorem is $1$ for $m$ a power of $2$ \cite[Lemma~3]{DPSZ12}.) If we combine \cref{norm5,norm6} respectively with \label{eq:norm-1-leq-inf} we obtain the following theorem.
+(We assume that the constant $C_m$ used in the original Theorem is $1$ for $m$ a power of $2$ \cite[Lemma~3]{DPSZ12}.) If we combine \cref{norm5,norm6} respectively with \cref{eq:norm-1-leq-inf} we obtain the following theorem.
 \begin{theorem}\label{th:norm-rel2}
     Let $f \in \mathcal{O}_K$ as in in \cite{DPSZ12}. Then, the following two inequations hold:
     \begin{align}
         \| \sigma(f) \|_\infty & \leq \| f \|_1 \leq n^{1 - \frac{1}{p}} \| f \|_p, \text{ and } \label{eq:Coo-norm}             \\
-        \| f \|_p              & \leq  n^{\frac{1}{p}} \| f \|_\infty \leq n^{\frac{1}{p}}  \| \sigma(f) \|_\infty \label{norm6}
+        \| f \|_p              & \leq  n^{\frac{1}{p}} \| f \|_\infty \leq n^{\frac{1}{p}}  \| \sigma(f) \|_\infty \label{norm7}
     \end{align}
 \end{theorem}
 We can thus bound a given bound in the norm $\ell_q$ for some $q$ by a bound in some $\ell_p$ norm using the above inequalities and analogously in the embedding norm, which we call $\mathcal{C}_p$. We combine both results in the method $\texttt{to\_Lp()}$ and $\texttt{to\_Cp()}$ in the norm classes $\texttt{Lp}$ and $\texttt{Cp}$ respectively. Note that the embedding norm $\mathcal{C}_p$ internally works like the $\ell_p$ norm as we define both for vector spaces of dimension $n$. We merely need the results in \cref{th:norm-rel2} for the conversion between both norms.
@@ -116,7 +116,7 @@ We also want to be able to add and multiply bounds from different norms. Note th
     (Again, we assume that $C_m = 1$ in the original statement.)
 \end{theorem}
 
-If the two norms bounds that we want to multiply are given in a different norm, we simply convert the bounds to the $\mathcal{C}_\infty$ norm as described in \cref{eq:Coo-norm}. Analogously, we can multiply two bounds $\|\sigma(f)\|_p, \|\sigma(g)\|_q$ in the embedding norm by applying \cref{th:mult}. In the case of \label{eq:mult}, we have to recursively embedded $\sigma(f)$ and $\sigma(g)$. With \cref{norm6} we obtain
+If the two norms bounds that we want to multiply are given in a different norm, we simply convert the bounds to the $\mathcal{C}_\infty$ norm as described in \cref{eq:Coo-norm}. Analogously, we can multiply two bounds $\|\sigma(f)\|_p, \|\sigma(g)\|_q$ in the embedding norm by applying \cref{th:mult}. In the case of \cref{eq:mult}, we have to recursively embedded $\sigma(f)$ and $\sigma(g)$. Together with \cref{norm7} we obtain
 \begin{align*}
     \|\sigma(f) \cdot \sigma(g)\|_\infty & \leq \|\sigma(\sigma(f)\cdot \sigma(g))\|_\infty \leq \|\sigma(\sigma(f)) \|_\infty \cdot \| \sigma(\sigma(g))\|_\infty \\
                                          & \leq  n^{1-\frac{1}{p}}\|\sigma(f) \|_\infty \cdot n^{1-\frac{1}{q}} \|\sigma(f) \|_\infty.
@@ -251,19 +251,34 @@ Once we find an insecure problem instance (i.e. the estimated attack cost in clo
 \end{algorithm2e}
 
 
-\section{Estimation Configuration Options}
+\section{Estimation Configuration Options}\label{sec:config-options}
 The configuration of the estimation can be customized via the class $\texttt{algorithms.Configuration}$ which is passed as an optional argument of $\texttt{param\_search.generic\_search()}$.
 
 We noted that the $\texttt{estimate()}$ function can be configured to run in parallel which may speed up the search, in particular if many cost models need to be tested (e.g. with configuration setting $\texttt{conservative=False}$ and long running algorithms like $\texttt{ARORA\_GB}$, $\texttt{CODED\_BKW}$ and $\texttt{PRIMAL\_DECODE}$ are used. The list of used algorithms can be changed in the configuration. We recommend to include $\texttt{PRIMAL\_USVP}$ for LWE instances and $\texttt{LATTICE\_REDUCTION}$ for SIS instances to make full use of early termination since the estimate algorithms for these attacks have a short runtime and yield relatively low cost estimates.
 
-\paragraph{Cost Models.} Attacks that use BKZ for lattice reduction require a cost model to estimate the number of CPU cycles in the SVP subroutine. Default cost models are shown in \cref{tab:costmodels}. We distinguish between estimates for classical, quantum, sieving and enumeration and each of these categories can be deselected by setting the respective parameter to $\texttt{False}$. At least one of classical and quantum and of sieving and enumeration respectively must be selected to make use of the default cost models.
+\paragraph{Cost Models.} \label{sec:tool-costmodels} Attacks that use BKZ for lattice reduction require a cost model to estimate the number of CPU cycles in the SVP subroutine. Default cost models are shown in \cref{tab:costmodels}. We distinguish between estimates for classical, quantum, sieving and enumeration and each of these categories can be deselected by setting the respective parameter to $\texttt{False}$. At least one of classical and quantum and of sieving and enumeration respectively must be selected to make use of the default cost models.
 
 Note that classical and quantum cost models cannot be directly compared with each other. The number of operations per second that can be executed by a quantum computer may be significantly smaller than for classical computers. % TODO add more?
 
 If all are unselected custom cost models must be specified and passed as an argument. We included an option of taking the most conservative estimate for each category combination for a more efficient parameter search or estimation. Furthermore, we assigned a priority value on an ordinal scale to each cost model which enables us to first run cost models that yield a lower cost and thus terminate the estimation process earlier for an insecure parameter set. The priority values of the default cost models are derived from \cref{fig:costmodels}.
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.7\textwidth]{graphics/cost_models.png}
+    \begin{subfigure}{0.5\textwidth}
+        \includegraphics[width=1\textwidth]{graphics/cost_models.pdf}
+        \caption{All}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=1\textwidth]{graphics/cost_models_small_beta.pdf}
+        \caption{Small block size $\beta$}\label{fig:costmodels-small-beta}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+        \includegraphics[width=1\textwidth]{graphics/cost_models_enum.pdf}
+        \caption{Enumeration}\label{fig:costmodels-enum}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \includegraphics[width=1\textwidth]{graphics/cost_models_sieving.pdf}
+        \caption{Sieving}\label{fig:costmodels-sieving}
+    \end{subfigure}
     \caption{Cost models}\label{fig:costmodels}
 \end{figure}
 The number of BKZ rounds can be configured by passing a function with parameters $\texttt{beta, d}$ where $\texttt{beta}$ is the block size and $\texttt{d}$ the lattice dimension. In the default configuration we use the more conservative Core-SVP model $\texttt{algorithms.BKZ\_SVP\_repeat\_core}$ \cite{ADPS16} in which the polynomial factor of the runtime complexity of BKZ is completely ignored. In addition, we provide a more realistic model $\texttt{algorithms.BKZ\_SVP\_repeat\_8d}$ for a BKZ cost of $8 \cdot d \cdot t_k$ BKZ rounds where $d$ again referes to the lattice dimension and $t_k$ is the number of clock cycles required for the SVP subroutine (see \cref{sec:bkz-8d}). % TODO maybe add a little more of evaluation here
@@ -273,21 +288,32 @@ The number of BKZ rounds can be configured by passing a function with parameters
 
 \begin{figure}[]
     \centering
-    \includegraphics[width=0.8\textwidth]{graphics/SIS_stddev=2,828_plots_1s.png}
+    \begin{subfigure}{1\textwidth}
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_200s.pdf}
+    \end{subfigure}
+    \begin{subfigure}{1\textwidth}
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_1s.pdf}
+    \end{subfigure}
+    \caption{LWE instance with $\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-small}
+\end{figure}
+\begin{figure}[]
+    \centering
+    \begin{subfigure}{1\textwidth}
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.pdf}
+    \end{subfigure}
+    \begin{subfigure}{1\textwidth}
+        \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.pdf}
+    \end{subfigure}
+    \caption{LWE instance with $\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-large}
+\end{figure}
+
+\begin{figure}[]
+    \centering
+    \includegraphics[width=0.8\textwidth]{graphics/SIS_stddev=2,828_plots_1s.pdf}
     \caption{SIS instance with $\sigma=2.828,\; m=n^2, \; 2^{2n} < q < 2^{2n+1}$}\label{fig:SIS-algs}
 \end{figure}
 
-\begin{figure}[]
-    \centering
-    \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=0,125_plots_200s.png}
-    \caption{LWE instance with $\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-small}
-\end{figure}
 
-\begin{figure}[]
-    \centering
-    \includegraphics[width=0.8\textwidth]{graphics/LWE_stddev=2,828_plots_200s.png}
-    \caption{LWE instance with $\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-large}
-\end{figure}
 
 % TODO: how does dual attack without LLL work???
 \begin{table}

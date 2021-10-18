@@ -109,7 +109,7 @@ class Lp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_1`-norm of the vector
         """
-        return self.to_Lp(self, p=1, dimension=dimension)
+        return self.to_Lp(p=1, dimension=dimension)
 
     def to_L2(self, dimension=None):
         r"""
@@ -118,7 +118,7 @@ class Lp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_2`-norm of the vector
         """
-        return self.to_Lp(self, p=2, dimension=dimension)
+        return self.to_Lp(p=2, dimension=dimension)
 
     def to_Loo(self, dimension=None):
         r"""
@@ -127,7 +127,7 @@ class Lp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_\infty`-norm of the vector
         """
-        return self.to_Lp(self, p=oo, dimension=dimension)
+        return self.to_Lp(p=oo, dimension=dimension)
 
     def to_Coo(self, dimension=None):
         r"""
@@ -313,7 +313,7 @@ class Cp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_1`-norm of the vector
         """
-        return self.to_Cp(self, p=1, dimension=dimension)
+        return self.to_Cp(p=1, dimension=dimension)
 
     def to_C2(self, dimension=None):
         r"""
@@ -322,7 +322,7 @@ class Cp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_2`-norm of the vector
         """
-        return self.to_Cp(self, p=2, dimension=dimension)
+        return self.to_Cp(p=2, dimension=dimension)
 
     def to_Coo(self, dimension=None):
         r"""
@@ -331,7 +331,7 @@ class Cp(BaseNorm):
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_\infty`-norm of the vector
         """
-        return self.to_Cp(self, p=oo, dimension=dimension)
+        return self.to_Cp(p=oo, dimension=dimension)
 
     def to_Lp(self, p, dimension=None):
         r"""

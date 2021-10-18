@@ -3,6 +3,8 @@ Module for distributions to specify secret and error distributions.
 
 Contains Uniform and Gaussian distributions with various constructors and utility methods. Instances can be transformed to bounds in various norms and a Gaussian width parameter :math:`alpha`. 
 
+We write :math:`sigma` to denote the standard deviation :math:`\sigma` (if secret is normal form, also the secret standard devation) and :math:`s` to denote the Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}` and :math:`\alpha = s / q = \sqrt{2\pi} \sigma / q`.
+
 AUTHOR:
     Nicolai Krebs - 2021
 """
@@ -261,7 +263,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
 
     def to_Loo(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`\ell_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms Gaussian width into norm :math:`\ell_\infty`-norm of a vector whose coefficients are distributed according to a  (componentwise) Gaussian (see `to_Lp`_).
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_\infty`-norm of vector

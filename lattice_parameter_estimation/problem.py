@@ -101,12 +101,17 @@ class AlgorithmResult:
         """
         :returns: JSON-serializable dict
         """
-
+        params = {}
+        for key, value in self.params.items():
+            try:
+                params[key] = float(value)
+            except:
+                params[key] = value
         return {
             "inst": self.problem_instance,
             "alg_name": self.alg_name,
             "cost_model": self.c_name,
-            "params": self.params,
+            "params": params,
             "sec": max(0, float(log(abs(self.cost["rop"]), 2).n())),
             "cost": str(self.cost),
             "runtime": self.runtime,
@@ -413,6 +418,9 @@ def reduce_parameter_problems(
     :param parameter_problems: iterable over instances of :class:`BaseProblem`
     """
 
+    if not isinstance(config, algorithms.Configuration):
+        raise ValueError("config must be instance of algorithms.Configuration")
+
     parameter_problems = list(parameter_problems)
     if not REDUCE_PROBLEMS:
         return parameter_problems
@@ -487,6 +495,9 @@ def algorithms_executor(
 
     :returns: ``None`` if res_queue is set, else an instance of :class:`AggregateEstimationResult`
     """
+
+    if not isinstance(config, algorithms.Configuration):
+        raise ValueError("config must be instance of algorithms.Configuration")
 
     start = time.time()
     results = AggregateEstimationResult(config=config)
@@ -623,6 +634,8 @@ def estimate(
     :returns: instance of :class:`AggregateEstimationResult`
     """
 
+    if not isinstance(config, algorithms.Configuration):
+        raise ValueError("config must be instance of algorithms.Configuration")
     # Create algorithm list of tuples (problem_instance, alg)
     algs = []
     parameter_problems = reduce_parameter_problems(parameter_problems, config)
@@ -852,6 +865,8 @@ class LWE(BaseProblem):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
         """
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
 
         secret_distribution = self.secret_distribution._convert_for_lwe_estimator()
         alpha = RR(self.error_distribution.get_alpha(q=self.q, n=self.n))
@@ -1290,6 +1305,9 @@ class MLWE(LWE):
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """
 
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
+
         lwe = LWE(
             n=self.n * self.d,
             q=self.q,
@@ -1386,6 +1404,9 @@ class RLWE(LWE):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RLWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """
+
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
 
         lwe = LWE(
             n=self.n,
@@ -1736,6 +1757,9 @@ class SIS(BaseProblem):
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "SIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """
 
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
+
         cost_models = config.reduction_cost_models()
         algs = []
         for reduction_cost_model in cost_models:
@@ -1808,7 +1832,7 @@ class SIS(BaseProblem):
         if "combinatorial_conservative" in config.algorithms:
             algs.append(
                 {
-                    "algname": "combinatorial-conservative",
+                    "algname": "combinatorial-cons",
                     "cname": "",
                     "algf": partial(
                         algorithms.SIS.combinatorial_conservative,
@@ -1873,6 +1897,9 @@ class MSIS(SIS):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "MSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """
+
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
 
         sis = SIS(
             n=self.n * self.d,
@@ -1942,6 +1969,9 @@ class RSIS(SIS):
 
         :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "RSIS"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime)
         """
+
+        if not isinstance(config, algorithms.Configuration):
+            raise ValueError("config must be instance of algorithms.Configuration")
 
         sis = SIS(
             n=self.n,

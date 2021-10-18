@@ -49,7 +49,7 @@ LATTICE_REDUCTION_RS = "reduction-rs"
 REDUCTION = "reduction"
 REDUCTION_RS = "reduction-rs"
 COMBINATORIAL = "combinatorial"
-COMBINATORIAL_CONSERVATIVE = "combinatorial_conservative"
+COMBINATORIAL_CONSERVATIVE = "combinatorial_cons"
 
 # All
 ALL = [

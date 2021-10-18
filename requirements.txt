@@ -2,3 +2,4 @@
 fire
 sphinx
 sphinxcontrib-bibtex
+sagemath

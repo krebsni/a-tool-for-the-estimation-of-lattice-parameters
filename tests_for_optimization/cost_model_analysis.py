@@ -49,7 +49,7 @@ def runtime_results():
     ax1.set_ylabel("Runtime [s]")
     ax1.legend()
     plt.grid()
-    plt.savefig("algorithms.png")
+    plt.savefig("algorithms", format="pdf")
     plt.show()
 
 
@@ -60,15 +60,32 @@ def cost_model_plotter():
     import sage.all
     from sage.all import RR, ZZ, log, gamma, pi
 
+    sieving = False
+    enumeration = True
+    if sieving and enumeration:
+        method = ""
+    elif sieving:
+        method = "_sieving"
+    else:
+        method = "_enum"
     beta = np.array([i for i in range(10, 500, 10)])
     ones = np.array([1] * len(beta))
     rop = {}
 
     # cost models without d
     for cost_model in BKZ_COST_MODELS:
-        rop[cost_model["name"]] = np.vectorize(cost_model["cost_model"])(
-            beta, ones, ones
-        )
+        if sieving and enumeration:
+            rop[cost_model["name"]] = np.vectorize(cost_model["cost_model"])(
+                beta, ones, ones
+            )
+        elif sieving and cost_model["method"] == "sieving":
+            rop[cost_model["name"]] = np.vectorize(cost_model["cost_model"])(
+                beta, ones, ones
+            )
+        elif enumeration and cost_model["method"] == "enumeration":
+            rop[cost_model["name"]] = np.vectorize(cost_model["cost_model"])(
+                beta, ones, ones
+            )
 
     fig1, ax1 = plt.subplots(1, 1)
     ax1.set_prop_cycle(
@@ -102,7 +119,7 @@ def cost_model_plotter():
     ax1.set_ylim([0, 300])
     ax1.legend()
     plt.grid()
-    plt.savefig("cost_models.png")
+    plt.savefig("cost_models" + method + ".pdf", format="pdf")
     plt.show()
 
 
@@ -151,7 +168,7 @@ def cost_model_d_2d_plotter():
     ax1.set_ylabel("log2 of BKZ reduction cost [rop]")
     ax1.legend()
     plt.grid()
-    plt.savefig("cost_models_d_2d.png")
+    plt.savefig("cost_models_d_2d", format="pdf")
     plt.show()
 
 
@@ -205,10 +222,9 @@ def cost_model_d_plotter():
     ax.set_ylabel("lattice dimension d")
     ax.set_zlabel("log2 of BKZ reduction cost [rop]")
     ax.legend()
-    plt.savefig("cost_models_d.png")
+    plt.savefig("cost_models_d", format="pdf")
     plt.show()
 
 
 if __name__ == "__main__":
     cost_model_plotter()
-    # runtime_results()
