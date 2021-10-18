@@ -1,4 +1,4 @@
-r"""TODO: documentation"""
+r"""Module for estimation algorithms. Includes configuration class and a number of estimation algorithms for SIS."""
 
 from multiprocessing import Value
 import sys
@@ -449,8 +449,6 @@ class SIS:
         :param beta: bound of solution in :math:`L_2`-norm (value not class)
         """
         # TODO check if use of n and m are correct
-        # TODO: is it possible to use code from lwe-estimator, if yes, does it render better results? If not can we improve the model here to get a more practical result by including an estimate for number calls to the SVP oracle?
-        # TODO: rinse and repeat? adapt to code in estimator?
 
         try:
             prec = beta.prec()
@@ -477,9 +475,10 @@ class SIS:
             if delta_0 < 1:
                 raise IntractableSolution("delta_0 < 1")
             if delta_0 < est.delta_0f(m):
-                raise est.OutOfBoundsError(
-                    "delta_0 = %f < %f" % (delta_0, est.delta_0f(m))
-                )  # TODO catch as intractable?
+                raise IntractableSolution(
+                    "delta_0 = %f < %f (best achievable delta_0 with block size k=m)"
+                    % (delta_0, est.delta_0f(m))
+                )
 
             ret = est.lattice_reduction_cost(
                 reduction_cost_model, delta_0, m, B=log(q, 2)
@@ -498,7 +497,7 @@ class SIS:
         r"""
         Subroutine to compute the list size in the combinatorial attack described in :cite:`MR09`.
 
-        For more details, see :py:func:`combinatorial`.
+        For more details, see :py:func:`algorithms.combinatorial`.
 
         :param n: height of matrix
         :param m: width of matrix
@@ -507,7 +506,6 @@ class SIS:
 
         :returns: tuple ``(L, k)`` of list size ``L`` and optimal ``k``such that combinatorial method can divide columns of :math:`A` into :math:`2^k` groups
         """
-        # TODO: check if reference to combinatorial shows up correctly
         # find optimal k
         k = closest_k = 1
         difference = oo
@@ -557,9 +555,7 @@ class SIS:
             lists = (2 ** k) * L
             cost = RR(lists * list_element_cost)
 
-            return est.Cost(
-                [("rop", cost), ("k", RR(2 ** k))]
-            )  # TODO other information?, return k just as k?
+            return est.Cost([("rop", cost), ("k", RR(2 ** k))])
 
         else:  # not a hard problem, trivial solution exists
             raise TrivialSolution(
@@ -577,7 +573,6 @@ class SIS:
         :param q: modulus
         :param bound: bound of solution in :math:`L_\infty`-norm (value not class)
         """
-        # TODO: check if reference to combinatorial shows up correctly
         beta = bound  # we need Loo norm
         if beta <= 1:
             raise IntractableSolution("beta < 1")
@@ -586,9 +581,7 @@ class SIS:
             (L, k) = SIS._combinatorial(q, n, m, beta)
             cost = L
 
-            return est.Cost(
-                [("rop", cost), ("k", RR(2 ** k))]
-            )  # TODO other information?, return k just as k?
+            return est.Cost([("rop", cost), ("k", RR(2 ** k))])
 
         else:  # not a hard problem, trivial solution exists
             raise TrivialSolution(

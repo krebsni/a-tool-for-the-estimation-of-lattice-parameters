@@ -2,7 +2,7 @@
 r"""
 BKZ cost models that were part of round 1 submissions to NIST PQC.
 
-This file is based on `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`_ authored by Fernando Virdia (2017, 2018) and Ben Curtis (2018).
+This file is originally based on `cost_asymptotics.py <https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io/blob/master/cost_asymptotics.py>`_ authored by Fernando Virdia (2017, 2018) and Ben Curtis (2018).
 
 .. list-table:: Notation
     :header-rows: 1
@@ -38,7 +38,6 @@ The value for key ``prio`` is derived from the folling plots of the various cost
 from sage.all import RR, ZZ, log
 
 BKZ_COST_MODELS = [
-    # TODO: add worst lower bounds for sieving algorithms ZZ(2)**RR(0.2075*beta), :cite:`ADPS16`, Frodo?
     {
         "name": "Q‑Sieve (paranoid lower bound)",
         "reference": ":cite:`ADPS16`",

@@ -2,6 +2,9 @@ r"""
 Module for distributions to specify secret and error distributions. 
 
 Contains Uniform and Gaussian distributions with various constructors and utility methods. Instances can be transformed to bounds in various norms and a Gaussian width parameter :math:`alpha`. 
+
+AUTHOR:
+    Nicolai Krebs - 2021
 """
 from abc import ABC, abstractmethod
 from . import norm
@@ -105,7 +108,7 @@ class Uniform(norm.BaseNorm, Distribution):
 
     def to_L1(self, dimension=None):
         """
-        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`L_1`-norm.
+        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`\ell_1`-norm.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
@@ -120,7 +123,7 @@ class Uniform(norm.BaseNorm, Distribution):
 
     def to_L2(self, dimension=None):
         """
-        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`L_2`-norm.
+        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`\ell_2`-norm.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
@@ -135,7 +138,7 @@ class Uniform(norm.BaseNorm, Distribution):
 
     def to_Loo(self, dimension=None):
         """
-        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`L_\infty`-norm.
+        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`\ell_\infty`-norm.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
@@ -150,7 +153,7 @@ class Uniform(norm.BaseNorm, Distribution):
 
     def to_Coo(self, dimension=None):
         """
-        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`C_\infty`-norm.
+        Convert bound (maximum of :math:`(|a|, |b|)`) to :math:`\mathcal{C}_\infty`-norm.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
@@ -201,7 +204,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
 
     def to_Lp(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`L_p`-norm of a vector whose coefficients are distributed according to a Gaussian. 
+        Transforms Gaussian width into norm :math:`\ell_p`-norm of a vector whose coefficients are distributed according to a Gaussian. 
         
         .. _to_Lp:
 
@@ -220,7 +223,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         :param sec: required security for statistical Gaussian to Lp-bound transformation
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         
-        :returns: upper bound of :math:`L_2`-norm of vector
+        :returns: upper bound of :math:`\ell_2`-norm of vector
         """
         if sec is None:
             if self.sec:
@@ -240,37 +243,51 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
 
     def to_L1(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`L_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms Gaussian width into norm :math:`\ell_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_1`-norm of vector
+        :returns: upper bound of :math:`\ell_1`-norm of vector
         """
         return self.to_Lp(sec=sec, dimension=dimension).to_L1(dimension=dimension)
 
     def to_L2(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`L_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms Gaussian width into norm :math:`\ell_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_2`-norm of vector
+        :returns: upper bound of :math:`\ell_2`-norm of vector
         """
         return self.to_Lp(sec=sec, dimension=dimension).to_L2(dimension=dimension)
 
     def to_Loo(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`L_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms Gaussian width into norm :math:`\ell_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_\infty`-norm of vector
+        :returns: upper bound of :math:`\ell_\infty`-norm of vector
         """
-        return self.to_Lp(sec=sec, dimension=dimension).to_Loo(dimension=dimension)
+        if sec is None:
+            if self.sec:
+                sec = self.sec
+            else:
+                raise ValueError("sec parameter must be specified")
+
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
+
+        bound = self.s * sqrt(log(2.0) * (sec + 1) / pi)
+        return norm.Lp(value=bound, p=oo, dimension=dimension)
 
     def to_Coo(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`C_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms Gaussian width into norm :math:`\mathcal{C}_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`C_\infty`-norm of vector
+        :returns: upper bound of :math:`\mathcal{C}_\infty`-norm of vector
         """
         return self.to_Lp(sec=sec, dimension=dimension).to_Coo(dimension=dimension)
 

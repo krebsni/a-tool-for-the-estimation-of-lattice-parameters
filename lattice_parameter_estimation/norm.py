@@ -26,6 +26,9 @@ From :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integer
         \| f \|_p \leq n^{\frac{1}{p}} \| f \|_\infty &\leq n^{\frac{1}{p}} \| \sigma(f) \|_\infty \label{norm3} \tag{3}\\
         \| \sigma(f) \|_\infty &\leq \| f \|_1 \leq n^{1 - \frac{1}{p}}\| f \|_p \label{norm4} \tag{4}
     \end{align}
+
+AUTHOR:
+    Nicolai Krebs - 2021
 """
 
 from multiprocessing.sharedctypes import Value
@@ -65,8 +68,8 @@ class BaseNorm(ABC):
 class Lp(BaseNorm):
     def __init__(self, value, p, dimension):
         """
-        :param value: value of :math:`L_p`-norm of a vector
-        :param p: specifies :math:`L_p`-norm, must be positive integer or ``oo``
+        :param value: value of :math:`\ell_p`-norm of a vector
+        :param p: specifies :math:`\ell_p`-norm, must be positive integer or ``oo``
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         """
         self.p = p
@@ -140,7 +143,7 @@ class Lp(BaseNorm):
                     "Dimension must be specified as the object has not be initialized with a dimension."
                 )
 
-        return Cp(  # TODO: make Coo, C1, C2 like for L
+        return Cp(
             value=self.value * dimension ** (1 - 1 / self.p), p=oo, dimension=dimension
         )
 
@@ -200,7 +203,7 @@ class Lp(BaseNorm):
 
     def __mul__(self, other):
         r"""
-        Multiply :math:`L_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`.
+        Multiply :math:`\ell_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm`.
 
         From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f, g \in \mathcal{R}_q`
 
@@ -249,21 +252,21 @@ class Lp(BaseNorm):
 
 
 def L1(value, dimension) -> Lp:
-    r"""Alias for Lp-norm with p=1. See :class:`Lp`."""
+    r"""Alias for :math:`\ell_p`-norm with p=1. See :class:`Lp`."""
     return Lp(value=value, p=1, dimension=dimension)
 
 
 def L2(value, dimension) -> Lp:
-    r"""Alias for Lp-norm with p=2. See :class:`Lp`."""
+    r"""Alias for :math:`\ell_p` with p=2. See :class:`Lp`."""
     return Lp(value=value, p=2, dimension=dimension)
 
 
 def Loo(value, dimension) -> Lp:
-    r"""Alias for Lp-norm with p=oo. See :class:`Lp`."""
+    r"""Alias for :math:`\ell_p` with p=oo. See :class:`Lp`."""
     return Lp(value=value, p=oo, dimension=dimension)
 
 
-class Cp(BaseNorm):  # TODO
+class Cp(BaseNorm):
     """
     Canonical embedding norm :math:`\mathcal{C}_p`.
     """
@@ -285,7 +288,7 @@ class Cp(BaseNorm):  # TODO
 
         :param p: norm parameter of target norm, must be positive integer or ``oo``
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_2`-norm of the vector
+        :returns: upper bound of :math:`\ell_2`-norm of the vector
         """
         if dimension is None:
             dimension = self.dimension
@@ -336,7 +339,7 @@ class Cp(BaseNorm):  # TODO
 
         :param p: norm parameter of target norm
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_2`-norm of the vector
+        :returns: upper bound of :math:`\ell_2`-norm of the vector
         """
         if dimension is None:
             dimension = self.dimension
@@ -355,7 +358,7 @@ class Cp(BaseNorm):  # TODO
         Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_1`-norm of the vector
+        :returns: upper bound of :math:`\ell_1`-norm of the vector
         """
         return self.to_Lp(1, dimension=dimension)
 
@@ -364,7 +367,7 @@ class Cp(BaseNorm):  # TODO
         Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_2`-norm of the vector
+        :returns: upper bound of :math:`\ell_2`-norm of the vector
         """
         return self.to_Lp(1, dimension=dimension)
 
@@ -373,7 +376,7 @@ class Cp(BaseNorm):  # TODO
         Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`L_\infty`-norm of the vector
+        :returns: upper bound of :math:`\ell_\infty`-norm of the vector
         """
         return self.to_Lp(1, dimension=dimension)
 
@@ -421,7 +424,6 @@ class Cp(BaseNorm):  # TODO
             \\
                                                 & \leq  n^{2-\frac{1}{p}-\frac{1}{q}}\|\sigma(f) \|_\infty \cdot \|\sigma(f) \|_\infty.
         """
-        # TODO
         if not isinstance(other, BaseNorm):
             try:
                 return Cp(value=self.value * other, p=self.p, dimension=self.dimension)
@@ -460,15 +462,15 @@ class Cp(BaseNorm):  # TODO
 
 
 def C1(value, dimension) -> Lp:
-    r"""Alias for Cp-norm with p=1. See :class:`Cp`."""
+    r"""Alias for :math:`\mathcal{C}_p`-norm with ``p=1``. See :class:`Cp`."""
     return Cp(value=value, p=1, dimension=dimension)
 
 
 def C2(value, dimension) -> Lp:
-    r"""Alias for Cp-norm with p=2. See :class:`Cp`."""
+    r"""Alias for :math:`\mathcal{C}_p`-norm with ``p=2``. See :class:`Cp`."""
     return Cp(value=value, p=2, dimension=dimension)
 
 
 def Coo(value, dimension) -> Lp:
-    r"""Alias for Cp-norm with p=oo. See :class:`Cp`."""
+    r"""Alias for :math:`\mathcal{C}_p`-norm with ``p=oo``. See :class:`Cp`."""
     return Cp(value=value, p=oo, dimension=dimension)

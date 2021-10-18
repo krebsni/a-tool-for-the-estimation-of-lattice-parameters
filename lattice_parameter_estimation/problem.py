@@ -1,5 +1,8 @@
 r""" 
-TODO: documentation
+Module containing problem classes for SIS and LWE and their ring and module variants such as statistically secure variants where applicable. In addition, the module contains estimate functions to estimate the security of parameter problems and estimate results classes to encapsulate cost estimates. 
+
+AUTHOR:
+    Nicolai Krebs - 2021
 """
 
 from numpy.core.fromnumeric import var
@@ -1999,7 +2002,7 @@ class StatisticalMSIS:
         s  \approx x \sqrt{\frac{\pi}{(\texttt{sec} + 1) \ln(2)}}
 
     :ivar max_sigma: standard deviation :math:`\sigma`
-    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    :ivar max_beta: max bound :math:`\beta` in :math:`\ell_2`-norm
     """
 
     def __init__(self, sec, n, d, q, m):
@@ -2041,7 +2044,7 @@ class StatisticalMatrixMSIS(StatisticalMSIS):
     For more details, see :class:`StatisticalMSIS`.
 
     :ivar max_sigma: standard deviation :math:`\sigma`
-    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    :ivar max_beta: max bound :math:`\beta` in :math:`\ell_2`-norm
     """
 
     def __init__(self, n, q, width, height, sec=None):
@@ -2063,7 +2066,7 @@ class StatisticalRSIS(StatisticalMSIS):
     For details, see :class:`StatisticalMSIS` with module dimension :math:`d=1`.
 
     :ivar max_sigma: standard deviation :math:`\sigma`
-    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    :ivar max_beta: max bound :math:`\beta` in :math:`\ell_2`-norm
     """
 
     def __init__(self, sec, n, q, m):
@@ -2084,7 +2087,7 @@ class StatisticalSIS(StatisticalMSIS):
     For details, see :class:`StatisticalMSIS` with degree of polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e. :math:`d=n`).
 
     :ivar max_sigma: standard deviation :math:`\sigma`
-    :ivar max_beta: max bound :math:`\beta` in :math:`L_2`-norm
+    :ivar max_beta: max bound :math:`\beta` in :math:`\ell_2`-norm
     """
 
     def __init__(self, sec, n, q, m):
