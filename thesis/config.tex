@@ -490,7 +490,6 @@
 %     FÜr if-then-else @ commands.tex
 \usepackage{ifthen}
 
-\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
 
 
 % EN: Code Listings
@@ -661,8 +660,8 @@
   backend       = biber, %biber does not work with 64x versions alternative: bibtex8
   %minalphanames only works with biber backend
   sortcites     = true,
-  bibstyle      = alphabetic,
-  citestyle     = alphabetic,
+  bibstyle      = numeric,
+  citestyle     = numeric,
   giveninits    = true,
   useprefix     = false, %"von, van, etc." will be printed, too. See below.
   minnames      = 1,
@@ -841,6 +840,9 @@
 % DE: Zur Darstellung von Algorithmen
 %     Algorithm muss nach hyperref geladen werden
 \usepackage[chapter]{algorithm}
+
+\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
+
 \usepackage[]{algpseudocode}
 
 

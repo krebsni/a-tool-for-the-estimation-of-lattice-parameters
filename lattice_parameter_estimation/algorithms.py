@@ -509,17 +509,15 @@ class SIS:
         # find optimal k
         k = closest_k = 1
         difference = oo
-        failed, max_failures = 0, 10
-        while failed < max_failures:
+        decreasing = True
+        right = m / n * log(2 * beta + 1, q)
+        while decreasing:
             left = 2 ** k / (k + 1)
-            right = m / n * log(2 * beta + 1, q)
             new_difference = abs(left - right)
             if new_difference < difference:
                 difference = new_difference
                 closest_k = k
-                failed = 0
-            else:
-                failed += 1
+                decreasing = False
             k += 1
         k = closest_k
 

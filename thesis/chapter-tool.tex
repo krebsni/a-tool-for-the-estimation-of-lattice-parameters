@@ -1,4 +1,4 @@
-The main goal of the thesis is the creation a tool that combines the algorithm estimates for LWE and SIS that we introduced above and can be configured without much knowledge of the workings of the underlying algorithms. To our knowledge there has not been a tool that includes the function of generically searching for secure parameters for both LWE and SIS instances as well as for ring and module variants. Some schemes (e.g. commitment schemes, see \cref{sec:two-problem-search}) depend on the statistical security of either LWE or SIS. We hence include classes respectively to find parameters satisfying this criteria. % TODO: maybe not here just in the section. 
+We will now proceed to describe our tool in more detail. The core part of the Python library is a function that generically searches for secure parameters for both LWE and SIS instances as well as for ring and module variants. Moreover, some schemes (e.g. commitment schemes, see \cref{sec:two-problem-search}) depend on the statistical security of either LWE or SIS. We hence include classes respectively to find parameters satisfying this criteria. % TODO: maybe not here just in the section. 
 Furthermore, we provide a set of utility classes and methods for most commonly used distributions and norms.
 A configuration class allows for a substantial customization of the estimation process.
 The tool can either estimate the bit security level of fixed parameter sets or generically search for parameter sets that satisfy a certain bit security level.
@@ -10,30 +10,31 @@ The tool can either estimate the bit security level of fixed parameter sets or g
 The secret distribution used in encryption schemes based on LWE or SIS can either distributed according to a Gaussian or a uniform distribution. The error distribution in LWE must be a Gaussian distribution with parameter $\alpha$. In general, if both error and secret are sampled in LWE are sampled according to Gaussian distributions their parameters may differ. Currently, however, the \textit{estimator} only supports secrets that follow a uniform distributions or a Gaussian distribution with the same paramter as the error distribution.
 
 \subsection{Gaussian Distribution}
-In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $\texttt{sec}$. Note that a $n$-dimensional Gaussian $D_{\mathbf{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbf{Z}, s}$ \cite{GJS15}. %TODO check
+In some applications we receive a Gaussian distribution as input but require a bound in some norm in order to estimate the hardness of an SIS instance. Hence, we need to transform a Gaussian with parameter $s  = \sqrt{2 \pi} \sigma$ into a bound $\beta$ given some security parameter $\texttt{sec}$. Note that a $n$-dimensional Gaussian $D_{\mathbb{Z}^n, s}$ can be sampled by combining samples from $n$ independent one-dimensional Gaussians $D_{\mathbb{Z}, s}$ \cite{GJS15}. %TODO check
 
-For a Gaussian distribution and a random variable $X$ with $X \sim D_{\mathbf{Z}, s}$, the following holds: % put as theorem, also for norm inequalities
+For a Gaussian distribution and a random variable $X$ with $X \sim D_{\mathbb{Z}, s}$, the following holds: % put as theorem, also for norm inequalities
 
 \begin{equation}
-    \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \|\mathbf{v}\|^2/s^2}
+    \text{Pr}\left[ |X| \geq \beta \right] \leq 2 e^{-\pi \beta^2/s^2}
 \end{equation}
 
-We demand $2 e^{-\pi \beta^2/s^2} \approx 2^{-\texttt{sec}}$ with $\beta = \|\mathbf{v}\|$  and obtain
+We demand $2 e^{-\pi \beta^2/s^2} \leq 2^{-\texttt{sec}}$  and obtain
 
 \begin{align*}
-    2 e^{-\pi \beta^2/s^2}   & \approx 2^{-\texttt{sec}}                               \\
-    -\pi \frac{\beta^2}{s^2} & \approx (-\texttt{sec} - 1)\ln (2)                      \\
-    \beta                    & \approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
+    2 e^{-\pi \beta^2/s^2}   & \leq 2^{-\texttt{sec}}                               \\
+    -\pi \frac{\beta^2}{s^2} & \leq (-\texttt{sec} - 1)\ln (2)                      \\
+    \beta                    & \geq s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
 \end{align*}
+
 
 \begin{theorem}[Gaussian to Bound]
     Given a Gaussian distribution $D_{\mathbb{Z}^n, s}$ with width parameter $s  = \sqrt{2 \pi} \sigma$ and a security parameter $\texttt{sec}$, we can compute a bound $\beta$ such that a sample $\mathbf{v}$ drawn from $D_{\mathbb{Z}^n, s}$ satisfies $\text{Pr}\left[ \|\mathbf{v}\| \geq \beta \right] \leq 2^{-\texttt{sec}}$ as follows:
     \begin{equation}
-        \beta  \approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
+        \beta  = s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
     \end{equation}
 \end{theorem}
 
-The resulting bound $\beta$ is an $\ell_2$-norm bound. % TODO: distributions is changes => thanks Marc! (also noticed that it doesn't make sense to have componentwise and L2)
+The resulting bound $\beta$ can be considered as a bound in $\ell_\infty$ or $\ell_2$-norm. % TODO: distributions is changes => thanks Marc! (also noticed that it doesn't make sense to have componentwise and L2)
 
 We provide the classes $\texttt{GaussianAlpha}$, $\texttt{GaussianSigma}$ and $\texttt{GaussianS}$ to allow for the most flexibility in specifying a Gaussian distribution.
 
@@ -54,7 +55,7 @@ and obtain the variance $\text{Var}(X) = \mathbb{E}(X^2) - \mathbb{E}(X)^2$.
 
 
 
-\section{Norms bound estimates} \label{sec:norm-bounds}% TODO: check
+\section{Norm Inequations} \label{sec:norm-bounds}% TODO: check
 %TODO: write some prose about why we need that
 % TODO: make sure that it is clear that these are bounds!!!
 In practical scenarios, oftentimes we require that the bound of a result does not exceed a certain value to guarantee correctness. In addition, we have seen that estimation algorithms rely on bounds in different $\ell_p$-norms. For example, the combinatorial attack in \cref{sec:combinatorial} needs a bound in $\ell_\infty$ norm, whereas the dual attack in \cref{sec:dual-attack} uses bounds in the Euclidean norm. We thus need a way to bound a value of a bound in one norm by a value in a different norm. In our tool, we define a norm class with parameter $p$ and provide a  method $\texttt{to\_Lp()}$ for conversions into all other norms mentioned here. We begin by the following Theorem.
@@ -65,7 +66,7 @@ In practical scenarios, oftentimes we require that the bound of a result does no
     \end{align}
     Let $p, q \in \mathbb{N}$ with $1 \leq p \leq q \leq \infty$. Then the following inequation holds:
     \begin{align}
-        \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q' \label{eq:norm-1-leq-inf}.
+        \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_{q'} \label{eq:norm-1-leq-inf}.
     \end{align}
 \end{theorem}
 % \begin{proof}% TODO: show full proof https://math.stackexchange.com/questions/218046/relations-between-p-norms
@@ -98,32 +99,25 @@ In addition, oftentimes we consider norms in the canonical embedding. Let $\math
 \end{theorem}
 We can thus bound a given bound in the norm $\ell_q$ for some $q$ by a bound in some $\ell_p$ norm using the above inequalities and analogously in the embedding norm, which we call $\mathcal{C}_p$. We combine both results in the method $\texttt{to\_Lp()}$ and $\texttt{to\_Cp()}$ in the norm classes $\texttt{Lp}$ and $\texttt{Cp}$ respectively. Note that the embedding norm $\mathcal{C}_p$ internally works like the $\ell_p$ norm as we define both for vector spaces of dimension $n$. We merely need the results in \cref{th:norm-rel2} for the conversion between both norms.
 
-We also want to be able to add and multiply bounds from different norms. Note that the degree of the polynomial of the underlying ring to which we apply the norms must match. To add two bounds we simply bound the second addend by the used norm of the first as described in \cref{th:norm-rel1,th:norm-rel2} and add both bounds to obtain a bound in the norm of the first addend. It is slightly more complicated for multiplication and we state the results in the next theorem.
+We also want to be able to estimate bounds on the result of addition and multiplication of vectors of a bounded length in different norms. Note that the degree of the polynomial of the underlying ring to which we apply the norms must match. For addition, we simply bound the second addend by the used norm of the first as described in \cref{th:norm-rel1,th:norm-rel2} and add both bounds to obtain a bound on the result in the norm of the first addend. It is slightly more complicated for multiplication and we state the results in the next theorem.
 
 \begin{theorem}[Multiplication of Norm Bounds \cite{BDLOP18, DPSZ12}]\label{th:mult}
     Let $f$ be defined as above and let $g \in \mathcal{R}_q$ where $g = \sum_i \overline{g}_i X^i$ where $g_i \in \left[-(q-1)/2, (q-1)/2\right]$ and $\overline{g}_i = g_i \mod q$ as in \cite{BDLOP18}. We then can define the following inequations for multiplication according to \cite{BDLOP18}:
 
-    \begin{itemize}
-        \item If $\|f\|_\infty \leq \beta, \|g\|_1 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
-        \item If $\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma$ then $\|f \cdot g\|_\infty \leq \beta \cdot \gamma$.
-    \end{itemize}
+    \begin{align}
+        \|f \cdot g\|_\infty & \leq \|f\|_\infty \cdot \|g\|_1, \label{eq:mult1} \\
+        \|f \cdot g\|_\infty & \leq \|f\|_2 \cdot \|g\|_2 \label{eq:mult2}.
+    \end{align}
 
     Let $x, y \in \mathcal{O}_K$. Then, the following inequation holds according to \cite{DPSZ12}:
     \begin{align}
-        \| x \cdot y \|_\infty         & \leq n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty             \nonumber   \\
-        \| \sigma(x \cdot y) \|_\infty & \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty. \label{eq:mult}
+        \| x \cdot y \|_\infty         & \leq n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty   \label{eq:mult3}       \\
+        \| \sigma(x \cdot y) \|_\infty & \leq  \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty. \label{eq:mult4}
     \end{align}
     (Again, we assume that $C_m = 1$ in the original statement.)
 \end{theorem}
 
-If the two norms bounds that we want to multiply are given in a different norm, we simply convert the bounds to the $\mathcal{C}_\infty$ norm as described in \cref{eq:Coo-norm}. Analogously, we can multiply two bounds $\|\sigma(f)\|_p, \|\sigma(g)\|_q$ in the embedding norm by applying \cref{th:mult}. In the case of \cref{eq:mult}, we have to recursively embedded $\sigma(f)$ and $\sigma(g)$. Together with \cref{norm7} we obtain
-\begin{align*}
-    \|\sigma(f) \cdot \sigma(g)\|_\infty & \leq \|\sigma(\sigma(f)\cdot \sigma(g))\|_\infty \leq \|\sigma(\sigma(f)) \|_\infty \cdot \| \sigma(\sigma(g))\|_\infty \\
-                                         & \leq  n^{1-\frac{1}{p}}\|\sigma(f) \|_\infty \cdot n^{1-\frac{1}{q}} \|\sigma(f) \|_\infty.
-    \\
-                                         & \leq  n^{2-\frac{1}{p}-\frac{1}{q}}\|\sigma(f) \|_\infty \cdot \|\sigma(f) \|_\infty.
-\end{align*}
-
+If the two norms bounds that we want to multiply are given in a different norm, we simply convert the bounds to the $\mathcal{C}_\infty$ norm as described in \cref{eq:Coo-norm}. Analogously, we can bound the result of a multiplication of to embedded vectors $\sigma(f), \sigma(g)$ by applying \cref{th:mult}, e.g. given $\|\sigma(f)\|_2, \|\sigma(g)\|_2$, we can bound the $\mathcal{C}_\infty$-norm bound of the product $\sigma(f) \cdot \sigma(g)$ by $\|\sigma(f)\|_2 \cdot \|\sigma(g)\|_2$ with \cref{eq:mult2}. Note that \cref{eq:mult4} cannot be applied in the canonical embedding. Instead we convert the bounds of the two vectors that are to be multiplied to one of the first three cases in \cref{th:mult} and take the lowest result.
 
 
 \section{Problem Classes}
@@ -247,7 +241,7 @@ Once we find an insecure problem instance (i.e. the estimated attack cost in clo
             }
         }
     }
-    \caption{Generic search} \label{alg:generic-search}
+    \caption{Generic Search} \label{alg:generic-search}
 \end{algorithm2e}
 
 
@@ -264,18 +258,22 @@ If all are unselected custom cost models must be specified and passed as an argu
 \begin{figure}[h!]
     \centering
     \begin{subfigure}{0.5\textwidth}
+        \centering
         \includegraphics[width=1\textwidth]{graphics/cost_models.pdf}
         \caption{All}
     \end{subfigure}
     \begin{subfigure}{0.49\textwidth}
+        \centering
         \includegraphics[width=1\textwidth]{graphics/cost_models_small_beta.pdf}
         \caption{Small block size $\beta$}\label{fig:costmodels-small-beta}
     \end{subfigure}
     \begin{subfigure}{0.5\textwidth}
+        \centering
         \includegraphics[width=1\textwidth]{graphics/cost_models_enum.pdf}
         \caption{Enumeration}\label{fig:costmodels-enum}
     \end{subfigure}
     \begin{subfigure}{0.49\textwidth}
+        \centering
         \includegraphics[width=1\textwidth]{graphics/cost_models_sieving.pdf}
         \caption{Sieving}\label{fig:costmodels-sieving}
     \end{subfigure}
@@ -285,13 +283,13 @@ The number of BKZ rounds can be configured by passing a function with parameters
 
 
 \paragraph{Algorithms.} \label{sec:tool-algorithms} \cref{fig:SIS-algs}, \ref{fig:LWE-algs-small} and \ref{fig:LWE-algs-large} show the plots of runtime and performance tests for the various algorithms that can be used in our tool. In accordance with the results, we assigned priority values on an ordinal scale to the estimation algorithms. In \cref{tab:lwe-alg-prio} and \ref{tab:sis-alg-prio} we present the list of algorithms and their corresponding priority values and justify our choice. Algorithms with a smaller priority are expected to yield relatively good results quickly and can therefore be executed first. If the estimate result does not satisfy the specified security requirement we can terminate the estimation process early in order to maximize the efficiency of our search. Note that, while convenient, directly comparing the results for different algorithms is not always admissible as the compared algorithms may rely on different assumptions. Some algorithms may compute a more realistic cost while others may return a more conservative or even paranoid cost estimate (e.g. BKZ is used with the Core-SVP paranoid lower bound). The results have to be weighted carefully in order to guarantee the security of a given scheme in the forseable future while trying to keep the cost of using the scheme as low as possible. % TODO maybe move to conclusion...
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\textwidth]{graphics/SIS_stddev=2,828_plots_1s.pdf}
     \caption{SIS instance with $\sigma=2.828,\; m=n^2, \; 2^{2n} < q < 2^{2n+1}$}\label{fig:SIS-algs}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering
     \begin{subfigure}{1\textwidth}
         \centering
@@ -303,7 +301,7 @@ The number of BKZ rounds can be configured by passing a function with parameters
     \end{subfigure}
     \caption{LWE instance with $\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}$}\label{fig:LWE-algs-small}
 \end{figure}
-\begin{figure}[h]
+\begin{figure}[h!]
     \centering
     \begin{subfigure}{1\textwidth}
         \centering
@@ -336,7 +334,7 @@ The number of BKZ rounds can be configured by passing a function with parameters
                                   &          & does not always yield results                       \\
         \bottomrule
     \end{tabular}
-    \caption{LWE estimate algorithm priorities}\label{tab:lwe-alg-prio}
+    \caption{Prioritization of LWE Algorithms}\label{tab:lwe-alg-prio}
     \vspace{1cm}
     \begin{tabular}[]{lll}
         \toprule
@@ -347,7 +345,7 @@ The number of BKZ rounds can be configured by passing a function with parameters
         Combinatorial Attack          & 10       & fast, often slightly higher cost results \\
         \bottomrule
     \end{tabular}
-    \caption{SIS estimate algorithm prioritie}\label{tab:sis-alg-prio}
+    \caption{Prioritization of SIS Algorithms}\label{tab:sis-alg-prio}
 \end{table}
 
 % TODO first finish section on algorithms

@@ -445,14 +445,23 @@ class Cp(BaseNorm):
                 or (self.p == 2 and other.p == 2)
             ):
                 return Cp(value=self.value * other.value, p=oo, dimension=dimension)
-
-        return Cp(
-            value=dimension ** (2 - 1 / self.p - 1 / other.p)
-            * self.to_Coo().value
-            * other.to_Coo().value,
-            p=oo,
-            dimension=dimension,
-        )
+            else:
+                best = Coo(value=oo, dimension=self.dimension)
+                temp = self.to_Coo() * other.to_C1()  # returns Coo norm
+                if temp.value < best.value:
+                    best = temp
+                temp = self.to_C1() * other.to_Coo()
+                if temp.value < best.value:
+                    best = temp
+                temp = self.to_C2() * other.to_C2()
+                if temp.value < best.value:
+                    best = temp
+                temp = self.to_Coo() * other.to_Coo()
+                if temp.value < best.value:
+                    best = temp
+                return temp
+        else:
+            return self * other.to_Coo()
 
     def __rmul__(self, other):
         return self * other

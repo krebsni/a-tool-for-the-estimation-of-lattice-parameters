@@ -129,17 +129,17 @@
 \ifdeutsch
   \listof{Listing}{Verzeichnis der Listings}
 \else
-  \listof{Listing}{List of Listings}
+  %\listof{Listing}{List of Listings}
 \fi
 
 %mittels \newfloat wurde die Algorithmus-Gleitumgebung definiert.
 %Mit folgendem Befehl werden alle floats dieses Typs ausgegeben
-\ifdeutsch
-  \listof{Algorithmus}{Verzeichnis der Algorithmen}
-\else
-  \listof{Algorithmus}{List of Algorithms}
-\fi
-%\listofalgorithms %Ist nur für Algorithmen, die mittels \begin{algorithm} umschlossen werden, nötig
+% \ifdeutsch
+%   \listof{Algorithmus}{Verzeichnis der Algorithmen}
+% \else
+%   \listof{Algorithmus}{List of Algorithms}
+% \fi
+\listofalgorithms %Ist nur für Algorithmen, die mittels \begin{algorithm} umschlossen werden, nötig
 
 % Abkürzungsverzeichnis
 \printnoidxglossaries
@@ -205,60 +205,43 @@
 
 
 \chapter{Introduction}\label{sec:intro}
-
-- rise of quantum computing (short history)
-
-* conceptual
-
-* reality
+The rise of quantum computing promises great progress in areas that are considered to be very difficult for classical computers. At the same time, it poses a threat to cybersecurity as some widely used cryptographic schemes that are assumed to be secure for classical computers no longer are secure in the era of quantum computing. The idea of quantum computing began in the early 1980's with a quantum mechanical model of a Turing machine by Paul Benioff. It soon became clear that quantum computing has a great advantage over classical computing in certain applications. In 1994, Peter Shor proposed algorithms to solve the problems of integer factorization and discrete logarithms in polynomial time \cite{Shor97}. As a result, cryptographic schemes that rely on the hardness of either of those assumptions, such as RSA, can be efficiently broken by quantum computers. Another popular algorithm that we will refer to later on, Grover's search algorithm (1996), leads to a quadratic speedup of search on unstructured data \cite{Gro96}.
+Recent years have shown increasing interest and investments into quantum computing both by startups and large corporations like Google and IBM, e.g., only a few months ago Europe's most powerful 27-Qubit IBM Quantum System One was inaugurated in Ehningen, Germany. The current standard of technology, however, is still at a relatively immature stage and therefore quantum computers are mainly used for academic purposes. The realization of fully capable quantum computers is not expected to to happen for at least another five to ten years.
+% Quantum computing promises great advantage over classical computing in the areas of machine learning, modelling and understanding of biochemical processes and the like.
+Nevertheless, particularly in the area of cryptography, we need a new secure encryption schemes that can replace previous schemes and are based on different and stronger hardness assumptions. One solution that has gained great popularity over the last two decades is lattice based cryptography.
 
 
-- problem: some hard classical problems no longer hard
+The concept of lattices has been applied in cryptography since the end of the last century. Lattice reduction algorithms, such as the LLL algorithm, resulted in a number of new practical attacks on popular cryptosystems \cite{NV10}. Then, in 1996, the landmark work of Ajtai \cite{Ajt96} laid a foundation for a new family of cryptosystems. He showed that any instance of a certain lattice problem, namely, the approximate Shortest Vector Problem (SVP$_\gamma$), can be reduced to a randomized instance of the Short Integer Solution (SIS) problem. In particular, this implies that an average-case SIS instance is at least as hard as a worst-case instance of SVP$_\gamma$, leading to very strong security guarantees. Later, Regev came up with a similar worst-case to average-case reduction for the Learning with Errors (LWE) problem \cite{Reg05}. SIS and LWE can be applied to create advanced cryptographic primitives, even some that seemed infeasible before. The SIS problem can be used to build one-way functions \cite{Ajt96, MR04}, collision resistant hash functions \cite{GGH96}, identity-based encryption schemes \cite{Lyu08} and digital signature schemes \cite{LM08, GPV08}. LWE is even more powerful than SIS and lead to a number to public-key encryption schemes \cite{Reg05, PW08, LPR10}, identity-based encrpytion schemes \cite{GPV08, ABB10}, somewhat and fully homomorphic encryption schemes \cite{Gen09a,BV11,GSW13} and more.
+In addition to good security guarantees and an abundance of applications, the required key sizes are relatively small (quasilinear) and we obtain good pratical runtimes.
 
-* Shor's Algorithm (Peter Shor, 1994) %Sho97
-=> quantum computers can solve the factoring and the discrete logarithm problem in polynomial time
+%
+% % - ´minicrypt´ primitives, introduced in \cite{MR04}, origins in \cite{Ajt96}, used for ´minicrypt´ primitives: one-way functions \cite{Ajt96}, collision resistant hash functions \cite{GGH96}, digital signature schemes \cite{GPV08, CHKP10}, and identification schemes \cite{MV03, Lyu08, KTX07} % TODO change or \cite{Reg10}
+% - ´cryptomania´ applications: public-key encryption schemes under chosen-plaintext attacks \cite{Reg05, KTX07, PVW08}, and chosen-ciphertext attacks \cite{PW08, Pei09}, oblivious transfer protocoles \cite{PVW08}, identity-based encryption (IBE) schemes \cite{GPV08, CHKP10, ABB10}, leakage-resilient encryption \cite{AGV09, ACPS09, DGKPV10, GKPV10}, and more % TODO change or \cite{Reg10}
 
-* application to encryption
+% \begin{figure}
+%   \begin{chronology}[5]{2000}{2021}{3ex}[\textwidth]
+%     \event{2001}{AKS sieve $2^{\mathcal{O(n)}}$ time and space \cite{AKS01}}
+%     \event{2010}{List sieve in $2^{3.2n}$ time and $2^{1.33n}$ space \cite{MV10}}
+%     \event{2013}{Voronoi cell $2^{2n}$ time and $2^{n}$ space \cite{MV13}}
+%     \event{2014}{Gaussian sampling $2^{n}$ time and space \cite{ADRS14}}
+%   \end{chronology}
+%   \caption{Provable algorithms for SVP}
+% \end{figure}
 
-* overview of current encryption methods that will become insecure
+% Origin: work of Ajtai and Dwork \cite{AD97}, first public-key cryptosystem based on worst-case lattice problems, simlifications/improvements \cite{GGH97b, Reg03} imply hardness result for LWE.
 
+% Applications: SIS can be used for one-way functions and collision-resistant hasing. LWE can be used to build pseudo-random number generators, public-key encryption schemes and oblivious transfer and secure MPC. Lattice Trapdoors (trapdoor functions, digital signatures)? Punctured Trapdoors (identity-based encryption, attribute-based encryption, predicate encryption)? % TODO: from https://www.youtube.com/watch?v=LlPXfy6bKIY see below for more detail
 
-- one solution (among hash-based, code-based, isogeny-based, and multivariate): lattice crypto
+% - establishing theoretical and asymptotic hardness \cite{Reg05} % ? Check
+% \cite{BLPRS13, MP13}
+% - concrete hardness of LWE: attacks, runtime estimates,
 
-* overview over history and capability of lattice crypto
+In order to use LWE and SIS in practice, we first need to find a set of parameters to parameterize the problem instance used in scheme such that the chosen parameters satsify a certain security requirement. We can measure the security of an instance by means of a bit security level $\texttt{sec}$. A security level of $\texttt{sec} = 128$ means that an attacker has to perform at least $2^\texttt{128}$ operations solve the respective problem instance. In general, it is difficult to find hard lower bounds on the number of operation required to break a scheme. Even if they exist, they may not be realistic in practice and result in larger key sizes and therefore less efficient schemes than really needed. We therefore need a way to estimate the concrete hardness of LWE and SIS. This can be achieved by examining the runtime complexity of the currently best attack algorithms. \citet{APS15} and follow-up works as \cite{Alb17,BBGS19} performed an in-depth study of the practical hardness of LWE and encapsulated their findings in the LWE Estimator\footnote{\url{https://bitbucket.org/malb/lwe-estimator/}}, which subsequently we will simply call\textit{estimator}. However, the \textit{estimator} does not include estimates for SIS and specifying distributions is not very user-friendly as of now. In addition, it only returns costs for a fixed parameter set. A user has to specify a search function by himself. In this work, we aim to fill this gap with a new Python library, which we call Lattice Parameter Estimation\footnote{\url{https://github.com/krebsni/a-tool-for-the-estimation-of-lattice-parameters}} and will subsequently refer to simply as \textit{tool}. Our tool can be used to generically search for secure parameter sets given a set of problem instances. We provide classes for LWE and SIS, their ring and module variants, and statistically secure variants where applicable. We also included more convenient distribution classes and classes for various $\ell_p$-norms and the canonical embedding as cryptographic schemes oftentimes require some guarantees of bounds on operands. We use the \textit{estimator} for cost estimates for LWE instances and add three estimation algorithms for SIS instances.
 
-* advantages: good (quasilinear) asymptotic key sized, good concrete runtimes and key sizes, worst-case secure instantiations, advanced cryptographic primitives previously infeasible
+\section{Organization}
+In \cref{ch:preliminaries}, we introduce lattices, lattice problems and their variants and a number of mathematical tools that will be needed later on. We describe the main approaches and algorithms for solving LWE and SIS that we use in our tool in \cref{ch:algorithms}. We remark on the complexity of the algorithms, whenever feasible in the scope of our work, and present a number of BKZ cost models. In \cref{ch:tool}, we explain our tool in more detail and give an overview of the various functionalities and configuration options. Finally, we present two usage examples of our tool in \cref{ch:usage}. % TODO maybe take out
 
-* including intro to LWE/SIS and applications to build crypto systems
-
-. SIS: signature schemes, hash functions
-
-. LWE: ``cryptomania'' applications (PKE, ...), signature schemes, lines:
-% TODO: more content in comment under lattice background
-
-- cryptographic applications
-
-- establishing theoretical and asymptotic hardness \cite{Reg05} % ? Check
-\cite{BLPRS13, MP13}
-- concrete hardness of LWE: attacks, runtime estimates,
-
-* briefly outline concept and benefits of hard-case to average-case reductions
-
-
-- purpose of this thesis
-
-* building schemes: need realistic hardness estimates of schemes for given parameter settings
-
-* lack in the past: no unified/easy to use tool => thesis aims to solve this problem
-=> python library \textit{Lattice Parameter Estimation}, we will just call \textit{tool} in this work % TODO: too long. Maybe just "tool"?
-LWE instances are estimated by calling various estimation functions from the LWE Estimator \cite{APS15}, which we will refer to as \textit{estimator}. % TODO: link in footnote to github repo
-
-
-- overview of chapters/how to read
-
-
-
-\chapter{Preliminaries} \label{chap:Preliminaries}
+\chapter{Preliminaries} \label{ch:preliminaries}
 \input{chapter-preliminaries.tex}
 
 
@@ -268,11 +251,11 @@ LWE instances are estimated by calling various estimation functions from the LWE
 
 
 
-\chapter{Lattice Parameter Estimation Tool}
+\chapter{Lattice Parameter Estimation Tool}\label{ch:tool}
 \input{chapter-tool.tex}
 
 
-\chapter{Usage Examples}
+\chapter{Usage Examples}\label{ch:usage}
 \section{Two Problem Search}\label{sec:two-problem-search}
 % TODO: based on \cite{BDLOP18}
 two problems lwe sis, what they are, how to solve it by the tool
@@ -281,11 +264,10 @@ two problems lwe sis, what they are, how to solve it by the tool
 
 \chapter{Conclusion}
 % TODO
-- short summary
-- tool
-- future work: add more algorithms, extension to specify own algorithms (already possible but not really conveniant), estimator may be adapted in near future => adapt tool
-- other things not part of my work but interesting
+In summary, we examined two important problems in modern cryptography, namely, LWE and SIS, and discussed various strategies and algorithms for solving both problems from a perspective of practical hardness estimation. Furthermore, we compiled a list of up-to-date reduction cost models from the literature. These cost models play a crucial role in predicting the behavior of attack algorithms that rely on a lattice reduction subroutine. We introduced a new unified and user-friendly tool that can be used to find secure parameters for a given cryptographic scheme. The tool includes all popular variants of LWE and SIS as well as respective cost estimation procedures, provides a number of utility classes and functions, and allows for detailed customization.
 
+\paragraph{Future Work.} In the future, our tool could be further extended with more estimation algorithms, in particular for SIS. We included a very basic version of a combinatorial attack on SIS in the dual lattice \cite{MR09}. It should be possible to apply improvements to the BKW algorithm to the combinatorial attack and obtain more realistic estimates. Furthermore, the LWE Estimator has not been updated over the last two years \cite{APS15}. Recently, more accurate estimates of the primal uSVP attack have been published in \cite{PV21}. In addition, we may see a major refactoring of the estimator in terms of how distributions are handled. In our tool, we introduced wrapper classes for this purpose. In the case of an update, our tool may not be compatible with the new version of the estimator anymore and will need to be adapted accordingly.
+Lastly, as of now, our tool does not provide a convenient way to specify custom estimate algorithms. This functionality could be included as part of the configuration class.
 
 
 \printbibliography

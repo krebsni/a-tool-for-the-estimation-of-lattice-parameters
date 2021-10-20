@@ -5,7 +5,7 @@
 % TODO: some algebraic background
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{Z}^+$.
+In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{N} \setminus \{0\}$.
 % TODO: anything else? Inner product, negation in ring
 % add alpha, s, sigma here?
 
@@ -23,38 +23,8 @@ For standard vector spaces, the definitions are essentially equivalent to the ab
 
 \section{Lattices}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% maybe put in intro
-Lattices have been used in cryptography since the end of the last century. Lattice reduction algorithms such as the LLL algorithm resulted in a number of practical attacks on popular cryptosystems \cite{NV10}. The landmark work of Ajtai \cite{Ajt96} opened up the way for a new family of cryptosystems. He showed that any instance of a certain lattice problem, the approximate Shortest Vector Problem (SVP$_\gamma$) can be reduced to a randomized instance of the Short Integer Solution (SIS) problem. In particular, this implies that an average-case SIS instance is at least as hard as a worst-case instance of SVP$_\gamma$, resulting in extremely strong security guarantees. Later, Regev came up with a similar worst-case to average-case reduction for the Learning with Errors (LWE) problem \cite{Reg05}.
-
-% TODO: the following could be move to intro
-% * fully homomorphic [Gen09]
-
-% * BGV scheme [BV11, BGV12]
-
-% * tools [LPR10, LPR13] ideal latties, RLWE
-
-% Other Notes: %TODO
-% - PKE \cite{AD97, Reg03, Reg05}, CCA security \cite{PW08, Pei09}, identity-based encryption \cite{GPV08, CHKP10, ABB10}, fully homomorphic \cite{Gen09a}
-% - , LWE introduced by \cite{Reg05} "provably as hard as certain lattice problems in worst case, appear to require time exponential in main security parameter to solve"
-% - NTRU \cite{HPS98}
-% - $q$-ary lattice: modulus $q\geq 2$
-
-% Applications: SIS can be used for one-way functions and collision-resistant hasing. LWE can be used to build pseudo-random number generators, public-key encryption schemes and oblivious transfer and secure MPC. Lattice Trapdoors (trapdoor functions, digital signatures)? Punctured Trapdoors (identity-based encryption, attribute-based encryption, predicate encryption)? % TODO: from https://www.youtube.com/watch?v=LlPXfy6bKIY see below for more detail
-
-% % TODO: move to intro 
-% % - introduced in \cite{MR04}, origins in \cite{Ajt96}, used for ´minicrypt´ primitives: one-way functions \cite{Ajt96}, collision resistant hash functions \cite{GGH96}, digital signature schemes \cite{GPV08, CHKP10}, and identification schemes \cite{MV03, Lyu08, KTX07} % TODO change or \cite{Reg10}
-
-% Following based on \cite{Reg10}:% TODO: change or quote 
-
-% Introduced by Regev in \cite{Reg09}
-% Origin: work of Ajtai and Dwork \cite{AD97}, first public-key cryptosystem based on worst-case lattice problems, simlifications/improvements \cite{GGH97b, Reg03} imply hardness result for LWE.
-% Early work: hardness based on unique-SVP, Peikert \cite{Pei09} and Lyubashevsky and Micciancio \cite{LM09} show that unique-SVP is essentially equivalent to \textsc{GapSVP}.
-
-% - ´cryptomania´ applications: public-key encryption schemes under chosen-plaintext attacks \cite{Reg05, KTX07, PVW08}, and chosen-ciphertext attacks \cite{PW08, Pei09}, oblivious transfer protocoles \cite{PVW08}, identity-based encryption (IBE) schemes \cite{GPV08, CHKP10, ABB10}, leakage-resilient encryption \cite{AGV09, ACPS09, DGKPV10, GKPV10}, and more % TODO change or \cite{Reg10}
-
-% - most important: fully homomorphic encryption schemes \cite{Gen09a, BV11, Bra12, GSW13} % TODO 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% TODO: write more intro?
 We now present the mathematical definition of lattices and related tools that we will use later on. Most of the background theory is based on material from \cite{MG02} with some adaptions.
 
 A \textit{lattice} $\Lambda$ is a discrete additive subgroub of the vector space $\mathbb{R}^m$. Every lattice can be defined by a basis $\mathbf{B}$ of $n$ linearly independent basis vectors $\mathbf{b}_1, \ldots, \mathbf{b}_n \in \mathbb{R}^m$ with $m\geq n$. A lattice then is the set of all integer linear combinations of the basis vectors in $\mathbf{B}$.
@@ -97,7 +67,7 @@ The \textit{minimum distance} $\lambda_1(\Lambda)$ of a lattice is the length of
 \begin{equation}
     \lambda_1(\Lambda) = \min_{v \in \Lambda \setminus \{0\}}\|\mathbf{v}\|.
 \end{equation}
-Furthermore, we can define \textit{$i$th successive minima} $\lambda_i(\Lambda)$ by considering an $m$-dimensional ball $\mathcal{B}(\mathbf{0}, r)$ with increasing radius $r \in \mathbb{R}$ and center $\mathbf{0} \in \mathbb{R}^m$ at the origin of $\Lambda$. Then  $\lambda_i(\Lambda)$ is the smallest radius $r$ such that the ball $\mathcal{B}(\mathbf{0}, r)$ contains exactly $i$ linearly independent lattice vectors. Note that an optimally reduced basis with basis vectors $\mathbf{b}_1 \leq \mathbf{b}_2 \cdots \leq \mathbf{b}_n$ satisfies $\lambda_i(\Lambda) = \|mathbf{b}_i\|$ for all $i\in [n]$.
+Furthermore, we can define \textit{$i$th successive minima} $\lambda_i(\Lambda)$ by considering an $m$-dimensional ball $\mathcal{B}(\mathbf{0}, r)$ with increasing radius $r \in \mathbb{R}$ and center $\mathbf{0} \in \mathbb{R}^m$ at the origin of $\Lambda$. Then  $\lambda_i(\Lambda)$ is the smallest radius $r$ such that the ball $\mathcal{B}(\mathbf{0}, r)$ contains exactly $i$ linearly independent lattice vectors. Note that an optimally reduced basis with basis vectors $\mathbf{b}_1 \leq \mathbf{b}_2 \cdots \leq \mathbf{b}_n$ satisfies $\lambda_i(\Lambda) = \|\mathbf{b}_i\|$ for all $i\in [n]$.
 
 
 In general it is hard to determine the exact values of $\lambda_i(\Lambda(\mathbf{B}))$ for a given basis $\mathbf{B}$. \textit{Minkowski theorem} states that $\lambda_1(\Lambda) \leq \sqrt{n} \cdot (\det(\Lambda))^{\frac{1}{n}}$ given that $\Lambda$ has rank $n$.
