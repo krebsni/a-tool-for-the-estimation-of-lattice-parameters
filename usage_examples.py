@@ -29,55 +29,9 @@ logger = logging.getLogger(__name__)
 lattice_parameter_estimation.Logging.set_level(logging.DEBUG)
 
 
-def compare_to_literature_examples():
-    # TODO
-    config = algorithms.Configuration()
-    schemes = [s for s in LWE_SCHEMES if s["name"] == "Lizard"]
-    scheme = schemes[0]
-    runtime = []
-    problem_instances = []
-    logger.info("Scheme: " + scheme["name"])
-
-    scheme_params = []
-    if isinstance(scheme["params"][0], list):
-        for param_sets in scheme["params"]:
-            scheme_params.extend([x for x in param_sets])
-    else:
-        scheme_params = scheme["params"]
-    for params in scheme_params:
-        n = params["n"]
-        q = params["q"]
-        sigma = params["sd"]  # standard deviation
-        err_dis = distributions.GaussianSigma(sigma=sigma, q=q)
-        if not "m" in params:
-            m = 2 * n
-        else:
-            m = params["m"]
-        if params["secret_distribution"] == "normal":
-            sec_dis = err_dis
-        else:
-            try:
-                (a, b), h = params["secret_distribution"]
-                sec_dis = distributions.Uniform(a=a, b=b, h=h)
-            except (TypeError, ValueError):
-                (a, b) = params["secret_distribution"]
-                sec_dis = distributions.Uniform(a=a, b=b)
-        problem_instances.append(
-            problem.LWE(
-                n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis
-            )
-        )
-
-    result = problem.estimate(parameter_problem=problem_instances, config=config)
-    runtime = result.runtime
-    runtime = sorted(runtime, key=lambda r: r["log_rop"])
+def estimation_example():
     import json
 
-    with open("runtime_Lizard.json", "w") as fout:
-        json.dump(runtime, fout)
-
-
-def estimation_example():
     sec = 350
     n = 2 ** 15
     q = 12289
@@ -87,9 +41,7 @@ def estimation_example():
         sigma=stddev, q=q, componentwise=True, sec=sec
     )
     sec_dis = err_dis  # "normal"
-    config = algorithms.Configuration(
-        algorithms=[algorithms.MITM, algorithms.LATTICE_REDUCTION]
-    )
+    config = algorithms.Configuration()
     lwe = problem.RLWE(
         n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis
     )
@@ -99,12 +51,9 @@ def estimation_example():
     print("LWE Estimates")
     print("---------------------------------")
     result = problem.estimate(parameter_problems=[lwe], config=config, sec=250)
-    import json
 
     print("Result: " + str(result))
     print(json.dumps(result.to_dict(), indent=4))
-    # result = param_search.is_secure(parameter_problem=[lwe], sec=350, config=config)
-    # print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
 
     # # Example: SIS
     print("---------------------------------")
@@ -112,18 +61,15 @@ def estimation_example():
     print("---------------------------------")
     q = param_search.make_prime(2 ** (2 * 10 + 1), lbound=2 ** (2 * 10))
     m = (n * log(q, 2)).round()
-    beta = err_dis.to_Loo(
-        dimension=n
-    )  # componentwise beta bound (convert from Gaussian)
+    beta = err_dis.to_Loo(dimension=n)
     sis = problem.RSIS(n=n, q=q, m=m, bound=beta)
-    # estimates
     result = problem.estimate(parameter_problems=[sis], config=config)
-    print("Result: " + json.dumps(result, indent=4))
-    # result = param_search.is_secure(parameter_problem=[sis], sec=350, config=config)
-    # print(["Insecure. ", "Secure! "][result.is_secure] + "Result: " + str(result.results))
 
 
 def Regev_example():
+    print("---------------------------------")
+    print("LWE Parameter Search (Regev)")
+    print("---------------------------------")
     config = algorithms.Configuration(algorithms=[algorithms.DUAL])
     sec = 128
 
@@ -159,7 +105,7 @@ def Regev_example():
 
 def SIS_example():
     print("---------------------------------")
-    print("SIS")
+    print("SIS Parameter Search")
     print("---------------------------------")
     config = algorithms.Configuration(
         algorithms=[algorithms.COMBINATORIAL, algorithms.LATTICE_REDUCTION],

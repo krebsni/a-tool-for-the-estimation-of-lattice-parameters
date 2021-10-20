@@ -813,6 +813,8 @@
 
 % EN: Extensions for references inside the document (\cref{fig:sample}, ...)
 % DE: cleveref für cref statt autoref, da cleveref auch bei Definitionen funktioniert
+\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
+
 \usepackage[capitalise,nameinlink,noabbrev]{cleveref}
 \ifdeutsch
   \crefname{table}{Tabelle}{Tabellen}
@@ -841,7 +843,6 @@
 %     Algorithm muss nach hyperref geladen werden
 \usepackage[chapter]{algorithm}
 
-\usepackage[algo2e, ruled, vlined, linesnumbered]{algorithm2e}
 
 \usepackage[]{algpseudocode}
 
@@ -893,7 +894,7 @@
   \crefname{Algorithmus}{Algorithm}{Algorithms}
   \floatname{Algorithmus}{Algorithm}
 \fi
-
+\crefname{algocf}{Algorithm}{Algorithms}
 
 
 % EN: Various chapter styles
