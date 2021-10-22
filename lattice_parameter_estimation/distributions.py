@@ -1,23 +1,20 @@
 r""" 
 Module for distributions to specify secret and error distributions. 
 
-Contains Uniform and Gaussian distributions with various constructors and utility methods. Instances can be transformed to bounds in various norms and a Gaussian width parameter :math:`alpha`. 
+Contains Uniform and Gaussian distributions with various constructors and utility methods. Instances can be transformed to bounds in various norms. 
 
-We write :math:`sigma` to denote the standard deviation :math:`\sigma` (if secret is normal form, also the secret standard devation) and :math:`s` to denote the Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}` and :math:`\alpha = s / q = \sqrt{2\pi} \sigma / q`.
-
-AUTHOR:
-    Nicolai Krebs - 2021
+We write ``sigma`` to denote the standard deviation :math:`\sigma` and :math:`s` to denote the Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}` and :math:`\alpha = s / q = \sqrt{2\pi} \sigma / q`.
 """
 from abc import ABC, abstractmethod
 from . import norm
-import sys
-import os
 import sage.all
 from sage.functions.log import log
-from sage.functions.other import ceil, sqrt
+from sage.functions.other import sqrt
 from sage.rings.all import QQ, RR
 from sage.symbolic.all import pi
+from sage.symbolic.all import pi, e
 import estimator as est
+from sage.misc.functional import round
 
 oo = est.PlusInfinity()
 
@@ -176,7 +173,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
     r"""
     Gaussian distribution.
 
-    Includes various constructors (in subclasses) :class:`GaussianS` for Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`, :class:`GaussianSigma` for standard deviation :math:`\sigma` and :class:`GaussianAlpha :math:`\alpha = s / q`. Gaussian can be converted to bounds in various norms with statistical security parameter ``sec``.
+    Includes various constructors (in subclasses) :class:`GaussianS` for Gaussian width parameter :math:`s = \sigma \cdot \sqrt{2\pi}`, :class:`GaussianSigma` for standard deviation :math:`\sigma` and :class:`GaussianAlpha` for :math:`\alpha = s / q`. Gaussian can be converted to bounds in various norms with statistical security parameter ``sec``.
     """
 
     @abstractmethod
@@ -206,67 +203,21 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
 
     def to_Lp(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`\ell_p`-norm of a vector whose coefficients are distributed according to a Gaussian. 
-        
+        Transforms a Gaussian width into :math:`\ell_p`-norm of a vector whose coefficients are distributed according to a Gaussian.
+
         .. _to_Lp:
 
-        For a Gaussian distribution, we have that: 
+        The following is based on :cite:`Lyu12`.
+        Given a Gaussian distribution :math:`D_{\mathbb{Z}^n, s}` with width parameter :math:`s  = \sqrt{2 \pi} \sigma` and a security parameter :math:`\texttt{sec}`, we can compute a bound :math:`\beta` such that a sample :math:`\mathbf{v}` drawn from :math:`D_{\mathbb{Z}^n, s}` satisfies :math:`\text{Pr}\left[ \|\mathbf{v}\|_\infty \geq \beta \right] \leq 2^{-\texttt{sec}}` as follows:
 
         .. math::
-            \text{Pr}\left[ |X| \geq x\right] &\leq 2 e^{-\pi x^2/s^2}\\
 
-        We require :math:`2 e^{-\pi x^2/s^2} \approx 2^{-\texttt{sec}}`, hence
+            \beta  = s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}.
 
-        .. math::
-            2 e^{-\pi x^2/s^2} &\approx 2^{-\texttt{sec}}\\
-            -\pi \frac{x^2}{s^2} &\approx (-\texttt{sec} - 1)\ln (2)\\
-            x  &\approx s \sqrt{\frac{(\texttt{sec} + 1) \ln(2)}{\pi}}\\
-        
-        :param sec: required security for statistical Gaussian to Lp-bound transformation
+        :param sec: required security for statistical Gaussian to :math:`\ell_p`-bound conversion
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        
+
         :returns: upper bound of :math:`\ell_2`-norm of vector
-        """
-        if sec is None:
-            if self.sec:
-                sec = self.sec
-            else:
-                raise ValueError("sec parameter must be specified")
-
-        if dimension is None:
-            dimension = self.dimension
-            if self.dimension is None:
-                raise ValueError(
-                    "Dimension must be specified as the object has not be initialized with a dimension."
-                )
-
-        bound = self.s * sqrt(log(2.0) * (sec + 1) / pi)
-        return norm.Lp(value=bound, p=2, dimension=dimension)
-
-    def to_L1(self, sec=None, dimension=None):
-        r"""
-        Transforms Gaussian width into norm :math:`\ell_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
-
-        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`\ell_1`-norm of vector
-        """
-        return self.to_Lp(sec=sec, dimension=dimension).to_L1(dimension=dimension)
-
-    def to_L2(self, sec=None, dimension=None):
-        r"""
-        Transforms Gaussian width into norm :math:`\ell_2`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
-
-        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`\ell_2`-norm of vector
-        """
-        return self.to_Lp(sec=sec, dimension=dimension).to_L2(dimension=dimension)
-
-    def to_Loo(self, sec=None, dimension=None):
-        r"""
-        Transforms Gaussian width into norm :math:`\ell_\infty`-norm of a vector whose coefficients are distributed according to a  (componentwise) Gaussian (see `to_Lp`_).
-
-        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
-        :returns: upper bound of :math:`\ell_\infty`-norm of vector
         """
         if sec is None:
             if self.sec:
@@ -284,10 +235,68 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
         bound = self.s * sqrt(log(2.0) * (sec + 1) / pi)
         return norm.Lp(value=bound, p=oo, dimension=dimension)
 
+    def to_L1(self, sec=None, dimension=None):
+        r"""
+        Transforms a Gaussian width into norm :math:`\ell_1`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+
+        :param sec: required security for statistical Gaussian to :math:`\ell_p`-bound conversion
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`\ell_1`-norm of vector
+        """
+        return self.to_Lp(sec=sec, dimension=dimension).to_L1(dimension=dimension)
+
+    def to_L2(self, sec=None, dimension=None):
+        r"""
+        Transforms a Gaussian width into norm :math:`\ell_2`-norm of a vector whose coefficients are distributed according to an :math:`n`-dimensional Gaussian.
+
+        We have that :math:`\text{Pr}\left[ \|X\|_2 > k\sigma \sqrt{n} \right] \leq k^n e^{\frac{n}{2}(1-k^2)}`, for an :math:`n`-dimensional Gaussian :math:`D_{\mathbb{Z}^n, s}` and a random variable :math:`X` with :math:`X \sim D_{\mathbb{Z}^n, s}`, for any :math:`k>1` :cite:`Lyu12`. We set :math:`k=\sqrt{2}` and obtain
+
+        .. math::
+        
+            \text{Pr}\left[ \|X\|_2 > \sigma \sqrt{2n} \right] \leq 2^{\frac{n}{2}} e^{\frac{n}{2}(1-2)} & = 2^{\frac{n}{2}} 2^{-\log e \frac{n}{2}} \\
+            & = 2^{\frac{n}{2}(1 -\log e)}
+        
+        If :math:`2^{\frac{n}{2}(1 -\log e)} \leq 2^{-\texttt{sec}}`, we take :math:`\sigma \sqrt{2n}` as our bound :math:`\beta`. Otherwise, we bound the :math:`\ell_2`-norm of :math:`\beta` by the :math:`\ell_\infty`-norm bound (see `to_Lp`_).
+
+        :param sec: required security for statistical Gaussian to :math:`\ell_p`-bound conversion
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`\ell_2`-norm of vector
+        """
+
+        if sec is None:
+            if self.sec:
+                sec = self.sec
+            else:
+                raise ValueError("sec parameter must be specified")
+
+        if dimension is None:
+            dimension = self.dimension
+            if self.dimension is None:
+                raise ValueError(
+                    "Dimension must be specified as the object has not be initialized with a dimension."
+                )
+
+        if 2 ** (dimension / 2 * (1 - log(e, 2))) <= 2 ** (-sec):
+            bound = self.sigma * sqrt(2 * dimension)
+            return norm.Lp(value=bound, p=2, dimension=dimension)
+        else:
+            return self.to_Lp(sec=sec, dimension=dimension).to_L2(dimension=dimension)
+
+    def to_Loo(self, sec=None, dimension=None):
+        r"""
+        Transforms a Gaussian width into norm :math:`\ell_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+
+        :param sec: required security for statistical Gaussian to :math:`\ell_p`-bound conversion
+        :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
+        :returns: upper bound of :math:`\ell_\infty`-norm of vector
+        """
+        return self.to_Lp(sec=sec, dimension=dimension).to_Loo(dimension=dimension)
+
     def to_Coo(self, sec=None, dimension=None):
         r"""
-        Transforms Gaussian width into norm :math:`\mathcal{C}_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
+        Transforms a Gaussian width into norm :math:`\mathcal{C}_\infty`-norm of a vector whose coefficients are distributed according to a Gaussian (see `to_Lp`_).
 
+        :param sec: required security for statistical Gaussian to :math:`\ell_p`-bound conversion
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_\infty`-norm of vector
         """
@@ -305,7 +314,7 @@ class Gaussian(norm.BaseNorm, ABC, Distribution):
 
 class GaussianAlpha(Gaussian):
     r"""
-    Helper class for Gaussian distribution with input parameter :math:`\alpha`.
+    Helper class for a Gaussian distribution with input parameter :math:`\alpha`.
     """
 
     def __init__(self, alpha, q, sec=None, dimension=None):
@@ -324,7 +333,7 @@ class GaussianAlpha(Gaussian):
 
 class GaussianSigma(Gaussian):
     """
-    Helper class for Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
+    Helper class for a Gaussian distribution with input parameter :math:`\sigma` (standard deviation).
     """
 
     def __init__(self, sigma, q=None, sec=None, dimension=None):
@@ -347,7 +356,7 @@ class GaussianSigma(Gaussian):
 
 class GaussianS(Gaussian):
     """
-    Helper class for Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
+    Helper class for a Gaussian distribution with input parameter :math:`s = \sigma \cdot \sqrt{2\pi}` where :math:`\sigma` is the standard deviation.
     """
 
     def __init__(self, s, q=None, sec=None, dimension=None):

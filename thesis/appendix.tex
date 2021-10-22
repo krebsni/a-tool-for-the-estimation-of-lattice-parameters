@@ -11,6 +11,33 @@ Similarly, for a lattice $\Lambda(\mathbf{B})$ a lattice code $\mathcal{C}$ defi
     \mathcal{C} = \left\{ x \in \Lambda(\mathbf{B}) \mid x \in \mathcal{V} \right\}.
 \end{equation} % TODO check
 
+\chapter{Proofs}
+\section{Proof of Norm Inequalities}\label{sec:proof-norm}
+Let $p, q \in \mathbb{N}$ with $1 \leq p \leq q \leq \infty$. Then the following inequation holds:
+\begin{align}
+    \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_{q'}.
+\end{align}
+
+\begin{proof}
+    For $\mathbf{x}, \mathbf{y} \in \mathbb{R}^n$ and $\frac{1}{u} + \frac{1}{v} = 1$, Hölder's inequality states that
+    \begin{align*}
+        \sum_{k=1}^n |\mathbf{x}_k| |\mathbf{y}_k| & \leq \left(\sum_{k=1}^n |\mathbf{x}_k|^u\right)^{\frac{1}{u}} \left(\sum_{k=1}^n |\mathbf{y}_k|^v\right)^{\frac{1}{v}}              \\
+                                                   & = \left(\sum_{k=1}^n |\mathbf{x}_k|^u\right)^{\frac{1}{u}} \left(\sum_{k=1}^n |\mathbf{y}_k|^{\frac{u}{u-1}}\right)^{1-\frac{1}{u}}
+    \end{align*}
+    Following \cite{norm-relations}, we set $|\mathbf{x}_i| = |\mathbf{z}_i|^p$, $\mathbf{y}_i = 1$ and $u = \frac{q}{p} > 1$ and get
+
+    \begin{align*}
+        \sum_{k=1}^n |\mathbf{z}_i|^p  = \sum_{k=1}^n |\mathbf{z}_i|^p |\mathbf{y} & \leq \left(\sum_{k=1}^n |\mathbf{z}_i|^{p \frac{q}{p}}\right)^{\frac{p}{q}} \left(\sum_{k=1}^n 1^\frac{q}{q-p}\right)^{1-\frac{p}{q}} \\
+                                                                                   & \leq n^{1-\frac{p}{q}} \left(\sum_{k=1}^n  |\mathbf{z}_i|^q\right)^{\frac{p}{q}}
+    \end{align*}
+    We now apply the definition of the $\ell_p$-norm (see \cref{sec:norms}) and obtain
+    \begin{align*}
+        \|\mathbf{z}\|_p = \left(\sum_{k=1}^n |\mathbf{z}_i|^p\right)^{\frac{1}{p}} & \leq  \left(n^{1-\frac{p}{q}} \left(\sum_{k=1}^n  |\mathbf{z}_i|^q \right)^{\frac{p}{q}} \right)^{\frac{1}{p}} \\
+                                                                                    & = n^{\frac{1}{p}-\frac{1}{q}}\left(\sum_{k=1}^n |\mathbf{z}_i|^q\right)^{\frac{1}{q}}                          \\
+                                                                                    & = n^{\frac{1}{p}-\frac{1}{q}} \|\mathbf{z}\|_q
+    \end{align*}
+\end{proof}
+
 \chapter{Tables}
 \section{Mapping of Parameters in Referenced Papers}
 \begin{table}

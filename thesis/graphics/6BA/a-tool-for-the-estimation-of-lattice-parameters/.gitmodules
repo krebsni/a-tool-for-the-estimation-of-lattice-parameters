@@ -1,6 +1,0 @@
-[submodule "lattice_parameter_estimation/estimator"]
-	path = lattice_parameter_estimation/estimator
-	url = https://bitbucket.org/malb/lwe-estimator.git
-[submodule "lattice_parameter_estimation/estimate_all_schemes"]
-	path = lattice_parameter_estimation/estimate_all_schemes
-	url = https://github.com/estimate-all-the-lwe-ntru-schemes/estimate-all-the-lwe-ntru-schemes.github.io.git

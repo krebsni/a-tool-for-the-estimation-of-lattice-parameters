@@ -1,8 +1,6 @@
-r"""Module for estimation algorithms. Includes configuration class and a number of estimation algorithms for SIS."""
+r"""Module for estimation algorithms. Includes a configuration class and several estimation algorithms for SIS."""
 
 from multiprocessing import Value
-import sys
-import os
 import logging
 import norm
 import sage.all
@@ -12,6 +10,7 @@ from sage.rings.all import QQ, RR, ZZ, RealField
 from sage.symbolic.all import pi
 import reduction_cost_models
 import estimator as est
+from sage.misc.functional import round
 
 oo = est.PlusInfinity()
 
@@ -49,7 +48,7 @@ LATTICE_REDUCTION_RS = "reduction-rs"
 REDUCTION = "reduction"
 REDUCTION_RS = "reduction-rs"
 COMBINATORIAL = "combinatorial"
-COMBINATORIAL_CONSERVATIVE = "combinatorial_cons"
+COMBINATORIAL_CONSERVATIVE = "combinatorial_conservative"
 
 # All
 ALL = [
@@ -78,7 +77,7 @@ class SecurityStrategy:
 
 class ALL_SECURE(SecurityStrategy):
     """
-    All algorithms must yield results that satisfy security parameter.
+    All algorithms must yield results that satisfy the security parameter.
     """
 
     pass
@@ -86,7 +85,7 @@ class ALL_SECURE(SecurityStrategy):
 
 class SOME_SECURE(SecurityStrategy):
     """
-    At least one algorithm must yield results that satisfy security parameter (other algorithms may fail in case of timeout or exception, but no insecure result).
+    At least one algorithm must yield results that satisfy the security parameter. Other algorithms may fail in case of timeout or exception, but no insecure result is allowed.
     """
 
     pass
@@ -94,40 +93,22 @@ class SOME_SECURE(SecurityStrategy):
 
 class NOT_INSECURE(SecurityStrategy):
     """
-    Algorithms may fail in case of timeout or exception, but no insecure result. Secure result not needed to continue with search.
+    Algorithms may fail in case of a timeout or an exception, but no insecure result is allowed.
     """
 
     pass
 
 
 ## BKZ SVP rounds ##
-def BKZ_SVP_repeat_core(beta, d):
-    """Returns the number of BKZ rounds of the Core-SVP model :cite:p:`ADPS16`, i.e. the literal ``1``.
-
-    :param beta: block size
-    :param d: lattice dimension
-    """
-
-    return 1
+class BKZ_SVP_repeat_core:
+    """Core-SVP model (only one BKZ round) :cite:p:`ADPS16`."""
 
 
-def BKZ_SVP_repeat_8d(beta, d):
-    """Returns the number of BKZ rounds of the model described in :cite:p:`APS15`, i.e. ``8 * d``.
-
-    :param beta: block size
-    :param d: lattice dimension
-    """
-
-    return 8 * d
+class BKZ_SVP_repeat_8d:
+    """SVP model with ``8n`` BKZ rounds :cite:p:`APS15`."""
 
 
 class Configuration:
-    """
-    Configuration of the cost estimation parameters (including cost models and algorithms used).
-    """
-
-    # TODO: custom reduction_cost_function
-
     def __init__(
         self,
         conservative=True,
@@ -145,7 +126,7 @@ class Configuration:
         timeout=1000,
     ):
         r"""
-        Configure cost estimation.
+        Configuration of the cost estimation parameters (including cost models and used algorithm).
 
         .. list-table:: List of cost models included for ``conservative=True``
             :header-rows: 1
@@ -153,11 +134,11 @@ class Configuration:
             * - Selection
               - Cost models
             * - default
-              - "Q‑Core‑Sieve", "Lotus"
+              - "Q‑Sieve", "Lotus"
             * - `classical=False`
-              - "Q‑Core‑Sieve", "Q‑Core‑Enum + O(1)"
+              - "Q‑Sieve", "Q‑Enum + O(1)"
             * - `quantum=False`
-              - "Core‑Sieve", "Lotus"
+              - "Sieve", "Lotus"
 
         If ``sieving=False`` or ``enumeration=False``, the cost models in the respective groups are removed from the list. For more details, see :ref:`cost_models <cost-models>`.
 
@@ -183,7 +164,7 @@ class Configuration:
         :param quantum: use quantum quantum, ``True`` by default
         :param sieving: use sieving cost_models, ``True`` by default
         :param enumeration: use enumeration cost_models, ``True`` by default
-        :param bkz_svp_rounds: function that takes beta and d as input and returns the number of BKZ rounds, set to ``BKZ_SVP_repeat_core`` by default, the function ``BKZ_SVP_repeat_8d`` can also be used
+        :param bkz_svp_rounds: ``BKZ_SVP_repeat_core`` for the Core-SVP model, can also be``BKZ_SVP_repeat_8d`` for ``8n`` BKZ rounds
         :param algorithms: list containing algorithms for cost estimate. For LWE and its variants, the list can contain the constants ``USVP`` (or ``PRIMAL_USVP``), ``PRIMAL_DECODE`` (or ``DECODE``), ``DUAL``, ``DUAL_NO_LLL``, ``ARORA_GB``, ``MITM``, ``CODED_BKW`` (or ``BKW``). For SIS and its variants, the list can contain ``LATTICE_REDUCTION`` (or ``REDUCTION``), ``LATTICE_REDUCTION_RS`` (or ``REDUCTION_RS``), ``COMBINATORIAL`` and ``COMBINATORIAL_CONSERVATIVE``. Instead of a list, the parameter can be set to ``ALL`` to run all algorithms. The constants are included in :py:mod:`lattice_parameter_estimation.algorithms`. Default is ``[USVP, REDUCTION]``. For more details see :py:mod:`lattice_parameter_estimation.problem.LWE.get_estimate_algorithms` and :py:mod:`lattice_parameter_estimation.problem.SIS.get_estimate_algorithms`
         :param custom_cost_models: list of reduction cost models (see above)
         :param parallel: multiprocessing support, active by default
@@ -205,7 +186,7 @@ class Configuration:
         self.sieving = sieving
         self.enumeration = enumeration
         self.bkz_svp_rounds = bkz_svp_rounds
-        sis_algs = ["reduction", "combinatorial"]
+        sis_algs = [REDUCTION, COMBINATORIAL, REDUCTION_RS, COMBINATORIAL_CONSERVATIVE]
         lwe_algs = [
             "usvp",
             "decode",
@@ -239,7 +220,10 @@ class Configuration:
                 )
             self.cost_models = custom_cost_models
         else:
-            unfiltered_cost_models = reduction_cost_models.BKZ_COST_MODELS
+            if bkz_svp_rounds == BKZ_SVP_repeat_core:
+                unfiltered_cost_models = reduction_cost_models.BKZ_COST_MODELS
+            else:
+                unfiltered_cost_models = reduction_cost_models.BKZ_COST_MODELS_8d
             bkz_cost_models = []
             if not paranoid:
                 unfiltered_cost_models = [

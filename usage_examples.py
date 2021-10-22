@@ -94,10 +94,11 @@ def simple_LWE_parameter_search_example():
     print("LWE Parameter Search (Regev)")
     print(SEPARATOR)
     config = algorithms.Configuration(algorithms=[algorithms.DUAL])
-    sec = 128
+    sec = 120
 
     def next_parameters(n, q=None, m=None, alpha=None):
-        n, alpha, q, m = Param.Regev(n * 2, m=n ** 2)
+        n, alpha, q = Param.Regev(n * 2)
+        m = n ** 2
         yield n, q, m, alpha
 
     def parameter_problem(n, q, m, alpha):
@@ -132,7 +133,7 @@ def simple_SIS_parameter_search_example():
     config = algorithms.Configuration()
     sec = 128
 
-    def next_parameters(n):
+    def next_parameters(n, q, m, beta):
         # Parameters as in MP12
         n *= 2
         q = param_search.make_prime(2 * n ** 2, lbound=n ** 2)
@@ -146,7 +147,7 @@ def simple_SIS_parameter_search_example():
 
     res = param_search.generic_search(
         sec,
-        next(next_parameters(2 ** 5)),
+        next(next_parameters(2 ** 5, 0, 0, 0)),
         next_parameters,
         param_search.unit_cost,
         parameter_problem,
@@ -155,7 +156,9 @@ def simple_SIS_parameter_search_example():
 
     print(SEPARATOR)
     print("Search successful")
-    print(f"Parameters: {res['parameters']}")
+    print(
+        f"Parameters: ({res['parameters'][0]} {res['parameters'][1]} {str(float(res['parameters'][2]))} {str(float(res['parameters'][3].to_Loo().value))})"
+    )
     print(f"Estimate results: {str(res['result'])}")
 
 
@@ -603,7 +606,4 @@ def test_reduction():
 
 
 if __name__ == "__main__":
-    # SIS_example()
-    # Regev_example()
-    # two_problem_search_example()
     fire.Fire()

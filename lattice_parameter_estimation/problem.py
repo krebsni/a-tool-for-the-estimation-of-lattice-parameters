@@ -1,31 +1,24 @@
 r""" 
-Module containing problem classes for SIS and LWE and their ring and module variants such as statistically secure variants where applicable. In addition, the module contains estimate functions to estimate the security of parameter problems and estimate results classes to encapsulate cost estimates. 
-
-AUTHOR:
-    Nicolai Krebs - 2021
+Module containing problem classes for SIS and LWE and their ring and module variants, as well as statistically secure variants, where applicable. In addition, the module contains estimate functions to estimate the security of parameter problems and estimate result classes to encapsulate return values for cost estimates. 
 """
 
-from numpy.core.fromnumeric import var
 from . import distributions
 from . import algorithms
 from . import norm
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from typing import Generator, Iterable, List
+from typing import Iterable, List
 import time
-import sys
 import os
 import logging
 import traceback
 import multiprocessing as mp
-from concurrent.futures import ThreadPoolExecutor
 from queue import Empty
 from functools import partial
 import json
 import sage.all
-from sage.functions.log import exp, log
-from sage.functions.other import ceil, sqrt, floor, binomial
-from sage.rings.all import QQ, RR
+from sage.functions.log import log
+from sage.functions.other import sqrt
+from sage.rings.all import RR
 from sage.symbolic.all import pi, e
 from sage.misc.functional import round
 import estimator as est
@@ -81,7 +74,7 @@ class AlgorithmResult:
         :param params: list of input parameters for algorithm
         :param alg_name: name of algorithm
         :param c_name: name of cost model
-        :param cost: cost dict (:py:mod:`lattice_parameter_estimation.estimator.estimator.Cost` from lwe-estimator)
+        :param cost: cost dict (:py:mod:`lattice_parameter_estimation.estimator.estimator.Cost` from LWE Estimator)
         :param is_successful: ``True`` if algorithm was successful
         :param error: string with error description
         :param is_insecure: must be ``True`` if found cost estimate violates security requirement
@@ -149,9 +142,7 @@ class AlgorithmResult:
 
 class AggregateEstimationResult:
     """
-    Encapsulates aggregation of estimate results and automates is_secure check according to specified security strategy in config.
-
-    TODO: Type of return value needed for overloaded lt-operator :class:`BaseProblem` instances.
+    Encapsulates aggregation of estimate results and automates ``is_secure``-check according to specified security strategy in ``config``.
     """
 
     def __init__(
@@ -271,7 +262,7 @@ class AggregateEstimationResult:
 
     def is_secure(self):
         """
-        Returns if secure according to security strategy in config
+        Returns ``True`` if secure according to security strategy in config
         """
 
         if self.is_insecure:
@@ -401,17 +392,7 @@ def reduce_parameter_problems(
     """
     Reduce iterable of parameter problems to easiest versions of SIS and LWE respectively according to the following hardness rules:
 
-    For LWE,
-    * the larger n, the harder
-    * the larger q, the easier
-    * the larger alpha, the harder
-    * the larger m, the easier (more samples)
-
-    For SIS,
-    * the larger n, the harder
-    * the larger q, the harder
-    * the larger bound, the easier
-    * the larger m, the easier
+    For LWE, we have that the larger ``n`` and ``alpha`` are and the smaller ``q`` and ``m`` are, the harder the problem becomes. For SIS, the problem becomes harder for increasing ``n`` and ``q`` and decreasing ``beta`` and ``m``.
 
     Two problem instances might not be comparable with the above rules, hence the reduction is incomplete.
 
@@ -775,7 +756,7 @@ def estimate(
 ## LWE and its variants ##
 class LWE(BaseProblem):
     """
-    Learning with Errors (LWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    Learning with Errors (LWE) problem class used to create a list of algorithms from the LWE Estimator :cite:`APS15` for cost estimation.
     """
 
     _counter = 1
@@ -817,7 +798,7 @@ class LWE(BaseProblem):
 
     def get_estimate_algorithms(self, config: algorithms.Configuration):
         r"""
-        Compute list of estimate functions from the lwe-estimator :cite:`APS15` on the LWE instance according to the attack configuration.
+        Compute list of estimate functions from the LWE Estimator :cite:`APS15` on the LWE instance according to the attack configuration.
 
         The priorities are assigned as follows:
 
@@ -849,21 +830,27 @@ class LWE(BaseProblem):
               - 200
               - extremely slow, often higher estimates, does not always yield results
 
-        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=0,125_plots_200s.png
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_plot_Regev_long.png
             :align: center
             :figclass: align-center
 
-            LWE instance with :math:`\sigma=0.125,\; m=\infty, \; 2^{n} < q < 2^{n+1}`
+            LWE instance with parameters as in :cite:`Reg05`
 
-        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_stddev=2,828_plots_200s.png
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_plot_Regev_long_small_n.png
             :align: center
             :figclass: align-center
 
-            LWE instance with :math:`\sigma=2.828,\; m=\infty, \; 2^{n} < q < 2^{n+1}`
+            LWE instance with parameters as in :cite:`Reg05` for small :math:`n`
+
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/LWE_plot_long_small.png
+            :align: center
+            :figclass: align-center
+
+            LWE instance with :math:`\sigma=2.828,\; m=\infty, \; n < q < 2n`
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
-        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model with lower expected cost estimate for lower priorities
+        :returns: list of algorithms, e.g. ``[{"algname": "a1", "cname": "c1", "algf": f, "prio": 0, "cprio": 0, "inst": "LWE"}]`` where "prio" is the priority value of the algorithm (lower values have shorted estimated runtime) and "cprio" of the cost model, with lower expected cost estimate for lower priorities
         """
         if not isinstance(config, algorithms.Configuration):
             raise ValueError("config must be instance of algorithms.Configuration")
@@ -876,7 +863,7 @@ class LWE(BaseProblem):
             and self.secret_distribution.get_alpha(q=self.q, n=self.n) != alpha
         ):
             raise NotImplementedError(
-                "If secret distribution is Gaussian it must follow the error distribution. Differing Gaussians not supported by lwe-estimator at the moment."
+                "If secret distribution is Gaussian it must follow the error distribution. Differing Gaussians not supported by LWE Estimator at the moment."
             )  # TODO: perhaps change
 
         cost_models = config.reduction_cost_models()
@@ -884,9 +871,7 @@ class LWE(BaseProblem):
         algs = []
         # Choose algorithms. Similar to estimate_lwe function in estimator.py
         for reduction_cost_model in cost_models:
-            cost_model = lambda beta, d, B: config.bkz_svp_rounds(
-                beta, d
-            ) * reduction_cost_model["cost_model"](beta, d, B)
+            cost_model = cost_model = reduction_cost_model["cost_model"]
             success_probability = reduction_cost_model["success_probability"]
             cname = reduction_cost_model["name"]
             cprio = reduction_cost_model["prio"]
@@ -1254,7 +1239,7 @@ class LWE(BaseProblem):
 
 class MLWE(LWE):
     """
-    Module Learning with Errors (MLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    Module Learning with Errors (MLWE) problem class used to create a list of algorithms from LWE Estimator :cite:`APS15` for cost estimation.
     """
 
     _counter = 1
@@ -1271,7 +1256,7 @@ class MLWE(LWE):
         variant="MLWE",
     ):
         """
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param d: rank of module
         :param q: modulus
         :param m: number of samples
@@ -1355,7 +1340,7 @@ class MLWE(LWE):
 
 class RLWE(LWE):
     """
-    Ring Learning with Errors (RLWE) problem class used to create a list of algorithms from lwe-estimator :cite:`APS15` for cost estimation.
+    Ring Learning with Errors (RLWE) problem class used to create a list of algorithms from LWE Estimator :cite:`APS15` for cost estimation.
     """
 
     _counter = 1
@@ -1371,7 +1356,7 @@ class RLWE(LWE):
         label=None,
     ):
         """
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param m: number of samples
         :param secret_distribution: secret distribution (subclass of :py:mod:`lattice_parameter_estimation.distributions.Gaussian` or :py:mod:`lattice_parameter_estimation.distributions.Uniform`)
@@ -1463,7 +1448,7 @@ class StatisticalGaussianMLWE:
     :math:`q`                     :math:`q`   modulus
     :math:`l`                     :math:`m+d` width of matrix :math:`\mathbf{A}`
     :math:`k`                     :math:`m`   height of matrix :math:`\mathbf{A}`
-    :math:`n`                     :math:`n`   degree of polynomial
+    :math:`n`                     :math:`n`   degree of ring polynomial
     ============================= =========== ========================================
 
     Then Corollary 7.5 combined with Theorem 7.4 in :cite:`LPR13` reads as follows:
@@ -1477,7 +1462,7 @@ class StatisticalGaussianMLWE:
 
     def __init__(self, n, d, q, m, sec=None):
         """
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param d: rank of module
         :param q: modulus
         :param m: number of samples
@@ -1486,7 +1471,7 @@ class StatisticalGaussianMLWE:
         # TODO check parameters
         if sec and sec > n:
             raise ValueError(
-                "sec parameter must be greater than degree of polynomial n. Given parameters are not statistically secure."
+                "sec parameter must be greater than degree of ring polynomial n. Given parameters are not statistically secure."
             )
 
         self.n = n
@@ -1521,7 +1506,7 @@ class StatisticalGaussianMatrixMLWE(StatisticalGaussianMLWE):
 
     def __init__(self, n, q, width, height, sec=None):
         r"""
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
         :param height: height of matrix :math:`\mathbf{A}`
@@ -1542,7 +1527,7 @@ class StatisticalGaussianRLWE(StatisticalGaussianMLWE):
 
     def __init__(self, n, q, m, sec=None):
         """
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param m: number of samples
         :param sec: optional security parameter to ensure that n >= sec and for Gaussian conversion
@@ -1566,7 +1551,7 @@ class StatisticalUniformMLWE:
     :math:`k`                     :math:`m+d` width of matrix :math:`[ \mathbf{I}_n \; \mathbf{A}' ]`
     :math:`n`                     :math:`m`   height of matrix :math:`[ \mathbf{I}_n \; \mathbf{A}' ]`
     :math:`d`                     :math:`d_2` variable
-    :math:`N`                     :math:`n`   degree of polynomial
+    :math:`N`                     :math:`n`   degree of ring polynomial
     ============================= =========== ============================================================
 
     Lemma (:cite:`BDLOP18` Lemma 4): Let :math:`1 < d_2 < n` be a power of 2. If :math:`q` is a prime congruent to :math:`2d_2 + 1 \;(\text{mod } 4d_2)` and
@@ -1592,7 +1577,7 @@ class StatisticalUniformMLWE:
     def __init__(self, sec, n, d, q, m, d_2=None):
         r"""
         :param sec: required bit security of MLWE instance
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param d: rank of module (width of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
         :param q: modulus, must be prime congruent to :math:`2d_2 + 1 \;(\text{mod } 4d_2)`
         :param m: number of samples (height of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
@@ -1631,7 +1616,7 @@ class StatisticalUniformMLWE:
         Find :math:`d` that is a power of 2 and satisfies :math:`1 < d < n`  such that the prime :math:`q` is congruent to :math:`2d_2 + 1 \;(\text{mod } 4d_2)`
 
         :param q: prime
-        :param n: upper bound of d (degree of polynomial)
+        :param n: upper bound of d (degree of ring polynomial)
         """
 
         d = 2
@@ -1661,7 +1646,7 @@ class StatisticalUniformMatrixMLWE(StatisticalUniformMLWE):
 
     def __init__(self, sec, n, q, width, height, d_2=None):
         r"""
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
         :param height: height of matrix :math:`\mathbf{A}`
@@ -1684,7 +1669,7 @@ class StatisticalUniformRLWE(StatisticalUniformMLWE):
     def __init__(self, sec, n, q, m, d_2=None):
         r"""
         :param sec: required bit security of MLWE instance
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus, must be prime congruent to :math:`2d_2 + 1 \;(\text{mod } 4d_2)`
         :param m: number of samples (height of matrix :math:`\mathbf{A}'` in :cite:`BDLOP18`)
         :param d_2: :math:`1 < d_2 < N` and :math:`d_2` is a power of 2
@@ -1737,20 +1722,23 @@ class SIS(BaseProblem):
               - Priority
               - Comment
             * - lattice-reduction
-              - 5
+              - 1
               - fastest, low cost estimates
             * - lattice-reduction-rs
-              - 7
-              - same results as lattice-reduction, does not always work
+              - 2
+              - same results as lattice-reduction
             * - combinatorial
               - 10
-              - fast, often slightly higher cost results
+              - fast, often higher cost results
+            * - combinatorial-conservative
+              - 9
+              - fast, often higher cost results, slightly better than combinatorial
 
-        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/SIS_stddev=2,828_plots_1s.png
+        .. figure:: ../tests_for_optimization/algorithm_runtime_cost/SIS_plot_small.png
             :align: center
             :figclass: align-center
 
-            SIS instance with :math:`\sigma=2.828,\; m=n^2, \; 2^{2n} < q < 2^{2n+1}`
+            SIS instance with :math:`n^2 < q < 2n^2, \; m = 2n \sqrt{n \log q}, \; s = 2 \sqrt{n \log q}`
 
         :param config: instance of :py:mod:`lattice_parameter_estimation.algorithms.Configuration`
 
@@ -1763,9 +1751,7 @@ class SIS(BaseProblem):
         cost_models = config.reduction_cost_models()
         algs = []
         for reduction_cost_model in cost_models:
-            cost_model = lambda beta, d, B: config.bkz_svp_rounds(
-                beta, d
-            ) * reduction_cost_model["cost_model"](beta, d, B)
+            cost_model = reduction_cost_model["cost_model"]
             cname = reduction_cost_model["name"]
 
             if "reduction-rs" in config.algorithms:
@@ -1785,7 +1771,7 @@ class SIS(BaseProblem):
                             m=self.m,
                             reduction_cost_model=cost_model,
                         ),
-                        "prio": 1,
+                        "prio": 2,
                         "cprio": reduction_cost_model["prio"],
                         "inst": self.variant,
                     }
@@ -1806,7 +1792,7 @@ class SIS(BaseProblem):
                             m=self.m,
                             reduction_cost_model=cost_model,
                         ),
-                        "prio": 2,
+                        "prio": 1,
                         "cprio": reduction_cost_model["prio"],
                         "inst": self.variant,
                     }
@@ -1824,7 +1810,7 @@ class SIS(BaseProblem):
                         m=self.m,
                         bound=self.bound.to_Loo(self.n).value,
                     ),
-                    "prio": 0,
+                    "prio": 10,
                     "cprio": 0,
                     "inst": self.variant,
                 }
@@ -1841,7 +1827,7 @@ class SIS(BaseProblem):
                         m=self.m,
                         bound=self.bound.to_Loo(self.n).value,
                     ),
-                    "prio": 0,
+                    "prio": 9,
                     "cprio": 0,
                     "inst": self.variant,
                 }
@@ -1866,7 +1852,7 @@ class MSIS(SIS):
 
     def __init__(self, n, d, q, m, bound: norm.BaseNorm, variant="MSIS", label=None):
         """
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param d: rank of module
         :param q: modulus
         :param m: number of samples
@@ -1940,7 +1926,7 @@ class RSIS(SIS):
     def __init__(self, n, q, m, bound: norm.BaseNorm, variant="RSIS", label=None):
         """
         :param q: modulus
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param m: number of samples
         :param bound: upper bound on norm of solution, must be subclass of :py:mod:`lattice_parameter_estimation.norm.BaseNorm`
         :param variant: for internal use to distinguish variants
@@ -2017,7 +2003,7 @@ class StatisticalMSIS:
     :math:`m`                    :math:`m`     height of matrix :math:`\hat{\mathbf{A}}_1`
     :math:`B`                    :math:`B`     norm-bound of secret
     :math:`s`                    :math:`s`     Gaussian width (not stddev)
-    :math:`N`                    :math:`n`     degree of polynomial
+    :math:`N`                    :math:`n`     degree of ring polynomial
     ============================ ============= ============================================
 
     The number of elements in :math:`B_{m+d}(0, 2B)` can be estimated from above as :math:`|B_{m+d}(0, 2B)| \ll (2 \pi e /((m+d) n))^{(m+d) n/2} \cdot (2 B)^{(m+d) n}`. The scheme is statistically binding if the probability that non zero elements in :math:`B_{m+d}(0, 2B)` of radius :math:`2B` in :math:`\mathcal{R}_q^{m+d}` map to :math:`\mathbf{0}` in :math:`\mathcal{R}_q^{m}` is negligible. Hence, it must hold that :math:`|B_{m+d}(0, 2B)|/q^{m n} \leq 2^{-\texttt{sec}}` and we get:
@@ -2038,7 +2024,7 @@ class StatisticalMSIS:
     def __init__(self, sec, n, d, q, m):
         """
         :param sec: required bit security of MSIS instance
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param d: rank of module (or height of matrix)
         :param q: modulus
         :param m: number of samples (or width of matrix)
@@ -2079,7 +2065,7 @@ class StatisticalMatrixMSIS(StatisticalMSIS):
 
     def __init__(self, n, q, width, height, sec=None):
         r"""
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param width: width of matrix :math:`\mathbf{A}`
         :param height: height of matrix :math:`\mathbf{A}`
@@ -2102,7 +2088,7 @@ class StatisticalRSIS(StatisticalMSIS):
     def __init__(self, sec, n, q, m):
         """
         :param sec: required bit security of MSIS instance
-        :param n: degree of polynomial
+        :param n: degree of ring polynomial
         :param q: modulus
         :param m: number of samples (or width of matrix)
         """
@@ -2114,7 +2100,7 @@ class StatisticalSIS(StatisticalMSIS):
     r"""
     Statistically secure RSIS according to :cite:`DOTT21`, section 4.1.
 
-    For details, see :class:`StatisticalMSIS` with degree of polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e. :math:`d=n`).
+    For details, see :class:`StatisticalMSIS` with degree of ring polynomial dimension :math:`n=1`, height of matrix becomes rank of modulus (i.e., :math:`d=n`).
 
     :ivar max_sigma: standard deviation :math:`\sigma`
     :ivar max_beta: max bound :math:`\beta` in :math:`\ell_2`-norm

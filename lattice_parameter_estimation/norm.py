@@ -6,14 +6,15 @@ Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f \
 It is easy to see that for any :math:`p, q \in \mathbb{N}` with :math:`\infty \geq p \geq q \geq 1` the following inequation holds:
 
 .. math::
+
     \begin{align}
         \| f \|_p & \leq \| f \|_q \label{norm1}. \tag{1}
     \end{align}
-In addition, if we apply Hölder's inequality to finite vector spaces as in `Relations between p-norms<https://math.stackexchange.com/questions/218046/relations-between-p-norms>`_, the following holds:
 
-For :math:`1 \leq p \leq q \leq \infty` it holds that
+In addition, from Hölder's inequality it follows that for :math:`1 \leq p \leq q \leq \infty`:
 
 .. math::
+
     \begin{align}
         \lim_{q' \rightarrow q}\| f \|_p & \leq \lim_{q' \rightarrow q} n^{\frac{1}{p} - \frac{1}{q'}}\| f \|_q'. \label{norm2} \tag{2}
     \end{align}
@@ -22,6 +23,7 @@ For :math:`1 \leq p \leq q \leq \infty` it holds that
 From :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number and :math:`\sigma` denote the canonical embedding as defined in :cite:`DPSZ12`. Then, for :math:`x, y \in \mathcal{O}_K` it holds the following inequations hold (we assume that :math:`C_m` in :cite:`DPSZ12` is :math:`1` due to :math:`m` power of :math:`2`):
 
 .. math::
+
     \begin{align}
         \| f \|_p \leq n^{\frac{1}{p}} \| f \|_\infty &\leq n^{\frac{1}{p}} \| \sigma(f) \|_\infty \label{norm3} \tag{3}\\
         \| \sigma(f) \|_\infty &\leq \| f \|_1 \leq n^{1 - \frac{1}{p}}\| f \|_p \label{norm4} \tag{4}
@@ -29,16 +31,14 @@ From :cite:`DPSZ12`, Theorem 7: Let :math:`\mathcal{O}_K` be the ring of integer
 
 AUTHOR:
     Nicolai Krebs - 2021
+
 """
 
-from multiprocessing.sharedctypes import Value
-import sys
-import os
 from abc import ABC
 from abc import abstractmethod
 import sage.all
-from sage.functions.other import sqrt
 import estimator as est
+from sage.misc.functional import round
 
 oo = est.PlusInfinity()
 
@@ -131,7 +131,7 @@ class Lp(BaseNorm):
 
     def to_Coo(self, dimension=None):
         r"""
-        Calculate norm bound in :math:`\mathcal{C}_\infty`-norm for a given norm bound in some :math:`\ell_q`-norm by using Equations :math:`\ref{norm3}`:
+        Calculate norm bound in :math:`\mathcal{C}_\infty`-norm for a given norm bound in some :math:`\ell_q`-norm by using Equation :math:`\ref{norm3}`:
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_\infty`-norm of the vector
@@ -149,7 +149,7 @@ class Lp(BaseNorm):
 
     def to_Cp(self, p, dimension=None):
         r"""
-        Calculate norm bound in :math:`\mathcal{C}_p`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm3}`:
+        Calculate norm bound in :math:`\mathcal{C}_p`-norm for a given norm bound in some :math:`q`-norm by using Equation :math:`\ref{norm3}`:
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_p`-norm of the vector
@@ -158,7 +158,7 @@ class Lp(BaseNorm):
 
     def to_C1(self, p, dimension=None):
         r"""
-        Calculate norm bound in :math:`\mathcal{C}_1`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm3}`:
+        Calculate norm bound in :math:`\mathcal{C}_1`-norm for a given norm bound in some :math:`q`-norm by using Equation :math:`\ref{norm3}`:
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_1`-norm of the vector
@@ -167,7 +167,7 @@ class Lp(BaseNorm):
 
     def to_C2(self, p, dimension=None):
         r"""
-        Calculate norm bound in :math:`\mathcal{C}_2`-norm for a given norm bound in some :math:`q`-norm by using Equations :math:`\ref{norm3}`:
+        Calculate norm bound in :math:`\mathcal{C}_2`-norm for a given norm bound in some :math:`q`-norm by using Equation :math:`\ref{norm3}`:
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\mathcal{C}_2`-norm of the vector
@@ -195,7 +195,7 @@ class Lp(BaseNorm):
             TypeError(f"Cannot add {type(self)} to {type(other)}")
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
-        val = other.to_Lp(self.p, self.dimension)
+        val = other.to_Lp(self.p, self.dimension).value
         return Lp(value=self.value + val, p=self.p, dimension=self.dimension)
 
     def __sub__(self, other):
@@ -207,16 +207,26 @@ class Lp(BaseNorm):
 
         From :cite:`BDLOP18`: Let :math:`\mathcal{R}_q` be a ring as defined in :cite:`BDLOP18` and :math:`f, g \in \mathcal{R}_q`
 
-        1. If :math:`\|f\|_\infty \leq \beta, \|g\|_1 \leq \gamma` then :math:`\|f \cdot g\|_\infty \leq \beta \cdot \gamma`.
-        2. If :math:`\|f\|_2 \leq \beta, \|g\|_2 \leq \gamma` then :math:`\|f \cdot g\|_\infty \leq \beta \cdot \gamma`.
+        .. math::
+        
+            \begin{align}
+                \|f \cdot g\|_\infty & \leq \|f\|_\infty \cdot \|g\|_1, \label{norm10}\tag{5}\\
+                \|f \cdot g\|_\infty & \leq \|f\|_2 \cdot \|g\|_2.\label{norm11}\tag{6}
+            \end{align}
+            
 
         And from :cite:`DPSZ12`: Let :math:`\mathcal{O}_K` be the ring of integers of a number field :math:`K=\mathbb{Q}(\theta)`, where :math:`\theta` is an algebraic number. Then, for :math:`x, y \in \mathcal{O}_K` it holds that
 
         .. math::
-            \| \sigma(x \cdot y) \|_\infty \leq \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_\infty \label{norm5}\tag{5}
-            \| x \cdot y \|_\infty         & \leq n^2 \cdot \| x \|_\infty \cdot \| y \|_\infty
+
+            \begin{align}
+                \| \sigma(x \cdot y) \|_p \leq \| \sigma(x) \|_\infty \cdot \| \sigma(y) \|_p \label{norm5}\tag{7}
+            \end{align}
 
         (We assume that :math:`C_m = 1` in the original statement from the paper.)
+
+        If Equations :math:`\ref{norm10}` and :math:`\ref{norm11}` do not apply and the bounds for both vectors that we want to multiply is given in some :math:`\ell_p`-norm, we simply convert both bounds to the :math:`\mathcal{C}_\infty`-norm as described in Equation :math:`\ref{norm4}` and apply Equation :math:`\ref{norm5}` with :math:`p=\infty`.
+
         :returns: norm bound in some :math:`\ell_p`-norm or `\mathcal{C}_\infty`-norm
         """
         if not isinstance(other, BaseNorm):
@@ -336,7 +346,7 @@ class Cp(BaseNorm):
 
     def to_Lp(self, p, dimension=None):
         r"""
-        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`. We first convert the :math:`\mathcal{C}_p`-norm bound into the :math:`\mathcal{C}_\infty`-norm.
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equation :math:`\ref{norm3}`. We first convert the :math:`\mathcal{C}_p`-norm bound into the :math:`\mathcal{C}_\infty`-norm.
 
         :param p: norm parameter of target norm
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
@@ -356,7 +366,7 @@ class Cp(BaseNorm):
 
     def to_L1(self, dimension=None):
         r"""
-        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equation :math:`\ref{norm3}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_1`-norm of the vector
@@ -365,7 +375,7 @@ class Cp(BaseNorm):
 
     def to_L2(self, dimension=None):
         r"""
-        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equation :math:`\ref{norm3}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_2`-norm of the vector
@@ -374,7 +384,7 @@ class Cp(BaseNorm):
 
     def to_Loo(self, dimension=None):
         r"""
-        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equations :math:`\ref{norm4}`.
+        Calculate norm bound in :math:`\ell_p`-norm for a given norm bound in :math:`\mathcal{C}_p`-norm by using Equation :math:`\ref{norm3}`.
 
         :param dimension: dimension, note that for RLWE and MLWE the dimension has to be multiplied by the degree of the polynomial ``n``
         :returns: upper bound of :math:`\ell_\infty`-norm of the vector
@@ -401,7 +411,7 @@ class Cp(BaseNorm):
         if self.dimension != other.dimension:
             raise ValueError("Vectors must have the same dimension for addition.")
 
-        val = other.to_Cp(self.p, self.dimension)
+        val = other.to_Cp(self.p, self.dimension).value
         return Cp(value=self.value + val, p=self.p, dimension=self.dimension)
 
     def __radd__(self, other):
@@ -417,13 +427,7 @@ class Cp(BaseNorm):
         r"""
         Multiply :math:`C_p`-norm with ``other``. ``other`` can be a scalar or an instance of :class:`BaseNorm` as in :func:`~norm.Lp.__mul__`.
 
-        we can multiply two bounds :math:`\|\sigma(f)\|_p, \|\sigma(f)\|_q` in the embedding norm as in :class:`BaseNorm` as in :func:`~norm.Lp.__mul__`. To apply :math:`\ref{norm5}` we have to recursively embedded $\sigma(f)$ and $\sigma(g)$ and obtain
-        
-        .. math::
-            \|\sigma(f) \cdot \sigma(g)\|_\infty & \leq \|\sigma(\sigma(f)\cdot \sigma(g))\|_\infty \leq \|\sigma(\sigma(f)) \|_\infty \cdot \| \sigma(\sigma(g))\|_\infty \\
-                                                & \leq  n^{1-\frac{1}{p}}\|\sigma(f) \|_\infty \cdot n^{1-\frac{1}{q}} \|\sigma(f) \|_\infty.
-            \\
-                                                & \leq  n^{2-\frac{1}{p}-\frac{1}{q}}\|\sigma(f) \|_\infty \cdot \|\sigma(f) \|_\infty.
+        In the case that we have an :math:`\ell_p`-norm and a :math:`\mathcal{C}_q`-norm for some :math:`p,q`, we similarly convert the :math:`\ell_p`-norm to the :math:`\mathcal{C}_\infty`-norm and apply Equation :math:`\ref{norm5}`. If both bounds are :math:`\mathcal{C}_p`-norm bounds with :math:`p < \infty`, we apply Equation :math:`\ref{norm5}` twice, once with the first bound converted to the :math:`\mathcal{C}_\infty`-norm and once with the second norm converted to the :math:`\mathcal{C}_\infty`-norm, and take the best value as our result bound.
         """
         if not isinstance(other, BaseNorm):
             try:
