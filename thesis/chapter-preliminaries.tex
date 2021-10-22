@@ -5,12 +5,12 @@
 % TODO: some algebraic background
 
 \section{Notation}
-In the following, we denote vectors by bold lower-case letters like $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangeably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{N} \setminus \{0\}$. By $\log$, we denote the logarithm base $2$ and, by $\ln$ we denote the natural logarithm with base $e$. In order to avoid confusion, throughout this work, we use $\sigma$ to denote the standard deviation, where $\sigma = \frac{s}{\sqrt{2 \pi}}$ for a width paramter $s$, and we define $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
+In the following, we denote vectors by bold lower-case letters $\mathbf{v}$ and matrices by bold upper-case letters $\mathbf{M}$. We interchangeably use matrix notation and sets of column vectors $\left[\mathbf{v}_1 \cdots \mathbf{v}_n\right] = \left\{\mathbf{v}_1, \dots, \mathbf{v}_n\right\}$. Unless specified otherwise, by $\| \cdot \|$ or simply \textit{norm} we refer to the Euclidean norm. By $[n]$ we denote the set $\{1, \dots, n\}$ for $n\in \mathbb{N} \setminus \{0\}$. We denote the logarithm base $2$ by $\log$ and the natural logarithm with base $e$ by $\ln$. In order to avoid confusion, throughout this work, we let $\sigma$ denote the standard deviation, and set $s =\sigma \sqrt{2 \pi}$ and $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$ for other commonly used Gaussian parameters.
 % TODO: anything else? Inner product, negation in ring
 % add alpha, s, sigma here?
 
 \section{Norms}\label{sec:norms}
-We can define the standard $\ell_p$-norms on the vector space $\mathbb{R}^n$. In this work, we will also consider rings and modules (see \cref{sec:ring-module}) and require a way to bound the length of ring and module elements. Let $\mathcal{R}_q=\mathbf{Z}_q[X]/\langle X^n + 1 \rangle$ be a quotient ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. Following \cite{BDLOP18}, we define the norms
+We can define the standard $\ell_p$-norms on the vector space $\mathbb{R}^n$. In this work, we will also consider rings and modules (see \cref{sec:ring-module}) and require a way to bound the length of ring and module elements. Let $\mathcal{R}_q=\mathbb{Z}_q[X]/\langle X^n + 1 \rangle$ be a quotient ring as defined in \cite{BDLOP18} and $f \in \mathcal{R}_q$ with $f = \sum_i f_i X^i$. Following \cite{BDLOP18}, we define the norms
 \begin{equation}
     \begin{aligned}
         \ell_1 : \| f \|_1           & = \sum_i |f_i|,                                         \\
@@ -19,7 +19,7 @@ We can define the standard $\ell_p$-norms on the vector space $\mathbb{R}^n$. In
         \ell_\infty : \| f \|_\infty & = \max_i |f_i|.
     \end{aligned}
 \end{equation}
-For standard vector spaces, the definitions are essentially equivalent to the above, except that $f$ is a vector in $\mathbb{R}^n$ with coefficients $f_i$. For a module element $\mathbf{f} \in \mathcal{R}_q^d$, we can simply view $\mathbf{f}$ as a $n\cdot d$-dimensional vector.
+For standard vector spaces, the definitions are essentially equivalent to the above, except that $f$ is a vector in $\mathbb{R}^n$ or, in our case, $\mathbb{Z}^n$ with coefficients $f_i$. For a module element $\mathbf{f} \in \mathcal{R}_q^d$, we can simply view $\mathbf{f}$ as a $n\cdot d$-dimensional vector.
 
 \section{Lattices}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,7 +27,7 @@ For standard vector spaces, the definitions are essentially equivalent to the ab
 % TODO: write more intro?
 We now present the mathematical definition of lattices and related tools that we will use later on. Most of the background theory is based on material from \cite{MG02} with some adaptions.
 
-A \textit{lattice} $\Lambda$ is a discrete additive subgroup of the vector space $\mathbb{R}^m$. Every lattice can be defined by a basis $\mathbf{B}$ of $n$ linearly independent basis vectors $\mathbf{b}_1, \ldots, \mathbf{b}_n \in \mathbb{R}^m$ with $m\geq n$. A lattice is then the set of all integer linear combinations of the basis vectors in $\mathbf{B}$. \cref{fig:lattice-a} shows a lattice with basis $\mathbf{b}_1 = (0, 1)^\intercal,\; \mathbf{b}_2 = (2, 1)^\intercal$.
+A \textit{lattice} $\Lambda$ is a discrete additive subgroup of the vector space $\mathbb{R}^m$. Every lattice can be defined by a basis $\mathbf{B}$ of $n$ linearly independent basis vectors $\mathbf{b}_1, \ldots, \mathbf{b}_n \in \mathbb{R}^m$ with $m\geq n$. A lattice is then the set of all integer linear combinations of the basis vectors in $\mathbf{B}$. \cref{fig:lattice-a} shows a lattice with basis vectors $\mathbf{b}_1 = (0, 1)^\intercal$ and $\mathbf{b}_2 = (2, 1)^\intercal$.
 
 \begin{definition}[Lattice]
     Given a basis $\mathbf{B} = \left[\mathbf{b}_1, \ldots, \mathbf{b}_n\right] \in \mathbb{R}^{m\times n}$, we call $\Lambda$ a lattice generated by the column vectors of $\mathbf{B}$ if
@@ -37,7 +37,7 @@ A \textit{lattice} $\Lambda$ is a discrete additive subgroup of the vector space
 \end{definition}
 
 % TODO: make plot
-We call $n$ the \textit{rank} of the lattice. A lattice has full rank if the $n=m$. The basis of a lattice $\mathbf{B}$ is not unique. The two example lattices in \cref{fig:lattice} are identical, but have different bases. If $\mathbf{B}$ is a basis of a lattice $\Lambda$, then for any unimodular matrix $\mathbf{U}\in \mathbb{Z}^{n\times n}$ with determinant $\pm 1$, the basis $\mathbf{B}\cdot \mathbf{U}$ is also a basis of $\Lambda$. In cryptographic applications, we usually start with a lattice basis $\mathbf{B}$ with long basis vectors that are not very orthogonal to each other. For example, the problem of finding a short vector (SVP or SVP$_\gamma$, see \cref{def:svp}) in $\Lambda(\mathbf{B})$ turns out to be very difficult. If we can somehow find a ``nicer'' basis for $\Lambda(\mathbf{B})$ with shorter and more orthogonal basis vectors, finding a solution becomes a lot easier. We can improve the quality of a basis or ``reduce'' a basis in such a way by means of lattice basis reduction. The basis in \cref{fig:lattice-b} is ideal, i.e., it cannot be further reduced, whereas the basis in \cref{fig:lattice-a} can be reduced. In this particular case, the reduction is quite trivial. We can simply compute $\mathbf{b}'_2 = \mathbf{b}_2 - \mathbf{b}_1$ and take $\{\mathbf{b}_1, \mathbf{b}'_2\}$ as our new basis. But more to that later.
+We call $n$ the \textit{rank} of the lattice. A lattice has full rank if the $n=m$. The basis of a lattice $\mathbf{B}$ is not unique. The two example lattices in \cref{fig:lattice} are identical, but have different bases. If $\mathbf{B}$ is a basis of a lattice $\Lambda$, then for any unimodular matrix $\mathbf{U}\in \mathbb{Z}^{n\times n}$ with determinant $\pm 1$, the basis $\mathbf{B}\cdot \mathbf{U}$ is also a basis of $\Lambda$. In cryptographic applications, we usually begin with a lattice basis $\mathbf{B}$ with long basis vectors that are not very orthogonal to each other. For example, the problem of finding a short vector (SVP or SVP$_\gamma$, see \cref{def:svp}) in $\Lambda(\mathbf{B})$ turns out to be very difficult. If we can somehow find a ``nicer'' basis for $\Lambda(\mathbf{B})$ with shorter and more orthogonal basis vectors, finding a solution becomes a lot easier. We can improve the quality of a basis or ``reduce'' a basis in such a way by means of lattice basis reduction. The basis in \cref{fig:lattice-b} is ideal, i.e., it cannot be further reduced, whereas the basis in \cref{fig:lattice-a} can be reduced. In this particular case, the reduction is quite trivial. We can simply compute $\mathbf{b}'_2 = \mathbf{b}_2 - \mathbf{b}_1$ and take $\{\mathbf{b}_1, \mathbf{b}'_2\}$ as our new basis. But more to that later.
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}
         \centering
@@ -102,13 +102,13 @@ We call $n$ the \textit{rank} of the lattice. A lattice has full rank if the $n=
 
 % TODO: do we need cosets???
 
-Similar to a quotient ring $\mathbb{Z}/q\mathbb{Z}$ of integers modulo some positive integer $q$ with cosets $c + q\mathbb{Z}$, we can define the quotient group $\mathbb{R}^m/\mathbf{\Lambda}$ with \textit{cosets}
+Similar to a quotient ring $\mathbb{Z}/q\mathbb{Z}$ of integers modulo some positive integer $q$ with cosets $c + q\mathbb{Z}$, we can define the quotient group $\mathbb{R}^m/\Lambda$ with \textit{cosets}
 \begin{equation}
     \mathbf{c} + \Lambda = \{\mathbf{c} + \mathbf{v} \mid \mathbf{v}\in \Lambda\}
 \end{equation}
 where $\mathbf{c} \in \mathbb{R}^m$ \cite{Pei16}. % TODO: maybe add plot
 
-An important concept is the \textit{fundamental domain} of a lattice. The fundamental domain is a subset of $\mathbb{R}^m$ that contains exactly one representative of every coset of $\mathbb{R}^m/\mathbf{\Lambda}$. The most commonly considered fundamental domain of a lattice with basis $\mathbf{B}$ is the (shifted) \textit{fundamental parallelepiped}
+An important concept is the \textit{fundamental domain} of a lattice. The fundamental domain is a subset of $\mathbb{R}^m$ that contains exactly one representative of every coset of $\mathbb{R}^m/\Lambda$. The most commonly considered fundamental domain of a lattice with basis $\mathbf{B}$ is the (shifted) \textit{fundamental parallelepiped}
 \begin{equation} \label{eq:fundamental-parallelepiped}
     \mathcal{P}_{\frac{1}{2}}(\mathbf{B}) = \mathbf{B} \cdot \left[ - \frac{1}{2}, \frac{1}{2}\right)^n = \left\{ \mathbf{x} \in \mathbb{R}^m \;\middle|\; \mathbf{x} = \sum_{i=1}^n c_i \mathbf{b}_i, \; c_i \in  \left[ - \frac{1}{2}, \frac{1}{2}\right) \right\}
 \end{equation}
@@ -121,7 +121,7 @@ Another region that is often used is the \textit{Voronoi region} $\mathcal{V}$ \
 % intuition: collection of all points that can be written as By where y in [0, 1)^n
 % TODO: maybe add plot
 
-The $n$-dimensional volume of the fundamental parallelepiped of a lattice $\Lambda(\mathbf{B})$ is equivalent to the \textit{determinant} of the lattice $\text{det}(\Lambda(\mathbf{B})) = \sqrt{\text{det}\left(\mathbf{B}^\intercal \mathbf{B}\right)}$. For a full-ranked lattice, the determinant becomes $\det(\Lambda(\mathbf{B})) = |\det(\mathbf{B})|$. The determinant is independent from the used basis, which can be easily verified by considering  $\text{det}(\Lambda(\mathbf{U}\mathbf{B})$.
+The $n$-dimensional volume of the fundamental parallelepiped of a lattice $\Lambda(\mathbf{B})$ is equivalent to the \textit{determinant} of the lattice $\text{det}(\Lambda(\mathbf{B})) = \sqrt{\text{det}\left(\mathbf{B}^\intercal \mathbf{B}\right)}$. For a full-ranked lattice, the determinant becomes $\det(\Lambda(\mathbf{B})) = |\det(\mathbf{B})|$. The determinant is independent from the used basis, which can be easily verified by looking at $\text{det}(\Lambda(\mathbf{U}\mathbf{B}))$.
 
 The \textit{minimum distance} $\lambda_1(\Lambda)$ of a lattice is the length of its shortest nonzero vector
 \begin{equation}
@@ -135,15 +135,15 @@ The \textit{Gaussian heuristic} is commonly used to estimate the minimum distanc
 \begin{equation}\label{eq:gaussian-heuristic}
     \lambda_1(\Lambda) \approx \frac{\Gamma(1 + n/2)^{1/n}}{\sqrt{\pi}} \det(\Lambda)^{1/n}
 \end{equation}
-By applying Stirling's formula to estimate the $\Gamma$-function as described in \cite{Gop16}, we can simply the estimate to
+By applying Stirling's formula to estimate the value of the $\Gamma$-function as described in \cite{Gop16}, we can simply the estimate to
 \begin{equation}\label{eq:simplified-gaussian-heuristic}
     \lambda_1(\Lambda) \approx \sqrt{\frac{n}{2\pi e}} \det(\Lambda)^{1/n}
 \end{equation}
 
 % TODO: dual lattice
-The dual $\Lambda^{\perp}$ of a lattice $\Lambda(\mathbf{B})$ is defined as the set of vectors $\mathbf{y}$ in the span of $\mathbf{B}$ such that the inner product $\langle \mathbf{y}, \mathbf{v} \rangle$  is an integer for all $\mathbf{v} \in \Lambda(\mathbf{B})$. The basis of the dual of a lattice with basis $\mathbf{B}$ is given by $\mathbf{B'} = \mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$.
+The dual $\Lambda^{\perp}$ of a lattice $\Lambda(\mathbf{B})$ is defined as the set of vectors $\mathbf{y}$ in the span of $\mathbf{B}$, such that the inner product $\langle \mathbf{y}, \mathbf{v} \rangle$  is an integer for all $\mathbf{v} \in \Lambda(\mathbf{B})$. The basis of the dual of a lattice with basis $\mathbf{B}$ is given by $\mathbf{B'} = \mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$.
 
-In cryptography, we are mainly interested in modular integer (or $q$-ary) lattices. A $q$-ary lattice is a lattice $\Lambda_q$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}\setminus \{0\}$. This means that a vector $\mathbf{x} \in \mathbb{Z}^m$ is in $\Lambda$ if and only if $\mathbf{x} \mod q$ also is in $\Lambda$.
+In cryptography, we are mainly interested in modular integer (or $q$-ary) lattices. A $q$-ary lattice is a lattice $\Lambda_q$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}\setminus \{0\}$. This means that a vector $\mathbf{x} \in \mathbb{Z}^m$ is in $\Lambda$ if and only if $\mathbf{x} \text{ mod } q$ also is in $\Lambda$.
 
 We now look at two important ways of specifying a $q$-ary lattice given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$ \cite{BBGS19}.\begin{equation}\label{eq:lwe-lattice}
     \Lambda_q(\mathbf{A}^\intercal) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid \exists \mathbf{y} \in \mathbb{Z}^n : \mathbf{v} = \mathbf{A}^\intercal \mathbf{y} \mod q \right\}
@@ -156,14 +156,14 @@ Finding a short vector in $\Lambda_q^\perp(\mathbf{A})$ corresponds to solving t
 
 % TODO: find basis of $\Lambda_q(\mathbf{A})$ \cite{AFG13}
 
-In many scenarios, it is convenient to have an explicit formula that describes the relationship between the determinant of the above two lattices and the dimensions of $\mathbf{A}$. For $q$ prime and $m$ sufficiently larger than $n$, we have that the rank of $\mathbf{A}$ is $n$, as the rows of $\mathbf{A}$ are linearly independent with high probability. As a result, the lattice $\Lambda_q(\mathbf{A}^\intercal)$ has $q^n$ points in $\mathbb{Z}_q^m$.
-Consider the fundamental domain $D = \mathcal{P}(\Lambda_q(\mathbf{A}^\intercal))$ and the fact that $\Lambda_q(\mathbf{A}^\intercal) + (D \mod q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition \cite{volume-lattice}. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|\Lambda_q(\mathbf{A}^\intercal)||D \mod q|$ and thus
+In many scenarios, it is convenient to have an explicit formula that describes the relationship between the determinant of the above two lattices and the dimensions of $\mathbf{A}$. For $q$ prime and $m$ sufficiently larger than $n$, we have that the rank of $\mathbf{A}$ is $n$, since the rows of $\mathbf{A}$ are linearly independent with high probability. As a result, the lattice $\Lambda_q(\mathbf{A}^\intercal)$ has $q^n$ points in $\mathbb{Z}_q^m$.
+Consider the fundamental domain $D = \mathcal{P}_{1/2}(\Lambda_q(\mathbf{A}^\intercal))$ and the fact that $(\Lambda_q(\mathbf{A}^\intercal) \text{ mod } q) + (D \text{ mod } q) = \mathbb{R}^m/q\mathbb{R}^m$ is a partition \cite{volume-lattice}. The volume of $\mathbb{R}^m/q\mathbb{R}^m$ is given by $q^m =|(\Lambda_q(\mathbf{A}^\intercal) \text{ mod } q)||D \text{ mod } q|$ and thus
 \begin{equation}\label{eq:det-MR}
-    \text{det}(\Lambda_q(\mathbf{A}^\intercal)) = |D \mod q| = \frac{q^m}{|\Lambda_q(\mathbf{A}^\intercal)|} = \frac{q^{m}}{q^{n}} = q^{m-n}.
+    \text{det}(\Lambda_q(\mathbf{A}^\intercal)) = |D \text{ mod } q| = \frac{q^m}{|(\Lambda_q(\mathbf{A}^\intercal) \text{ mod } q)|} = \frac{q^{m}}{q^{n}} = q^{m-n}.
 \end{equation}
 Furthermore, we know that the dual lattice  $\Lambda_q^\perp(\mathbf{A})$ has $q^{m-n}$ points in $\mathbb{Z}_q^m$ as the dimension of the kernel of $\mathbf{A}$ is $m-n$. Analogously, we obtain
 \begin{equation}\label{eq:det-MR-dual}
-    \text{det}(\Lambda_q(\mathbf{A}^\intercal)^{\perp}) = |D \mod q| = \frac{q^m}{|\Lambda_q(\mathbf{A}^\intercal)^{\perp}|} = \frac{q^{m}}{q^{m-n}} = q^n.
+    \text{det}(\Lambda_q(\mathbf{A}^\intercal)^{\perp}) = |D \text{ mod } q| = \frac{q^m}{|(\Lambda_q(\mathbf{A}^\intercal) \text{ mod } q)|} = \frac{q^{m}}{q^{m-n}} = q^n.
 \end{equation}
 
 
@@ -192,7 +192,7 @@ We define $\text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$, where $\Lambda(\mathbf
 
 
 \subsection{Lattice Problems}\label{sec:lattice-problems}
-In the previous section, we already mentioned the Shortest Vector Problem or short SVP. In this section, we want to briefly list several lattice problems used in this work.
+In the previous section, we already mentioned the Shortest Vector Problem or short SVP. In this section, we want to briefly list several lattice problems that are used to show the hardness of LWE and SIS.
 
 \begin{definition}[SVP$_\gamma$] \label{def:svp}
     Given a basis $\mathbf{B}$ of a lattice $\Lambda$, the (approximate) Shortest Vector Problem (SVP$_\gamma$) is the problem of finding a short lattice vector $v\in \Lambda$ such that $0 < \| v \| \leq \gamma \lambda_1(\Lambda)$.
@@ -207,7 +207,7 @@ The corresponding decision version is the \textsc{GapSVP}$_\gamma$ problem, in w
 Both \textsc{GapSVP}$_\gamma$ and \textsc{SIVP}$_\gamma$ are NP-hard for any constant approximation factor $\gamma$ \cite{Khot05,BS99}. % in all $\ell_p$-norms 
 % NP hard for any constant $\gamma$ % Kho04, HR07 see LM09
 % fastest algorithm for $1\leq \gamma \leq \text{poly}(n)$ has runtime complexity of $2^{O(n)}$
-In \cref{ch:algorithms}, we will look at some selected algorithms that rely on reductions to the following problems.
+% In \cref{ch:algorithms}, we will look at some selected algorithms that rely on reductions to the following problems.
 
 % \begin{definition}[CVP$_\gamma$] \label{def:gamma-CVP}
 %   Given a basis $\mathbf{B}$ of a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$, the (approximate)  Closest Vector Problem (CVP$_\gamma$) is the problem of finding a lattice vector $\mathbf{v} \in \Lambda$ with $\|\mathbf{t} - \mathbf{v}\| < \gamma \min_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{v}\|$.
@@ -236,7 +236,7 @@ Oftentimes in lattice cryptography, we work with samples or vectors drawn from a
 \begin{definition}[Discrete Gaussian Distribution \cite{GJS15}]
     The discrete Gaussian distribution $D_{\Lambda, s, \mathbf{c}}$ over an $m$-dimensional lattice $\Lambda$ with width parameter $s > 0$ and center $\mathbf{c}$ is the probability distribution we obtain by assigning each vector $\mathbf{x}\in \Lambda$ a probability proportional to $e^{-\pi \|\mathbf{x} - \mathbf{c}\|^2/s^2}$. If $\mathbf{c} = \mathbf{0}$ we simply write  $D_{\Lambda, s}$.
 \end{definition}
-A discrete Gaussian sampler over a lattice can be efficiently realized (see for example \cite{GPV08}). Recall that $\sigma$ denotes the standard deviation and we use width parameter $s = \sqrt{2 \pi} \sigma$. Furthermore, $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
+A discrete Gaussian sampler over a lattice can be efficiently realized (see \cite{GPV08}). Recall that $\sigma$ denotes the standard deviation and we use width parameter $s = \sqrt{2 \pi} \sigma$. Furthermore, $\alpha = \frac{s}{q} = \frac{\sqrt{2\pi} \sigma}{q}$.
 
 % * better definition in GPV08 => different definition needed for LWE??? % TODO
 % * how to do this? => variant of Babai's ``nearest-plane'' algorithm, see \cite{GPV08} % TODO
@@ -254,12 +254,12 @@ A discrete Gaussian sampler over a lattice can be efficiently realized (see for 
 In \cref{sec:intro}, we informally introduced the Learning with Errors (LWE) problem and the Short Integer Solution (SIS) problem that constitute the main focus of this work. Both problems have given rise to a plethora of cryptosystems with strong underyling hardness assumptions, particularly in the context of the imminent advent of quantum computing. Hence, their importance in modern cryptography cannot be understated. We will now continue to describe LWE and SIS in more detail.
 
 \subsection{Learning with Errors (LWE)} \label{sec:lwe}
-The \textit{Learning with Errors} (LWE) problem asks us to recover some secret vector $\mathbf{s} \in \mathbb{Z}_q^n$ from a sequence of perturbed random linear equations on $\mathbf{s}$. The perturbed linear equations, also called samples, are of the form $\langle\mathbf{a}_i, \mathbf{s}\rangle + e_i \mod q$, where $\mathbf{a}_i$ are in $\mathbb{Z}_q^n$ and $e_i$ are error terms. We obtain a total of $m$ samples and can thus also express the equation system that is to be solved as $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \mod q$, where $\mathbf{A} \in \mathbb{Z}^{n \times m}$ and $\mathbf{e} \in \mathbb{Z}^m$. Note that we only know $\mathbf{z}$ and $\mathbf{A}$. A formal definition follows.
+The \textit{Learning with Errors} (LWE) problem asks us to recover some secret vector $\mathbf{s} \in \mathbb{Z}_q^n$ from a sequence of perturbed random linear equations on $\mathbf{s}$. The perturbed linear equations, also called samples, are of the form $\langle\mathbf{a}_i, \mathbf{s}\rangle + e_i \text{ mod } q$, where $\mathbf{a}_i$ are randomly chosen over $\mathbb{Z}_q^n$ and $e_i$ are error terms. We obtain a total of $m$ samples and can thus also express the equation system that is to be solved as $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \text{ mod } q$, where $\mathbf{A} \in \mathbb{Z}^{n \times m}$ and $\mathbf{e} \in \mathbb{Z}^m$. Note that we only know $\mathbf{z}$ and $\mathbf{A}$. A formal definition follows.
 
 \begin{definition}[LWE Distribution \cite{Reg10}] %TODO
-    Given an integer $n \geq 1$, a modulus $q \geq 2$, an error distribution $\chi$ on $\mathbb{Z}_q$, and a fixed secret vector $\mathbf{s}$, let $\mathcal{A}_{\mathbf{s}, \chi}$ be the probability distribution over $\mathbb{Z}_q^n \times \mathbb{Z}_q$ by choosing a vector $\mathbf{a}_i \in \mathbb{Z}_q^n$ uniformly at random, $e_i \in \mathbb{Z}_q$ according to $\chi$.  $\mathcal{A}_{\mathbf{s}, \chi}$ outputs pairs of
+    Given an integer $n \geq 1$, a modulus $q \geq 2$, an error distribution $\chi$ on $\mathbb{Z}_q$, and a fixed secret vector $\mathbf{s}$, let $\mathcal{A}_{\mathbf{s}, \chi}$ be the probability distribution over $\mathbb{Z}_q^n \times \mathbb{Z}_q$ by choosing a vector $\mathbf{a}_i \in \mathbb{Z}_q^n$ uniformly at random and $e_i \in \mathbb{Z}_q$ according to $\chi$.  $\mathcal{A}_{\mathbf{s}, \chi}$ outputs pairs of
     \begin{equation}
-        (\mathbf{a}_i, \langle \mathbf{a}_i, \mathbf{s} \rangle + e_i \mod q) \in \mathbb{Z}_q^n \times \mathbb{Z}_q.
+        (\mathbf{a}_i, \langle \mathbf{a}_i, \mathbf{s} \rangle + e_i \text{ mod } q) \in \mathbb{Z}_q^n \times \mathbb{Z}_q.
     \end{equation}
 \end{definition}
 
@@ -308,7 +308,7 @@ Solving LWE also corresponds to solving the \textit{Bounded Distance Decoding pr
 \subsubsection{Hardness} \label{sec:lwe-hardness}
 % % TODO
 % Best algorithm to solve LWE: Blum, Kalai, and Wasserman \cite{BKW03} with $2^{O(n)}$ samples and time. % TODO Sketch BKW?
-The most important hardness results for LWE come from \cite{Reg05} and \cite{Pei09}. \citet{Reg05} showed that there exists a polynomial-time quantum reduction from worst-case \textsc{GapSVP}$_\gamma$ and SIVP$_\gamma$ in the $\ell_2$-norm to the (average-case) search version of LWE. That means that LWE is quantumly at least as hard as \textsc{GapSVP}$_\gamma$ and SIVP$_\gamma$. A similar classical probabilistic polynomial-time reduction from worst-case \textsc{GapSVP}$_\gamma$ was later proposed by \citet{Pei09} for a sufficiently large modulus $q\geq 2^n$ in any $\ell_p$-norm for $p \geq 2$. The Shortest Vector Problem and its variants are well studied problems that are NP-hard for certain approximation problems (see \cref{sec:lattice-problems}. To this point, it is assumed that no efficient quantum algorithms exist that can solve NP-hard problems. It is thus conjectured that cryptosystems based on the worst-case to average-case reductions from Regev and Peikert are secure, even in the context of quantum computing. The currently best algorithms solve LWE in $2^{O(n)}$ time.
+The most important hardness results for LWE come from \cite{Reg05} and \cite{Pei09}. \citet{Reg05} showed that there exists a polynomial-time quantum reduction from worst-case \textsc{GapSVP}$_\gamma$ and SIVP$_\gamma$ in the $\ell_2$-norm to the (average-case) search version of LWE. That means that LWE is quantumly at least as hard as \textsc{GapSVP}$_\gamma$ and SIVP$_\gamma$. A similar classical probabilistic polynomial-time reduction from worst-case \textsc{GapSVP}$_\gamma$ was later proposed by \citet{Pei09} for a sufficiently large modulus $q\geq 2^n$ in any $\ell_p$-norm for $p \geq 2$. The Shortest Vector Problem and its variants are well studied problems that are NP-hard for certain approximation problems (see \cref{sec:lattice-problems}). To this point, it is assumed that no efficient quantum algorithms exist that can solve NP-hard problems. It is thus conjectured that cryptosystems based on the worst-case to average-case reductions from Regev and Peikert are secure, even in the context of quantum computing. The currently best algorithms solve LWE in $2^{O(n)}$ time.
 
 
 
@@ -324,7 +324,7 @@ In the SIS problem, we again have a set of uniformly random vectors $\mathbf{a}_
     The problem \text{SIS}$_{n, q, m, \beta}$ is defined as follows: Given a uniformly random matrix $\mathbf{A}^{n\times m}$, find a vector $\mathbf{s} \in \mathbb{Z}^m$ such that $\mathbf{A} \cdot \mathbf{s} = \mathbf{0} \mod q$ and $0 < \| \mathbf{s}\| \leq \beta$.
 \end{definition}
 
-Finding such a vector corresponds to solving SVP$_\gamma$ in the scaled $q$-ary dual lattice $\Lambda_q^\perp(\mathbf{A}) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid  \mathbf{A}\mathbf{v} = \mathbf{0} \mod q \right\}$. Note that the problem becomes trivial for sufficiently large bounds $\beta$. If $\beta\geq q$ in any $\ell_p$-norm, we can simply choose $\mathbf{s} = [q, 0, \dots, 0]^\intercal$. In some scenarios, the vector $\mathbf{s}$ is restricted to $\mathbb{Z}_q^m$. However, depending on the used norm for the length of $\mathbf{s}$, we can still efficiently find $\mathbf{s}$ with $\|\mathbf{s}\|_p$ by using some standard linear equation solver $\|\mathbf{s}\|_p$, if $\{\mathbf{s}\in \mathbb{Z}_q^m \mid \|\mathbf{s}'\|_p \leq \beta\} = \mathbb{Z}_q^m$. For example, in the $\ell_\infty$-norm we have that $\beta=q$ is large enough. In \cref{sec:norm-bounds}, we will define norm bound conversions to be able to express relationships between different  $\ell_p$-norms.
+Finding such a vector corresponds to solving SVP$_\gamma$ in the scaled $q$-ary dual lattice $\Lambda_q^\perp(\mathbf{A}) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid  \mathbf{A}\mathbf{v} = \mathbf{0} \mod q \right\}$. Note that the problem becomes trivial for sufficiently large bounds $\beta$. If $\beta\geq q$ in any $\ell_p$-norm, we can simply choose $\mathbf{s} = [q, 0, \dots, 0]^\intercal$. In some scenarios, the vector $\mathbf{s}$ is restricted to $\mathbb{Z}_q^m$. However, depending on the used norm for the length of $\mathbf{s}$, we can still efficiently find $\mathbf{s}$ with $\|\mathbf{s}\|_p$ by using some standard linear equation solver $\|\mathbf{s}\|_p$, if $\{\mathbf{s}\in \mathbb{Z}_q^m \mid \|\mathbf{s}'\|_p \leq \beta\} = \mathbb{Z}_q^m$. For example, in the $\ell_\infty$-norm we have that $\beta=q$ is large enough. In \cref{sec:norm-bounds}, we will define norm bound inequalities to be able to express relationships between different $\ell_p$-norms.
 
 As a simple example, SIS can be used to create collision-resistant hash functions. The matrix $\mathbf{A}$ defines a linear transformation that maps elements in  $\mathbb{Z}^m$ to  $\mathbb{Z}^n$, where $n < m$. The function $h_\mathbf{A}(\mathbf{v}) = \mathbf{A} \mathbf{v} \mod q$ is thus a hash function. We now restrict the domain of $h_\mathbf{A}$ by a bound $\beta$ such that $\|\mathbf{v}\|_\infty \leq \beta$. Consider a collision $\mathbf{v}' \neq \mathbf{v}$ such that $h_\mathbf{A}(\mathbf{v}') = h_\mathbf{A}(\mathbf{v}) \mod q$ or equivalently, $h_\mathbf{A}(\mathbf{v}' - \mathbf{v}) = \mathbf{0}$. Obviously, it holds that $\|\mathbf{v}' - \mathbf{v}\| \leq 2\beta$. Thus, finding a collision also solves SIS and, in particular, is as hard as solving SIS.
 
