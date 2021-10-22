@@ -20,62 +20,84 @@ from sage.symbolic.all import pi, e
 from sage.functions.log import exp, log
 from sage.functions.other import ceil, sqrt, floor, binomial
 from lattice_parameter_estimation.estimator.estimator import Param, arora_gb, bkw_coded
-
+import multiprocessing as mp
 from lattice_parameter_estimation.estimate_all_schemes.schemes import LWE_SCHEMES
 
 logging.basicConfig(level=logging.DEBUG)  # set to INFO to hide exceptions
 logger = logging.getLogger(__name__)
 
 lattice_parameter_estimation.Logging.set_level(logging.DEBUG)
+SEPARATOR = algorithms.SEPARATOR
 
 
-def estimation_example():
-    import json
+def simple_estimation_example():
+    """So simple estimation example for LWE and SIS"""
 
-    sec = 350
-    n = 2 ** 15
-    q = 12289
-    m = 2 * 1024
-    stddev = sqrt(8 ** (-3))  # TODO
-    err_dis = distributions.GaussianSigma(
-        sigma=stddev, q=q, componentwise=True, sec=sec
+    # Configuration
+    config = algorithms.Configuration(
+        # Cost models
+        conservative=True,
+        paranoid=False,
+        classical=True,
+        quantum=True,
+        sieving=True,
+        enumeration=True,
+        bkz_svp_rounds=algorithms.BKZ_SVP_repeat_core,
+        custom_cost_models=[],
+        # Algorithms and security criteria of result
+        algorithms=algorithms.ALL,
+        security_strategy=algorithms.SOME_SECURE,
+        # Others
+        parallel=True,
+        num_cpus=mp.cpu_count(),  # this is the default
+        timeout=1000,
     )
-    sec_dis = err_dis  # "normal"
-    config = algorithms.Configuration()
-    lwe = problem.RLWE(
-        n=n, q=q, m=m, secret_distribution=sec_dis, error_distribution=err_dis
-    )
 
-    # estimates
-    print("---------------------------------")
+    n = 2 ** 9
+    sec = 250
+
+    ## LWE Example
+    print(SEPARATOR)
     print("LWE Estimates")
-    print("---------------------------------")
-    result = problem.estimate(parameter_problems=[lwe], config=config, sec=250)
-
+    print(SEPARATOR)
+    # use [Reg05] to get an LWE problem instance
+    n, alpha, q = Param.Regev(n)
+    err_dis = distributions.GaussianAlpha(alpha=alpha, q=q, sec=sec)
+    sec_dis = err_dis  # "normal"
+    lwe = problem.LWE(
+        n=n, q=q, m=est.oo, secret_distribution=sec_dis, error_distribution=err_dis
+    )
+    result = problem.estimate(parameter_problems=[lwe], config=config)
+    print(SEPARATOR)
     print("Result: " + str(result))
-    print(json.dumps(result.to_dict(), indent=4))
+    result.save_as_JSON(("LWE_Regev_example"))
 
-    # # Example: SIS
-    print("---------------------------------")
+    # SIS Example
+    print(SEPARATOR)
     print("SIS Estimates")
-    print("---------------------------------")
-    q = param_search.make_prime(2 ** (2 * 10 + 1), lbound=2 ** (2 * 10))
-    m = (n * log(q, 2)).round()
-    beta = err_dis.to_Loo(dimension=n)
-    sis = problem.RSIS(n=n, q=q, m=m, bound=beta)
+    print(SEPARATOR)
+    # use [MP12] to get an SIS problem instance
+    q = param_search.make_prime(2 * n ** 2, lbound=n ** 2)
+    m = 2 * n * log(q, 2)
+    s = 2 * sqrt(n * log(q, 2))
+    beta = distributions.GaussianS(s, q, 128, n)  # internally converted to bound
+    sis = problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS")
+    print(SEPARATOR)
     result = problem.estimate(parameter_problems=[sis], config=config)
+    print(SEPARATOR)
+    print("Result: " + str(result))
+    result.save_as_JSON(("SIS_MP12_example"))
 
 
-def Regev_example():
-    print("---------------------------------")
+def simple_LWE_parameter_search_example():
+    print(SEPARATOR)
     print("LWE Parameter Search (Regev)")
-    print("---------------------------------")
+    print(SEPARATOR)
     config = algorithms.Configuration(algorithms=[algorithms.DUAL])
     sec = 128
 
     def next_parameters(n, q=None, m=None, alpha=None):
-        n, alpha, q = Param.Regev(n * 2)
-        m = n ** 2
+        n, alpha, q, m = Param.Regev(n * 2, m=n ** 2)
         yield n, q, m, alpha
 
     def parameter_problem(n, q, m, alpha):
@@ -97,30 +119,30 @@ def Regev_example():
         config,
     )
 
-    print("---------------------------------")
+    print(SEPARATOR)
     print("Search successful")
     print(f"Parameters: {res['parameters']}")
     print(f"Estimate results: {str(res['result'])}")
 
 
-def SIS_example():
-    print("---------------------------------")
+def simple_SIS_parameter_search_example():
+    print(SEPARATOR)
     print("SIS Parameter Search")
-    print("---------------------------------")
-    config = algorithms.Configuration(
-        algorithms=[algorithms.COMBINATORIAL, algorithms.LATTICE_REDUCTION],
-        parallel=False,
-    )
+    print(SEPARATOR)
+    config = algorithms.Configuration()
     sec = 128
 
-    def next_parameters(n, q=None, m=None, beta=None):
-        n, alpha, q = Param.Regev(n * 2)
-        beta = distributions.GaussianAlpha(alpha=alpha, q=q).to_Lp(sec=sec, dimension=n)
-        m = n ** 2
+    def next_parameters(n):
+        # Parameters as in MP12
+        n *= 2
+        q = param_search.make_prime(2 * n ** 2, lbound=n ** 2)
+        m = 2 * n * log(q, 2)
+        s = 2 * sqrt(n * log(q, 2))
+        beta = distributions.GaussianS(s, q, 128, n)  # internally converted to bound
         yield n, q, m, beta
 
     def parameter_problem(n, q, m, beta):
-        yield problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS-Regev")
+        yield problem.SIS(n=n, q=q, m=m, bound=beta, label="SIS")
 
     res = param_search.generic_search(
         sec,
@@ -131,7 +153,7 @@ def SIS_example():
         config,
     )
 
-    print("---------------------------------")
+    print(SEPARATOR)
     print("Search successful")
     print(f"Parameters: {res['parameters']}")
     print(f"Estimate results: {str(res['result'])}")
@@ -162,9 +184,10 @@ def amortized_rejection_sample(
 
 
 def BGV_example():
-    print("---------------------------------")
-    print("BGV")
-    print("---------------------------------")
+    """Advanced example of a BGV with accountability based on [BGV11, DPSZ12]"""
+    print(SEPARATOR)
+    print("BGV Parameter Search")
+    print(SEPARATOR)
 
     staticstical_sec = 80
     secret_distribution = distributions.GaussianS(3)
@@ -470,22 +493,15 @@ def BGV_example():
 
 
 def two_problem_search_example():
-    print("---------------------------------")
-    print("Two Problem Search Problem")
-    print("---------------------------------")
-    # k: width (over R_q) of commitment matrices
-    # n: height (over R_q) of commitment matrices
-    # l: dimension (over R_q) of message space
-    # beta: norm bound for honest prover's randomness in Loo-norm
-    # kappa: maximum L1-norm of any element in challenge space
-    # sigma: stddev used in zero-knowledge proof => sigma = 11*kappa*beta*sqrt(k*N)
-    # m: width of commitment matrix A_2' => m = k - n - l
+    """Advanced example of a commitment scheme based on [BDLOP18]"""
+    print(SEPARATOR)
+    print("Two Problem Parameter Search")
+    print(SEPARATOR)
     staticstical_sec = 128
     computational_sec = 80
     sigma = 1
     N = 2 ** 15
     p = 2 ** 64
-    # TODO: try coded-bkw and mitm for the parameters
     q = p
     l = 1
     d1 = 1

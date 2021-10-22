@@ -376,14 +376,14 @@ class SIS:
         if beta < norm.Loo(q / 2, n).to_L2().value:
             # TODO: RS10 assumes delta-SVP solver => ensure that solver used here is indeed delta-HSVP
             # Requirements
-            if n < 128 or q < n * n:
-                raise ValueError(
-                    "Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2"
-                )
-            if m < n * log(q, 2) / log(beta, 2):
-                raise ValueError(
-                    "m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1."
-                )
+            # if n < 128 or q < n * n:
+            #     raise ValueError(
+            #         "Violation of requirements of [RS10, Proposition 1] during SIS lattice reduction: n < 128 or q < n^2"
+            #     )
+            # if m < n * log(q, 2) / log(beta, 2):
+            #     raise ValueError(
+            #         "m must be > n * log_2(q)/log_2(beta). Else delta_0 < 1."
+            #     )
 
             n = ZZ(n)
             q = ZZ(q)
@@ -509,15 +509,17 @@ class SIS:
         # find optimal k
         k = closest_k = 1
         difference = oo
-        decreasing = True
-        right = m / n * log(2 * beta + 1, q)
-        while decreasing:
+        failed, max_failures = 0, 10
+        while failed < max_failures:
             left = 2 ** k / (k + 1)
+            right = m / n * log(2 * beta + 1, q)
             new_difference = abs(left - right)
             if new_difference < difference:
                 difference = new_difference
                 closest_k = k
-                decreasing = False
+                failed = 0
+            else:
+                failed += 1
             k += 1
         k = closest_k
 

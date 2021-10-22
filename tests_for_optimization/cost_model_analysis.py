@@ -60,7 +60,7 @@ def cost_model_plotter():
     import sage.all
     from sage.all import RR, ZZ, log, gamma, pi
 
-    sieving = False
+    sieving = True
     enumeration = True
     if sieving and enumeration:
         method = ""

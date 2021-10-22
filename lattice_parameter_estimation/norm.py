@@ -242,7 +242,8 @@ class Lp(BaseNorm):
                     value=self.value * other.value, p=oo, dimension=self.dimension
                 )
 
-        return self.to_Coo() * other.to_Coo()
+        else:
+            return other * self.to_Coo()  # other is in Cp norm
 
     def __rmul__(self, other):
         return self * other
@@ -433,33 +434,24 @@ class Cp(BaseNorm):
             raise ValueError("Vectors must have the same dimension for addition.")
         dimension = self.dimension
         if isinstance(other, Cp):
-            if self.p == oo and other.p == oo:
+            if self.p == oo:
                 return Cp(
-                    value=dimension ** 2 * self.value * other.value,
-                    p=oo,
+                    value=self.value * other.value,
+                    p=other.p,
                     dimension=dimension,
                 )
-            elif (
-                (self.p == 1 and other.p == oo)
-                or (self.p == oo and other.p == 1)
-                or (self.p == 2 and other.p == 2)
-            ):
-                return Cp(value=self.value * other.value, p=oo, dimension=dimension)
+            elif other.p == oo:
+                return Cp(
+                    value=self.value * other.value,
+                    p=self.p,
+                    dimension=dimension,
+                )
             else:
-                best = Coo(value=oo, dimension=self.dimension)
-                temp = self.to_Coo() * other.to_C1()  # returns Coo norm
+                best = self.to_Coo() * other
+                temp = self * other.to_Coo()
                 if temp.value < best.value:
                     best = temp
-                temp = self.to_C1() * other.to_Coo()
-                if temp.value < best.value:
-                    best = temp
-                temp = self.to_C2() * other.to_C2()
-                if temp.value < best.value:
-                    best = temp
-                temp = self.to_Coo() * other.to_Coo()
-                if temp.value < best.value:
-                    best = temp
-                return temp
+                return best
         else:
             return self * other.to_Coo()
 
