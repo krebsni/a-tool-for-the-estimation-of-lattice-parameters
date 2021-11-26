@@ -40,3 +40,5 @@ Examples of what can be done with the module can be found in the script [usage_e
 Bugs
 ----
 Sage 9.0 is known to have memory leaks. To mitigate the issue, it is recommended to avoid running multiple generic searches with memory heavy estimation algorithms (i.e. bkw-coded, arora-gb and primal-decoded) in the same script. Hopefully this issue will be resolved with Sage 9.3.
+
+
