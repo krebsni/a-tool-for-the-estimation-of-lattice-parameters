@@ -1,0 +1,892 @@
+{
+    "alg_results": {
+        "LWE": [
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 804.9647350642683,
+                "cost": "rop: 2^805.0, m: 89, mem: 2^796.0",
+                "runtime": 0.013944625854492188,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 1596.2999313614912,
+                "cost": "rop: 2^1596.3, m: 160, mem: 2^1586.3",
+                "runtime": 0.013674259185791016,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": Infinity,
+                "cost": "rop: 2^inf",
+                "runtime": 0.029304981231689453,
+                "is_successful": false,
+                "is_insecure": false,
+                "error": "Traceback (most recent call last):\n  File \"/mnt/c/Users/Nico/OneDrive/Studium/Informatik/6BA/a-tool-for-the-estimation-of-lattice-parameters/lattice_parameter_estimation/problem.py\", line 546, in algorithms_executor\n    cost = algf()\n  File \"/mnt/c/Users/Nico/OneDrive/Studium/Informatik/6BA/a-tool-for-the-estimation-of-lattice-parameters/lattice_parameter_estimation/estimator/estimator.py\", line 2932, in mitm\n    raise ValueError(\"Cannot find m to satisfy constraints (noise too big).\")\nValueError: Cannot find m to satisfy constraints (noise too big).\n"
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 3309.9652003210326,
+                "cost": "rop: 2^3310.0, m: 265, mem: 2^3299.0",
+                "runtime": 0.015099525451660156,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 6602.568795802785,
+                "cost": "rop: 2^6602.6, m: 427, mem: 2^6590.6",
+                "runtime": 0.01600933074951172,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 13186.25012172191,
+                "cost": "rop: 2^13186.3, m: 770, mem: 2^13173.3",
+                "runtime": 0.018420934677124023,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "mitm",
+                "cost_model": "",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 27252.937581445887,
+                "cost": "rop: 2^27252.9, m: 1459, mem: 2^27238.9",
+                "runtime": 0.016550302505493164,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 3.689578279616562,
+                "cost": "rop: 12.902, red: 12.902, delta_0: 1.010603, beta:   74, d:  307, m: 178",
+                "runtime": 0.06607413291931152,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 3981.864810074704,
+                "cost": "rop: 2^3981.9, red: 2^3981.9, delta_0: 1.000560, beta: 5096, d: 15846, m: 2^12.9",
+                "runtime": 0.09330391883850098,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 21.661882615795804,
+                "cost": "rop: 2^21.7, red: 2^21.7, delta_0: 1.007692, beta:  142, d:  556, m: 299",
+                "runtime": 0.08526921272277832,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 98.36745100570553,
+                "cost": "rop: 2^98.4, red: 2^98.4, delta_0: 1.004524, beta:  332, d: 1086, m: 573",
+                "runtime": 0.07717561721801758,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1630.8763535228172,
+                "cost": "rop: 2^1630.9, red: 2^1630.9, delta_0: 1.001000, beta: 2496, d: 8108, m: 2^12.0",
+                "runtime": 0.11043763160705566,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 3.689578279616562,
+                "cost": "rop: 12.902, red: 12.902, delta_0: 1.010603, beta:   74, d:  307, m: 178",
+                "runtime": 0.07578730583190918,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 256.671312028376,
+                "cost": "rop: 2^256.7, red: 2^256.7, delta_0: 1.002885, beta:  629, d: 2100, m: 1075",
+                "runtime": 0.09667134284973145,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 21.661882615795804,
+                "cost": "rop: 2^21.7, red: 2^21.7, delta_0: 1.007692, beta:  142, d:  556, m: 299",
+                "runtime": 0.0863499641418457,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 630.6116923779999,
+                "cost": "rop: 2^630.6, red: 2^630.6, delta_0: 1.001772, beta: 1205, d: 4168, m: 2^11.0",
+                "runtime": 0.10930800437927246,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 98.36745100570553,
+                "cost": "rop: 2^98.4, red: 2^98.4, delta_0: 1.004524, beta:  332, d: 1086, m: 573",
+                "runtime": 0.09318757057189941,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 256.671312028376,
+                "cost": "rop: 2^256.7, red: 2^256.7, delta_0: 1.002885, beta:  629, d: 2100, m: 1075",
+                "runtime": 0.12205982208251953,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 630.6116923779999,
+                "cost": "rop: 2^630.6, red: 2^630.6, delta_0: 1.001772, beta: 1205, d: 4168, m: 2^11.0",
+                "runtime": 0.1103200912475586,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 3981.864810074704,
+                "cost": "rop: 2^3981.9, red: 2^3981.9, delta_0: 1.000560, beta: 5096, d: 15846, m: 2^12.9",
+                "runtime": 0.09938979148864746,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "primal-usvp",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1630.8763535228172,
+                "cost": "rop: 2^1630.9, red: 2^1630.9, delta_0: 1.001000, beta: 2496, d: 8108, m: 2^12.0",
+                "runtime": 0.10117888450622559,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 19.578230330456744,
+                "cost": "rop: 2^19.6, m: 337, red: 2^19.6, delta_0: 1.009490, beta:   96, d:  337, |v|: 584.216, repeat: 2000, epsilon: 0.062500",
+                "runtime": 0.15233612060546875,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1741.0898349693773,
+                "cost": "rop: 2^1741.1, m: 2^12.0, red: 2^1741.1, delta_0: 1.000991, beta: 2525, repeat: 2^1693.0, d: 8211, c: 1",
+                "runtime": 0.18542885780334473,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 665.8661573214076,
+                "cost": "rop: 2^665.9, m: 2^11.1, red: 2^665.9, delta_0: 1.001718, beta: 1255, repeat: 2^609.0, d: 4251, c: 1",
+                "runtime": 0.1846940517425537,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 290.4345066901798,
+                "cost": "rop: 2^290.4, m: 1200, red: 2^290.4, delta_0: 1.002707, beta:  686, repeat: 2^233.0, d: 2224, c: 1",
+                "runtime": 0.17549371719360352,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 45.96177266067965,
+                "cost": "rop: 2^46.0, m: 620, red: 2^46.0, delta_0: 1.006952, beta:  170, d:  620, |v|: 2^12.4, repeat: 2^15.0, epsilon: 0.015625",
+                "runtime": 0.1745314598083496,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 19.578230330456744,
+                "cost": "rop: 2^19.6, m: 337, red: 2^19.6, delta_0: 1.009490, beta:   96, d:  337, |v|: 584.216, repeat: 2000, epsilon: 0.062500",
+                "runtime": 0.15971922874450684,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 137.58290146660505,
+                "cost": "rop: 2^137.6, m: 669, red: 2^137.6, delta_0: 1.004077, beta:  387, repeat: 2^99.0, d: 1181, c: 1",
+                "runtime": 0.17409110069274902,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 45.96177266067965,
+                "cost": "rop: 2^46.0, m: 620, red: 2^46.0, delta_0: 1.006952, beta:  170, d:  620, |v|: 2^12.4, repeat: 2^15.0, epsilon: 0.015625",
+                "runtime": 0.1638963222503662,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 4335.853108119315,
+                "cost": "rop: 2^4335.9, m: 2^13.0, red: 2^4335.9, delta_0: 1.000528, beta: 5462, repeat: 2^1451.0, d: 16492, c: 1",
+                "runtime": 0.26662611961364746,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 137.58290146660505,
+                "cost": "rop: 2^137.6, m: 669, red: 2^137.6, delta_0: 1.004077, beta:  387, repeat: 2^99.0, d: 1181, c: 1",
+                "runtime": 0.17662644386291504,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 350.24502401827107,
+                "cost": "rop: 2^350.2, m: 1221, red: 2^350.2, delta_0: 1.002657, beta:  704, repeat: 2^49.0, d: 2245, c: 1",
+                "runtime": 0.13582706451416016,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 151.93233453361088,
+                "cost": "rop: 2^151.9, m: 1181, red: 2^151.9, delta_0: 1.004077, beta:  387, d: 1181, |v|: 2^13.9, repeat: 2^27.0, epsilon: 2^-12.0",
+                "runtime": 0.11633777618408203,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1983.1971042283349,
+                "cost": "rop: 2^1983.2, m: 2^12.1, red: 2^1983.2, delta_0: 1.000941, beta: 2693, repeat: 2^187.0, d: 8426, c: 1",
+                "runtime": 0.1556556224822998,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 665.8661573214076,
+                "cost": "rop: 2^665.9, m: 2^11.1, red: 2^665.9, delta_0: 1.001718, beta: 1255, repeat: 2^609.0, d: 4251, c: 1",
+                "runtime": 0.18690705299377441,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 290.4345066901798,
+                "cost": "rop: 2^290.4, m: 1200, red: 2^290.4, delta_0: 1.002707, beta:  686, repeat: 2^233.0, d: 2224, c: 1",
+                "runtime": 0.20864129066467285,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 45.96177266067965,
+                "cost": "rop: 2^46.0, m: 364, red: 2^46.0, delta_0: 1.006952, beta:  170, repeat: 2^15.0, d:  620, c: 1",
+                "runtime": 0.14241290092468262,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 19.361091626109182,
+                "cost": "rop: 2^19.4, m: 208, red: 2^19.4, delta_0: 1.009540, beta:   94, repeat: 2^11.2, d:  336, c: 1",
+                "runtime": 0.14043545722961426,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 802.730615996694,
+                "cost": "rop: 2^802.7, m: 2^11.1, red: 2^802.7, delta_0: 1.001668, beta: 1304, repeat: 2^102.0, d: 4314, c: 1",
+                "runtime": 0.11007142066955566,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 4700.821022973685,
+                "cost": "rop: 2^4700.8, m: 2^13.0, red: 2^4700.8, delta_0: 1.000528, beta: 5462, repeat: 2^365.0, d: 16492, c: 1",
+                "runtime": 0.19291949272155762,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 128.0,
+                    "m": Infinity,
+                    "q": 4409.0,
+                    "alpha": 0.0016080325252034618
+                },
+                "sec": 19.361091626109182,
+                "cost": "rop: 2^19.4, m: 208, red: 2^19.4, delta_0: 1.009540, beta:   94, repeat: 2^11.2, d:  336, c: 1",
+                "runtime": 0.11997675895690918,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1741.0898349693773,
+                "cost": "rop: 2^1741.1, m: 2^12.0, red: 2^1741.1, delta_0: 1.000991, beta: 2525, repeat: 2^1693.0, d: 8211, c: 1",
+                "runtime": 0.19615554809570312,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 512.0,
+                    "m": Infinity,
+                    "q": 64879.0,
+                    "alpha": 0.00010927750741568247
+                },
+                "sec": 151.93233453361088,
+                "cost": "rop: 2^151.9, m: 1181, red: 2^151.9, delta_0: 1.004077, beta:  387, d: 1181, |v|: 2^13.9, repeat: 2^27.0, epsilon: 2^-12.0",
+                "runtime": 0.10554265975952148,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 256.0,
+                    "m": Infinity,
+                    "q": 33311.0,
+                    "alpha": 0.00021283706294083224
+                },
+                "sec": 45.96177266067965,
+                "cost": "rop: 2^46.0, m: 364, red: 2^46.0, delta_0: 1.006952, beta:  170, repeat: 2^15.0, d:  620, c: 1",
+                "runtime": 0.10396051406860352,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 4335.853108119315,
+                "cost": "rop: 2^4335.9, m: 2^13.0, red: 2^4335.9, delta_0: 1.000528, beta: 5462, repeat: 2^1451.0, d: 16492, c: 1",
+                "runtime": 0.19543051719665527,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 8192.0,
+                    "m": Infinity,
+                    "q": 41402789.0,
+                    "alpha": 1.712400438439561e-07
+                },
+                "sec": 4700.821022973685,
+                "cost": "rop: 2^4700.8, m: 2^13.0, red: 2^4700.8, delta_0: 1.000528, beta: 5462, repeat: 2^365.0, d: 16492, c: 1",
+                "runtime": 0.14435791969299316,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 4096.0,
+                    "m": Infinity,
+                    "q": 12046651.0,
+                    "alpha": 5.885299909179791e-07
+                },
+                "sec": 1983.1971042283349,
+                "cost": "rop: 2^1983.2, m: 2^12.1, red: 2^1983.2, delta_0: 1.000941, beta: 2693, repeat: 2^187.0, d: 8426, c: 1",
+                "runtime": 0.08745145797729492,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 1024.0,
+                    "m": Infinity,
+                    "q": 471193.0,
+                    "alpha": 1.5046521072303842e-05
+                },
+                "sec": 350.24502401827107,
+                "cost": "rop: 2^350.2, m: 1221, red: 2^350.2, delta_0: 1.002657, beta:  704, repeat: 2^49.0, d: 2245, c: 1",
+                "runtime": 0.09070897102355957,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "LWE",
+                "alg_name": "dual-scale-without-lll",
+                "cost_model": "Lotus",
+                "params": {
+                    "secret_distribution": "normal",
+                    "n": 2048.0,
+                    "m": Infinity,
+                    "q": 3774181.0,
+                    "alpha": 1.8785043440211436e-06
+                },
+                "sec": 802.730615996694,
+                "cost": "rop: 2^802.7, m: 2^11.1, red: 2^802.7, delta_0: 1.001668, beta: 1304, repeat: 2^102.0, d: 4314, c: 1",
+                "runtime": 0.06520485877990723,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            }
+        ]
+    },
+    "error": null,
+    "is_insecure": false,
+    "lowest_sec": 3.689578279616562,
+    "runtime": 1.1526293754577637
+}

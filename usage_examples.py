@@ -89,11 +89,11 @@ def simple_estimation_example():
     result.save_as_JSON(("SIS_MP12_example"))
 
 
-def simple_LWE_parameter_search_example():
+def simple_search_example():
     print(SEPARATOR)
-    print("LWE Parameter Search (Regev)")
+    print("Simple Parameter Search")
     print(SEPARATOR)
-    config = algorithms.Configuration(algorithms=[algorithms.DUAL])
+    config = algorithms.Configuration()
     sec = 120
 
     def next_parameters(n, q=None, m=None, alpha=None):
@@ -110,6 +110,12 @@ def simple_LWE_parameter_search_example():
             secret_distribution=distribution,
             error_distribution=distribution,
         )
+        yield problem.SIS(
+            n=n,
+            q=q,
+            m=m,
+            bound=distribution.to_Loo(sec=128, dimension=n),
+        )
 
     res = param_search.generic_search(
         sec,
@@ -120,10 +126,16 @@ def simple_LWE_parameter_search_example():
         config,
     )
 
-    print(SEPARATOR)
+    res_params = res["parameters"]
+    res_alg_results: problem.AggregateEstimationResult = res["result"]
+    print(res_params)
+    for k, v in res_alg_results.get_algorithm_result_dict(sort_by_rop=True).items():
+        print(f"{k}:")
+        for x in v:
+            print(f" - {x}")
+
+    print(algorithms.SEPARATOR)
     print("Search successful")
-    print(f"Parameters: {res['parameters']}")
-    print(f"Estimate results: {str(res['result'])}")
 
 
 def simple_SIS_parameter_search_example():

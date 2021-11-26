@@ -19,26 +19,26 @@ First, we need to define a measure to evaluate the quality of a given basis. The
 % - measure quality of basis: Hermite factor  % TODO change or \cite{Reg10}
 
 \begin{definition}[Root Hermite Factor \cite{LP11}]
-  Given a basis $\mathbf{B} = \left\{\mathbf{b}_1, \ldots, \mathbf{b}_n\right\}$ with $\|\mathbf{b}_1\| \leq \cdots,  \leq \|\mathbf{b}_n\|$, then an $n$-dimensional lattice $\Lambda(\mathbf{B})$ has root Hermite factor $\delta$ if
-  \begin{equation} \label{eq:hermite}
-    \| \mathbf{b}_1 \| \approx \delta^n \det(\Lambda)^{1/n}.
-  \end{equation}
+    Given a basis $\mathbf{B} = \left\{\mathbf{b}_1, \ldots, \mathbf{b}_n\right\}$ with $\|\mathbf{b}_1\| \leq \cdots,  \leq \|\mathbf{b}_n\|$, then basis $\mathbf{B}$ has root Hermite factor $\delta$ if
+    \begin{equation} \label{eq:hermite}
+        \| \mathbf{b}_1 \| \approx \delta^n \det(\Lambda)^{1/n}.
+    \end{equation}
 \end{definition}% TODO * $\delta = 1.01$ feasible, $\delta = 1.007$ seems infeasible for now
 We will later use a result that follows from the Geometric Series Assumption (GSA) as in \cite{Gop16}. The GSA estimates the length of the Gram-Schmidt vectors $\tilde{\mathbf{b}}_i$ as follows \cite{Sch03}: \label{sec:GSA} % got this from Gop16
 \begin{equation} \label{eq:GSA}
-  \| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \| \mathbf{b}_1 \|,
+    \| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \| \mathbf{b}_1 \|,
 \end{equation}
 for $0 < \alpha < 1$. If we combine \cref{eq:hermite} with \cref{eq:GSA}, we obtain  $\| \tilde{\mathbf{b}}_i \| \approx \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}$. Furthermore, we know that $\prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| = \det(\Lambda)$  % TODO: check
 and get
 \begin{align*}
-  \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}
-  \iff & \det(\Lambda) \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1} \\
-  \iff & \delta^{-2n} \approx \alpha^{\frac{n(n-1)}{2}}                             \\
-  \iff & \delta^{-2} \approx \alpha^{(n-1)/n}
+    \prod_{i-1}^n \| \tilde{\mathbf{b}}_i \| \approx \prod_{i-1}^n \alpha^{i-1} \delta^n \det(\Lambda)^{1/n}
+    \iff & \det(\Lambda) \approx \delta^{2n} \det(\Lambda) \prod_{i-1}^n \alpha^{i-1} \\
+    \iff & \delta^{-2n} \approx \alpha^{\frac{n(n-1)}{2}}                             \\
+    \iff & \delta^{-2} \approx \alpha^{(n-1)/n}
 \end{align*}
 Hence, $\alpha \approx \delta^{-2}$ and
 \begin{equation}
-  \| \tilde{\mathbf{b}}_i \| \approx \delta^{-2(i-1) + n} \det(\Lambda)^{1/n}
+    \| \tilde{\mathbf{b}}_i \| \approx \delta^{-2(i-1) + n} \det(\Lambda)^{1/n}
 \end{equation}
 We can see that for smaller $i$, the length of the Gram-Schmidt vectors $\tilde{\mathbf{b}}_i$ decreases, whereas for larger $i$, the length increases, resulting in a long and skinny fundamental parallelepiped $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$.
 
@@ -58,31 +58,31 @@ The LLL algorithm was proposed by Lenstra, Lenstra and Lovász \cite{LLL82} and 
 
 A $\theta$-LLL reduced basis ensures two criteria \cite{LLL82}:
 \begin{enumerate}
-  \item Size-reduced: $|\mu_{i,j}| \leq \frac{1}{2}$ for $1\leq i \leq n$ and $j < i$ \label{size-red}
-  \item Lovász condition: $\theta \| \tilde{\mathbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\mathbf{b}}_i + \tilde{\mathbf{b}}_{i+1} \|^2$ for $1\leq i < n$
+    \item Size-reduced: $|\mu_{i,j}| \leq \frac{1}{2}$ for $1\leq i \leq n$ and $j < i$ \label{size-red}
+    \item Lovász condition: $\theta \| \tilde{\mathbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\mathbf{b}}_i + \tilde{\mathbf{b}}_{i+1} \|^2$ for $1\leq i < n$
 \end{enumerate}
 
 Recall the definition of the Gram-Schmidt coefficients $\mu_{i, j} = \left\langle \tilde{\mathbf{b}}_j, \mathbf{b}_i\right\rangle / \left\langle \tilde{\mathbf{b}}_j, \tilde{\mathbf{b}}_j\right\rangle$. The LLL algorithm shown in \cref{alg:LLL} follows the notation in \cite{LLLReg04}. We start by computing the Gram-Schmidt orthogonalization of the input basis (\cref{alg:LLL-start}) and continue with a reduction step in which we update every basis vector $\mathbf{b}_i$ by pairwise comparing and subtracting lower indexed basis vector, just as in the Lagrange reduction (\cref{alg:LLL-red}) to ensure Criteria \ref{size-red}. Finally, vectors violating the Lovász condition are swapped (\cref{alg:LLL-swap}) and the process is repeated until nothing changes. The LLL algorithm can be used to find short vectors of at most $2^{n/2} \lambda_1(\Lambda)$ in polynomial time. Several floating-point variants have been suggested that can significantly speed up the runtime of LLL. For example, L$^2$ runs in $\mathcal{O}(n^2 \log^2 B)$, where $B$ is a bound on the norm of the input basis vectors \cite{NS05}. % TODO: newer versions?
 
 \begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function} % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
-  \Begin($\theta\text{-LLL} {(}\mathbf{B} \in \mathbb{Z}^{m\times n} {)}$) % TODO nxn???
-  {
-    Compute $\tilde{\mathbf{B}}$\label{alg:LLL-start}\\
-    \For{$i=2, \dots, n$}{
-      \For{$j=i-1, \dots, 1$}{
-        $\mathbf{b}_i = \mathbf{b}_i - \lfloor\mu_{i, j}\rceil \mathbf{b}_j$\label{alg:LLL-red}\\
-      }
+    \SetKwBlock{Begin}{function}{end function} % FROM https://cims.nyu.edu/~regev/teaching/lattices_fall_2004/ln/lll.pdf
+    \Begin($\theta\text{-LLL} {(}\mathbf{B} \in \mathbb{Z}^{m\times n} {)}$) % TODO nxn???
+    {
+        Compute $\tilde{\mathbf{B}}$\label{alg:LLL-start}\\
+        \For{$i=2, \dots, n$}{
+            \For{$j=i-1, \dots, 1$}{
+                $\mathbf{b}_i = \mathbf{b}_i - \lfloor\mu_{i, j}\rceil \mathbf{b}_j$\label{alg:LLL-red}\\
+            }
+        }
+        \If{$\exists i \text{ \upshape such that } \theta \| \tilde{\mathbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\mathbf{b}}_i + \tilde{\mathbf{b}}_{i+1} \|^2$}{
+            Swap $\mathbf{b}_{i}$ and $\mathbf{b}_{i+1}$\label{alg:LLL-swap}\\
+            Return $\theta$-LLL($\mathbf{B}$)\\
+        }
+        \Else{
+            Return $\mathbf{B}$\\
+        }
     }
-    \If{$\exists i \text{ \upshape such that } \theta \| \tilde{\mathbf{b}}_i \|^2 > \| \mu_{i+1, i} \tilde{\mathbf{b}}_i + \tilde{\mathbf{b}}_{i+1} \|^2$}{
-      Swap $\mathbf{b}_{i}$ and $\mathbf{b}_{i+1}$\label{alg:LLL-swap}\\
-      Return $\theta$-LLL($\mathbf{B}$)\\
-    }
-    \Else{
-      Return $\mathbf{B}$\\
-    }
-  }
-  \caption[The LLL Algorithm]{The LLL Algorithm \cite{LLL82}} \label{alg:LLL}
+    \caption[The LLL Algorithm]{The LLL Algorithm \cite{LLL82}} \label{alg:LLL}
 \end{algorithm2e}
 
 % Theoretical and experimental output quality
@@ -100,33 +100,33 @@ The Block Korkin-Zolotarev (BKZ) algorithm was proposed by Schnorr in 1987 and a
 
 
 \begin{algorithm2e} % TODO: check if block is not of dimension kxk
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{BKZ} {(} \mathbf{B} = \{\mathbf{b}_1, \dots, \mathbf{b}_{n}\}, k \in [n]\setminus \{1\} {)}$) % TODO nxn???
-  {
-      z = 0; j = 0\\
-      $\mathbf{B} = \text{LLL}(\mathbf{B})$ \\% LLL reduce and update basis
-      \While{$z < n-1$}{
-        $j = (j \mod (n-1)) + 1; l = \min(j + k -1, n); h = \min(l + 1, n)$\\
-        $A = \text{span}\left(\left\{\mathbf{b}_i | i \in [j-1]\right\}\right)$\label{BKZ-span}\\
-        \For{$i \in \{j, ..., l\}$}{
-          \If{$A \neq \emptyset$}{
-            $\mathbf{b}_i' = \pi_{A^\perp}(\mathbf{\mathbf{b}_i})$\label{BKZ-proj}\\
-          }
-          \Else{
-            $\mathbf{b}_i' = \mathbf{b}_i$\\
-          }
+    \SetKwBlock{Begin}{function}{end function}
+    \Begin($\text{BKZ} {(} \mathbf{B} = \{\mathbf{b}_1, \dots, \mathbf{b}_{n}\}, k \in [n]\setminus \{1\} {)}$) % TODO nxn???
+    {
+            z = 0; j = 0\\
+            $\mathbf{B} = \text{LLL}(\mathbf{B})$ \\% LLL reduce and update basis
+            \While{$z < n-1$}{
+                $j = (j \mod (n-1)) + 1; l = \min(j + k -1, n); h = \min(l + 1, n)$\\
+                $A = \text{span}\left(\left\{\mathbf{b}_i \mid i \in [j-1]\right\}\right)$\label{BKZ-span}\\
+                \For{$i \in \{j, ..., l\}$}{
+                    \If{$A \neq \emptyset$}{
+                        $\mathbf{b}_i' = \pi_{A^\perp}(\mathbf{\mathbf{b}_i})$\label{BKZ-proj}\\
+                    }
+                    \Else{
+                        $\mathbf{b}_i' = \mathbf{b}_i$\\
+                    }
+                }
+                $\mathbf{b}_\text{new}' = \text{SVP-Oracle}(\mathbf{b}_j', \dots, \mathbf{b}_{l}')$\label{BKZ-svp}\\
+                Reconstruct $\mathbf{b}_\text{new} = \textstyle \sum_{i=j}^l\alpha_i \mathbf{b}_i$ with $\alpha_i \in \mathbb{Z}$ such that $\mathbf{b}_\text{new}' = \pi_{\left(\text{span}\left(\mathbf{b}_j, \dots, \mathbf{b}_{l}\right)\right)^\perp}(\mathbf{b}_\text{new})$\label{BKZ-rec}\\
+                \If{$\mathbf{b}_\text{new}' \neq \tilde{\mathbf{b}}_j$}{
+                    $z=0;$ $\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \}= \text{LLL}(\{\mathbf{b}_j, \dots, \mathbf{b}_{j-1}, \mathbf{b}_\text{new}, \mathbf{b}_j, \dots, \mathbf{b}_{h} \})$\\
+                }
+                \Else{
+                    $z = z + 1;$ $\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \} = \text{LLL}(\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \})$\\
+                }
+            }
         }
-        $\mathbf{b}_\text{new}' = \text{SVP-Oracle}(\mathbf{b}_j', \dots, \mathbf{b}_{l}')$\label{BKZ-svp}\\
-        Reconstruct $\mathbf{b}_\text{new} = \textstyle \sum_{i=j}^l\alpha_i \mathbf{b}_i$ with $\alpha_i \in \mathbb{Z}$ such that $\mathbf{b}_\text{new}' = \pi_{\left(\text{span}\left(\mathbf{b}_j, \dots, \mathbf{b}_{l}\right)\right)^\perp}(\mathbf{b}_\text{new})$\label{BKZ-rec}\\
-        \If{$\mathbf{b}_\text{new}' \neq \tilde{\mathbf{b}}_j$}{
-          $z=0;$ $\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \}= \text{LLL}(\{\mathbf{b}_j, \dots, \mathbf{b}_{j-1}, \mathbf{b}_\text{new}, \mathbf{b}_j, \dots, \mathbf{b}_{h} \})$\\
-        }
-        \Else{
-          $z = z + 1;$ $\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \} = \text{LLL}(\{\mathbf{b}_j, \dots, \mathbf{b}_{h} \})$\\
-        }
-      }
-    }
-  \caption[The BKZ Algorithm]{The BKZ Algorithm \cite{SE91}} \label{alg:BKZ}
+    \caption[The BKZ Algorithm]{The BKZ Algorithm \cite{SE91}} \label{alg:BKZ}
 \end{algorithm2e} % TODO: check, maybe also with ABLR21, Alg 2 or 4
 
 % TODO: explain how SVP oracle can be implemented => possibly outsource, section for cost models!!!
@@ -155,7 +155,7 @@ It is difficult to find hard runtime bounds for BKZ. The upper bound on the numb
 % TODO: output quality: 
 The output quality of BKZ is closely related to the used block size $k$. The \textit{estimator} uses a limiting value from \cite{Chen13} to estimate the root Hermite factor $\delta$ for a given $k$:
 \begin{equation}
-  \lim_{n\rightarrow \infty} \delta \approx \left( \frac{k (\pi k)^{\frac{1}{k}}}{2\pi e}\right)^{\frac{1}{2(k-1)}}
+    \lim_{n\rightarrow \infty} \delta \approx \left( \frac{k (\pi k)^{\frac{1}{k}}}{2\pi e}\right)^{\frac{1}{2(k-1)}}
 \end{equation}
 For smaller block sizes $k\leq 40$, the \textit{estimator} uses fixed experimental values for $\delta$.
 % TODO: include? \cite{LP11} runtime according Linder-Peikert model, GSA: suggest $t_{\text{BKZ}}=1.8/\log_2{\delta} - 110$
@@ -206,22 +206,22 @@ The second group of SVP solvers are sieving algorithms \cite{ADHKPS19, MV10, NV0
 
 % nice overview and explanation in \cite{ADHKPS19}
 \begin{table}[h]
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    Algorithm                                & Runtime complexity   & Memory complexity    \\\hline
-    List Sieve \cite{MV10}                   & $2^{0.3199n + o(n)}$ & $2^{0.1325 + o(n)}$  \\
-    NV-sieve \cite{NV08, ADHKPS19}           & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    NV-sieve (quantum) \cite{NV08, ADHKPS19} & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    Gauss sieve \cite{MV10, HK17}            & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    BGJ-sieve \cite{BGJ15}                   & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    3-sieve \cite{BLS16, HK17}               & $2^{0.3962n + o(n)}$ & $2^{0.1887n + o(n)}$ \\
-    BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
-    \bottomrule
-  \end{tabular}
-  \caption{Overview of Popular Sieving Algorithms} % TODO: cite? from estimate all the?
-  \label{tab:sieving}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Algorithm                                & Runtime complexity   & Memory complexity    \\\hline
+        List Sieve \cite{MV10}                   & $2^{0.3199n + o(n)}$ & $2^{0.1325 + o(n)}$  \\
+        NV-sieve \cite{NV08, ADHKPS19}           & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        NV-sieve (quantum) \cite{NV08, ADHKPS19} & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        Gauss sieve \cite{MV10, HK17}            & $2^{0.415n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        BGJ-sieve \cite{BGJ15}                   & $2^{0.311n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        3-sieve \cite{BLS16, HK17}               & $2^{0.3962n + o(n)}$ & $2^{0.1887n + o(n)}$ \\
+        BDGL-sieve \cite{BDGL16}                 & $2^{0.292n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        BDGL-sieve (quantum) \cite{BDGL16}       & $2^{0.265n + o(n)}$  & $2^{0.2075n + o(n)}$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{Overview of Popular Sieving Algorithms} % TODO: cite? from estimate all the?
+    \label{tab:sieving}
 \end{table}
 
 \cref{tab:sieving} presents a list of currently best sieving algorithms. Note that some runtime and space complexities are only conjectured and not proven yet.
@@ -302,32 +302,32 @@ Finally, the Becker-Ducas-Gama-Laarhoven sieve \cite{BDGL16} applies locality se
 % \end{figure}
 
 \begin{table}
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    Name                             & Reference                       & Cost model                            \\\hline
-    Sieving                          &                                 &                                       \\\hline
-    Q-Sieve (paranoid lower bound)   & \cite{ADPS16}                   & $2^{0.2075k}$                         \\
-    Q-Sieve                          & \cite{Laa15,ADPS16,AGPS20}      & $2^{0.265k}$                          \\
-    Q-Sieve + O(1)                   & \cite{SAL+17}                   & $2^{0.265k + 16}$                     \\
-    Q-Sieve (min space)              & \cite{SHRS17}                   & $2^{0.2975k}$                         \\
-    Sieve                            & \cite{BDGL16,ADPS16,AGPS20}     & $2^{0.292k}$                          \\
-    Sieve + O(1)                     & \cite{SAL+17}                   & $2^{0.292k + 16}$                     \\
-    Sieve (min space)                & \cite{SHRS17}                   & $2^{0.368k}$                          \\\hline
-    Enumeration                      &                                 &                                       \\\hline
-    Lotus                            & \cite{PHAM17, ACDDPPVW18}       & $2^{0.125k \log k - 0.755 k + 2.254}$ \\
-    Enum + O(1)                      & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.187k \log k - 1.019 k + 16.1}$  \\
-    Q-Enum + O(1)                    & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.0936k \log k - 0.51 k + 8.05}$  \\
-    BCLV-Enum (quadratic fit) + O(1) & \cite{BCLV17}                   & $2^{0.000784 k^2 + 0.366 k + 0.875}$  \\
-    BKZ2.0-Enum                      & \cite{CN11, Chen13, ABFKSW20}   & $2^{0.184k \log k - 0.995k + 16.25}$  \\
-    ABF-Enum                         & \cite{ABFKSW20}                 & $2^{0.125k \log k}$                   \\
-    ABF-Enum + O(1)                  & \cite{ABFKSW20}                 & $2^{0.125k \log k - 0.547k + 10.4}$   \\
-    Q-ABF-Enum                       & \cite{ABFKSW20}                 & $2^{0.0625 k \log k}$                 \\
-    ABLR-Enum + O(1)                 & \cite{ABLR21}                   & $2^{0.125k \log k - 0.654k + 25.84}$  \\
-    \bottomrule
-  \end{tabular}
-  \caption[SVP Cost Models Overview]{SVP Cost Models Overview (Based on \cite[Table~4]{ACDDPPVW18})} % TODO: cite? from estimate all the?
-  \label{tab:costmodels}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Name                             & Reference                       & Cost model                            \\\hline
+        Sieving                          &                                 &                                       \\\hline
+        Q-Sieve (paranoid lower bound)   & \cite{ADPS16}                   & $2^{0.2075k}$                         \\
+        Q-Sieve                          & \cite{Laa15,ADPS16,AGPS20}      & $2^{0.265k}$                          \\
+        Q-Sieve + O(1)                   & \cite{SAL+17}                   & $2^{0.265k + 16}$                     \\
+        Q-Sieve (min space)              & \cite{SHRS17}                   & $2^{0.2975k}$                         \\
+        Sieve                            & \cite{BDGL16,ADPS16,AGPS20}     & $2^{0.292k}$                          \\
+        Sieve + O(1)                     & \cite{SAL+17}                   & $2^{0.292k + 16}$                     \\
+        Sieve (min space)                & \cite{SHRS17}                   & $2^{0.368k}$                          \\\hline
+        Enumeration                      &                                 &                                       \\\hline
+        Lotus                            & \cite{PHAM17, ACDDPPVW18}       & $2^{0.125k \log k - 0.755 k + 2.254}$ \\
+        Enum + O(1)                      & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.187k \log k - 1.019 k + 16.1}$  \\
+        Q-Enum + O(1)                    & \cite{SHRS17,Chen13,ACDDPPVW18} & $2^{0.0936k \log k - 0.51 k + 8.05}$  \\
+        BCLV-Enum (quadratic fit) + O(1) & \cite{BCLV17}                   & $2^{0.000784 k^2 + 0.366 k + 0.875}$  \\
+        BKZ2.0-Enum                      & \cite{CN11, Chen13, ABFKSW20}   & $2^{0.184k \log k - 0.995k + 16.25}$  \\
+        ABF-Enum                         & \cite{ABFKSW20}                 & $2^{0.125k \log k}$                   \\
+        ABF-Enum + O(1)                  & \cite{ABFKSW20}                 & $2^{0.125k \log k - 0.547k + 10.4}$   \\
+        Q-ABF-Enum                       & \cite{ABFKSW20}                 & $2^{0.0625 k \log k}$                 \\
+        ABLR-Enum + O(1)                 & \cite{ABLR21}                   & $2^{0.125k \log k - 0.654k + 25.84}$  \\
+        \bottomrule
+    \end{tabular}
+    \caption[SVP Cost Models Overview]{SVP Cost Models Overview (Based on \cite[Table~4]{ACDDPPVW18})} % TODO: cite? from estimate all the?
+    \label{tab:costmodels}
 \end{table} % TODO: add to tool, maybe change 8d thing to an optional parameter!!! => reduces number of lists, throw out silly ones...
 % TODO reference in text
 % TODO: add description of "core"
@@ -348,17 +348,17 @@ In this section, we present a number of popular attacks on LWE. The \textit{esti
 Some of the following attacks rely on a reduction of LWE to different lattice problems. We first define three important lattice problems in the context of LWE.
 
 \begin{definition}[HSVP$_\delta$] \label{def:hsvp}
-  Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, the (approximate)  Hermite Shortest Vector Problem (HSVP$_\delta$) is the problem of finding a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \delta \cdot \text{det}(\Lambda)^{\frac{1}{n}}$.
+    Given a basis $\mathbf{B}$ of a lattice $\Lambda(\mathbf{B}) \in \mathbb{R}^m$, the (approximate)  Hermite Shortest Vector Problem (HSVP$_\delta$) is the problem of finding a nonzero lattice vector $\mathbf{v} \in \Lambda$ such that $\| \mathbf{v} \| \leq \delta \cdot \text{det}(\Lambda)^{\frac{1}{n}}$.
 \end{definition}
 
 \begin{definition}[uSVP$_\gamma$] \label{def:usvp}
-  Given a lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, the (approximate) Unique Shortest Vector Problem (uSVP$_\gamma$) is the problem of finding the shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$.
+    Given a lattice $\Lambda$ such that $\lambda_2(\Lambda) > \gamma \lambda_1(\Lambda)$, the (approximate) Unique Shortest Vector Problem (uSVP$_\gamma$) is the problem of finding the shortest nonzero vector in $\mathbf{v} \in \Lambda$ with $\|\mathbf{v}\| = \lambda_1(\Lambda)$.
 \end{definition}
 % or more relaxed version $\|\mathbf{v}\| = \gamma\lambda_1(\Lambda)$
 %NP hard when $\gamma = 1 + 2^{-n^c}$ for some constant $c$ \cite{KS01}
 
 \begin{definition}[BDD$_\gamma$] \label{def:bdd}
-  Given a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, the (approximate)  Bounded Distance Decoding (BDD$_\gamma$) is the problem of finding the closest lattice vector $\mathbf{v} \in \Lambda$, i.e., $\mathbf{v} = \argmin_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$.
+    Given a lattice $\Lambda \subset \mathbb{R}^m$ and a target vector $\mathbf{t}\in\mathbb{R}^m$ such that $\text{dist}(\mathbf{t}, \Lambda) < \gamma \lambda_1(\Lambda)$, the (approximate)  Bounded Distance Decoding (BDD$_\gamma$) is the problem of finding the closest lattice vector $\mathbf{v} \in \Lambda$, i.e., $\mathbf{v} = \argmin_{\mathbf{v}' \in \Lambda} \|\mathbf{v}' - \mathbf{t}\|$.
 \end{definition}
 
 % or more relaxed version: find closest vector $\mathbf{v} \in \Lambda$ such that $\|\mathbf{v} - \mathbf{t}\| < \gamma \lambda_1(\Lambda)$
@@ -369,16 +369,16 @@ Some of the following attacks rely on a reduction of LWE to different lattice pr
 \cref{fig:algorithms} gives an overview of the three main approaches to solving LWE. The most natural approach is to recover the secret in LWE directly, e.g., by exhaustively searching the search space. In general, however, the search space is quite large, resulting in high attack costs. The \textit{estimator} incorporates two direct attacks, the Meet-in-the-Middle attack \cite{BG14} and an attack due to Arora and Ge \cite{AG11}. % TODO Arora Ge is not exhaustive search.... 
 % Overview in BBGS19
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.9\textwidth]{graphics/algorithms_overview.pdf}
-  \caption[An Overview of Algorithms and Related Problems for Solving LWE]{An overview of algorithms and related problems for soling LWE in this work. The diamond shaped boxes represent problems and arrows reductions between problems. Rectangular boxes represent approaches, classes of algorithms or algorithms. A connection between a problem and a rectangular box indicates that the latter can be used as a solver for the respective problem. Bold names indicate algorithms that can be used in our tool.}\label{fig:algorithms}
+    \centering
+    \includegraphics[width=0.9\textwidth]{graphics/algorithms_overview.pdf}
+    \caption[An Overview of Algorithms and Related Problems for Solving LWE]{An overview of algorithms and related problems for soling LWE in this work. The diamond shaped boxes represent problems and arrows reductions between problems. Rectangular boxes represent approaches, classes of algorithms or algorithms. A connection between a problem and a rectangular box indicates that the latter can be used as a solver for the respective problem. Bold names indicate algorithms that can be used in our tool.}\label{fig:algorithms}
 \end{figure}
 
 \subsubsection{Primal Attack}\label{sec:primal-attacks}
 The second approach aims to solve LWE in the primal LWE lattice by a reduction to the BDD problem. Consider an LWE instance with samples $\mathbf{A}, \mathbf{z}$ and the corresponding lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that for the secret vector $\mathbf{s}$ and error vector $\mathbf{e}$, it holds that $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \mod q = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} + q \mathbf{x}$ for some vector $\mathbf{x} \in \mathbb{Z}^m$. Obviously, $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$ is a lattice vector in the lattice $\Lambda_q(\mathbf{A}^\intercal)$. We know that $\text{dist}(\mathbf{z}, \Lambda_q(\mathbf{A}^\intercal) = \|\mathbf{e}\|$ and in general, it holds that $\|\mathbf{e}\| < \gamma \lambda_1(\Lambda_q(\mathbf{A}^\intercal))$. We thus have a reduction from LWE to BDD. By finding closest lattice point to $\mathbf{z}$ or, in other words, solving BDD in the lattice $\Lambda_q(\mathbf{A}^\intercal)$ we obtain $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$  and can recover the secret $\mathbf{s}$.
 
 \subsubsection{Dual Attack}\label{sec:dual-attacks}
-Finally, we can take advantage of the close relationship of LWE and SIS and solve LWE by finding a short vector in the dual SIS lattice \cite{LP11}. More precisely, we want to find a short nonzero vector $\mathbf{v}\in \mathbb{Z}_q^{m}$ in the scaled $q$-ary lattice $\Lambda_q(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$. Obviously, we have that $\langle \mathbf{v}, \mathbf{z} \rangle = \langle \mathbf{v}, \mathbf{A}^\intercal \mathbf{s} \rangle + \langle \mathbf{v}, \mathbf{e}\rangle = \langle \mathbf{v}\mathbf{A}^\intercal,  \mathbf{s} \rangle + \langle \mathbf{v}, \mathbf{e} \rangle \mod q$ and $\langle \mathbf{v}, \mathbf{z} \rangle$ roughly corresponds to a sample drawn from a Gaussian with parameter $s' = \|\mathbf{v}\| \cdot s$, given that $\mathbf{e}$ is distributed according to a Gaussian with parameter $s$. We then test whether $\langle \mathbf{v}, \mathbf{z} \rangle \mod q$ approximates the Gaussian. If $\mathbf{z}$ is instead drawn from a uniform distribution, the test accepts exactly with probability $0.5$ \cite{LP11}. If $s'$ is not much larger than $q$, the advantage of distinguishing uniform from LWE samples is very close to $\exp(-\pi (\| \mathbf{v} \| s/q)^2)$. An optimal attack cost can be achieved by balancing the advantage with the computational effort required to solve SVP$_\gamma$ on the SIS lattice, where $\gamma = \|\mathbf{v}\|$.
+Finally, we can take advantage of the close relationship of LWE and SIS and solve LWE by finding a short vector in the dual SIS lattice \cite{LP11}. More precisely, we want to find a short nonzero vector $\mathbf{v}\in \mathbb{Z}_q^{m}$ in the scaled $q$-ary lattice $\Lambda_q(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$. Obviously, we have that $\langle \mathbf{v}, \mathbf{z} \rangle = \langle \mathbf{v}, \mathbf{A}^\intercal \mathbf{s} \rangle + \langle \mathbf{v}, \mathbf{e}\rangle = \langle \mathbf{v}\mathbf{A}^\intercal,  \mathbf{s} \rangle + \langle \mathbf{v}, \mathbf{e} \rangle = \langle \mathbf{v}, \mathbf{e} \rangle \mod q $ and $\langle \mathbf{v}, \mathbf{z} \rangle$ roughly corresponds to a sample drawn from a Gaussian with parameter $s' = \|\mathbf{v}\| \cdot s$, given that $\mathbf{e}$ is distributed according to a Gaussian with parameter $s$. We then test whether $\langle \mathbf{v}, \mathbf{z} \rangle \mod q$ approximates the Gaussian. If $\mathbf{z}$ is instead drawn from a uniform distribution, the test accepts exactly with probability $0.5$ \cite{LP11}. If $s'$ is not much larger than $q$, the advantage of distinguishing uniform from LWE samples is very close to $\exp(-\pi (\| \mathbf{v} \| s/q)^2)$. An optimal attack cost can be achieved by balancing the advantage with the computational effort required to solve SVP$_\gamma$ on the SIS lattice, where $\gamma = \|\mathbf{v}\|$.
 % TODO from LP11, change
 % TODO: maybe include graphic of three approaches
 
@@ -422,47 +422,47 @@ The decoding attack falls into the regime of primal attacks that solve LWE by so
 We begin with the original Nearest Planes algorithm due to Babai \cite{Bab85}, as shown in \cref{alg:babai}. Our algorithm follows the notation in \cite{NPReg04}. The goal of the algorithm is to find a lattice vector relatively close to the target vector. The procedure used is similar to the procedure in the inner loop of LLL. We first project $\mathbf{t}$ to the span of all basis vectors $\text{span}(\mathbf{B})$, where $B$ denotes an LLL-reduced basis, to eliminate irrelevant dimensions and obtain a projected vector which we call $\mathbf{b}$. Next, we iterate over $i=n, \ldots, 1$. In each step, we want to find the closest hyperplane $c_i \tilde{\mathbf{b}}_i + \text{span}(\mathbf{b}_1, \dots, \mathbf{b}_{i-1})$ to the projected vector $\mathbf{b}$. We can compute $c_i$ by a simple projection of $b$ onto the Gram-Schmidt vector $\tilde{\mathbf{b}}_i$ and dividing by the square length of $\tilde{\mathbf{b}}_i$. We subtract $c_i \mathbf{b}_i$ from $b$ and replace $\mathbf{b}$ with the result. Notice that in the last step, the hyperplane is simply a point. We return $\mathbf{t} - \mathbf{b}$. If we indeed found the closest lattice vector for target $\mathbf{z}$, the vector $\mathbf{b}$ will be our error vector $\mathbf{e}$ and $\mathbf{t} - \mathbf{b}$ will be the desired lattice vector  $\mathbf{A}^\intercal \mathbf{s} + q \mathbf{x}$, from which we can recover our secret.
 
 \begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{NearestPlanes} {(}\text{LLL-reduced basis }\mathbf{B} \in \mathbb{R}^{m \times n},\text{ target }\mathbf{t}\in \mathbb{R}^{m}{)}$)
-  {
-    $\mathbf{b} = \pi_{\text{span}(\mathbf{B})}(\mathbf{t})$\\
-    \For{$i = n, \dots, 1$}{
-      $c_i = \text{round}(\langle \mathbf{b}, \tilde{\mathbf{b}}_i\rangle /  \langle \tilde{\mathbf{b}}_i, \tilde{\mathbf{b}}_i\rangle)$\\
-      $\mathbf{b} = \mathbf{b} - c_i \mathbf{b}_i$\\
+    \SetKwBlock{Begin}{function}{end function}
+    \Begin($\text{NearestPlanes} {(}\text{LLL-reduced basis }\mathbf{B} \in \mathbb{R}^{m \times n},\text{ target }\mathbf{t}\in \mathbb{R}^{m}{)}$)
+    {
+        $\mathbf{b} = \pi_{\text{span}(\mathbf{B})}(\mathbf{t})$\\
+        \For{$i = n, \dots, 1$}{
+            $c_i = \text{round}(\langle \mathbf{b}, \tilde{\mathbf{b}}_i\rangle /  \langle \tilde{\mathbf{b}}_i, \tilde{\mathbf{b}}_i\rangle)$\\
+            $\mathbf{b} = \mathbf{b} - c_i \mathbf{b}_i$\\
+        }
+        output $\mathbf{t} - \mathbf{b}$\\
     }
-    output $\mathbf{t} - \mathbf{b}$\\
-  }
-  \caption[Babai's Nearest Planes Algorithm]{Babai's Nearest Planes Algorithm \cite{Bab85}}\label{alg:babai} % TODO change algorithm to match below or just take intuitive description
+    \caption[Babai's Nearest Planes Algorithm]{Babai's Nearest Planes Algorithm \cite{Bab85}}\label{alg:babai} % TODO change algorithm to match below or just take intuitive description
 \end{algorithm2e}
 
-In general, however, the output is a lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$ in the fundamental parallelepiped of the Gram-Schmidt basis $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ and we only get the guarantee of $\|\mathbf{v} - \mathbf{t}\| \leq 2^{n/2} \text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$. To apply the algorithm on LWE, either $\mathbf{e}$ must be in $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ or we must increase our search radius. The former case is unlikely as the last Gram-Schmidt vectors in a reduced basis because of the long and skinny structure of $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ (see \cref{sec:GSA}. The latter case is exactly what the generalized algorithm by \cite{LP11} does.
+In general, however, the output is a lattice vector $\mathbf{v} \in \Lambda(\mathbf{B})$ in the fundamental parallelepiped of the Gram-Schmidt basis $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ and we only get the guarantee of $\|\mathbf{v} - \mathbf{t}\| \leq 2^{n/2} \text{dist}(\mathbf{t}, \Lambda(\mathbf{B}))$. To apply the algorithm on LWE, either $\mathbf{e}$ must be in $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ or we must increase our search radius. The former case is unlikely as the last Gram-Schmidt vectors in a reduced basis because of the long and skinny structure of $\mathcal{P}_{1/2}(\tilde{\mathbf{B}})$ (see \cref{sec:GSA}). The latter case is exactly what the generalized algorithm by \cite{LP11} does.
 
 Instead of choosing only the nearest plane in each iteration step, the Lindner and Peikert's variant that can be seen in \cref{alg:GeneralizedNearestPlanes} selects a variable amount $d_k$ of distinct planes in each step. As a consequence, the fundamental parallelepiped of the Gram-Schmidt basis is stretched in the direction of $\tilde{\mathbf{b}}_k$. The values of $\mathbf{d}$ should be chosen such that the covered area is approximately the same in each direction (i.e., by maximizing $\min_i(d_i \cdot \|\tilde{\mathbf{b}}_i\|)$). In particular, this implies that the $d_k$ are larger for larger $k$, as the Gram-Schmidt vectors have a smaller length. % TODO combine with section above 
 Compared to \cref{alg:babai}, the runtime increases by a factor $\prod_{i \in \{1, \dots, d_k\}} d_i$; however, the recursion step can be fully parallelized.
 
 \begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{GeneralizedNearestPlanes} {(} \mathbf{B} \in \mathbb{R}^{m \times k},\mathbf{t} \in \mathbb{R}^{m}, \mathbf{d} \in {(}\mathbb{Z}^+{)}^k {)}$)
-    { % TODO make sure that basis is always R^n, not Z^n
-    \If{k = 0}{
-      Return $\mathbf{0}$\\
+    \SetKwBlock{Begin}{function}{end function}
+    \Begin($\text{GeneralizedNearestPlanes} {(} \mathbf{B} \in \mathbb{R}^{m \times k},\mathbf{t} \in \mathbb{R}^{m}, \mathbf{d} \in {(}\mathbb{Z}^+{)}^k {)}$)
+        { % TODO make sure that basis is always R^n, not Z^n
+        \If{k = 0}{
+            Return $\mathbf{0}$\\
+        }
+        \Else{
+        Compute projection $\mathbf{v}$ of $\mathbf{t}$ onto $\text{span}(\mathbf{B})$\\
+        Compute the $d_k$ distinct integers $c_1, \dots, c_{d_k}$ closest to $\langle \mathbf{v}, \tilde{\mathbf{b}}_k\rangle /  \langle \tilde{\mathbf{b}}_k, \tilde{\mathbf{b}}_k\rangle$\\
+        Return $\bigcup_{i \in \{1, \dots, d_k\}} (c_i \cdot \mathbf{b}_k + \text{GeneralizedNearestPlanes}(\{\mathbf{b}_1, \dots, \mathbf{b}_{k-1}\}, (d_1, \dots, d_{k-1}), \mathbf{v} - c_i \cdot \mathbf{b}_k))$\\
     }
-    \Else{
-    Compute projection $\mathbf{v}$ of $\mathbf{t}$ onto $\text{span}(\mathbf{B})$\\
-    Compute the $d_k$ distinct integers $c_1, \dots, c_{d_k}$ closest to $\langle \mathbf{v}, \tilde{\mathbf{b}}_k\rangle /  \langle \tilde{\mathbf{b}}_k, \tilde{\mathbf{b}}_k\rangle)$\\
-    Return $\bigcup_{i \in \{1, \dots, d_k\}} (c_i \cdot \mathbf{b}_k + \text{GeneralizedNearestPlanes}(\{\mathbf{b}_1, \dots, \mathbf{b}_{k-1}\}, (d_1, \dots, d_{k-1}), \mathbf{v} - c_i \cdot \mathbf{b}_k))$\\
-  }
-  }
-  \caption[Generalized Nearest Planes Algorithm]{Generalized Nearest Planes Algorithm \cite{LP11}}\label{alg:GeneralizedNearestPlanes}
+    }
+    \caption[Generalized Nearest Planes Algorithm]{Generalized Nearest Planes Algorithm \cite{LP11}}\label{alg:GeneralizedNearestPlanes}
 \end{algorithm2e}
 
 It is evident that a lower quality of the reduced input basis can be compensated by increasing the values of $\mathbf{d}$. The input parameters of the lattice reduction and the generalized Nearest Planes algorithm should hence be adjusted such that the overall runtime is minimized. % TODO perhaps reformulate
 % TODO: add exact success probability? 
 The success probability of the Generalized Nearest Planes algorithm is given by
 \begin{equation*}
-  \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{\frac{1}{2}}(\tilde{\mathbf{B}} \cdot \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i\| \sqrt{\pi}}{2\alpha q}\right).
+    \text{Pr}\left[ \mathbf{e} \in \mathcal{P}_{\frac{1}{2}}(\tilde{\mathbf{B}} \cdot \text{diag}(\mathbf{d}))\right] = \prod_{i=1}^{m-1} \text{erf}\left(\frac{d_i \|\tilde{\mathbf{b}}_i\| \sqrt{\pi}}{2\alpha q}\right).
 \end{equation*} %TODO check, in particular m or n and explain
-The runtime of the decoding attack cannot be explicitly stated, as the reduction phase and the decoding phase have to be balanced for a given problem instance. This is done by iteratively varying the required basis quality $\delta$ for the reduction phase and stepwise increasing the components of $\mathbf{d}$ until the success probability is reached, such that the total runtime is minimized. The final runtime is given by $t_{\text{DEC}} = \rho\cdot (t_{\text{BKZ}} + t_{\text{GNP}})$ where $t_{\text{BKZ}}$ is the runtime of BKZ in the reduction phase and $t_{\text{GNP}}$ is the runtime of the Generalized Nearest Planes algorithm in the decoding phase. The number of rounds $\rho$ must be greater than $\log(1-\epsilon')/\log(1-\epsilon)$ to achieve a target success probability $\epsilon'$ if one decoding round has success probability $\epsilon$ (more details at the end of \cref{sec:primal-usvp}.
+The runtime of the decoding attack cannot be explicitly stated, as the reduction phase and the decoding phase have to be balanced for a given problem instance. This is done by iteratively varying the required basis quality $\delta$ for the reduction phase and stepwise increasing the components of $\mathbf{d}$ until the success probability is reached, such that the total runtime is minimized. The final runtime is given by $t_{\text{DEC}} = \rho\cdot (t_{\text{BKZ}} + t_{\text{GNP}})$ where $t_{\text{BKZ}}$ is the runtime of BKZ in the reduction phase and $t_{\text{GNP}}$ is the runtime of the Generalized Nearest Planes algorithm in the decoding phase. The number of rounds $\rho$ must be greater than $\log(1-\epsilon')/\log(1-\epsilon)$ to achieve a target success probability $\epsilon'$ if one decoding round has success probability $\epsilon$ (more details at the end of \cref{sec:primal-usvp}).
 
 
 
@@ -503,7 +503,7 @@ In the primal attack, instead of directly solving BDD, we reduce BDD to uSVP, i.
 To do this, we apply Kannan's embedding technique \cite{Kan87}. % TODO: quote theorem? For any $\gamma \geq 1, there is a polynomial time Cook-reduction from BDD$_{1/(2\gamma)}$ to $\gamma$-uSVP.
 Kannan's embedding creates a lattice with uSVP structure. We know that $\mathbf{A}^\intercal \mathbf{s}\mod q$ is the closest vector to the target $\mathbf{z} =\mathbf{A}^\intercal \mathbf{s} + \mathbf{e}^\intercal \mod q$ in $\Lambda(\mathbf{A}^\intercal)$. We now add a linearly independent basis vector  $(\mathbf{z}, \mu)$ and append a zero coefficient to each basis vector of the original lattice (i.e., the rows of $\mathbf{A}$). Thereby, we ensure that the new lattice contains the vector $[-\mathbf{e}, -\mu]^\intercal$ as $[\mathbf{A} \mid \mathbf{0}]^\intercal \mathbf{s} - 1 \cdot [\mathbf{z}^\intercal, \mu] = [-\mathbf{e}, -\mu]^\intercal$.
 
-More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{s}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
+More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $m$ dimensional lattice derived from the LWE instance and $\mu = \text{dist}(\mathbf{z}, \Lambda(\mathbf{B})) = \| \mathbf{z} - \mathbf{A}^\intercal \mathbf{s} \text{ mod } q\| = \| \mathbf{e}\|$ be the embedding factor, where $\mathbf{s}$ is the secret vector of the LWE instance. For more details on how to compute $\mathbf{B}$, we refer to \cite{AFG13}. %a basis of $\Lambda(\mathbf{A}^\intercal)$ % TODO: how? is \Lambda(\mathbf{A}^\intercal) not q-ary? => is A^\intercal not a basis?
 % TODO: we compute the reduced row echelon form $\mathbf{A}'' = \left[\mathbf{I}_n | \mathbf{A}'\right]$ of $\mathbf{A}$ and express the basis of $\Lambda(\mathbf{A}^\intercal)$ as
 % \begin{equation}
 %   \mathbf{B} = \begin{pmatrix}
@@ -514,10 +514,10 @@ More formally, let $\mathbf{B} \in \mathbb{Z}^{m \times m}$ be the basis of an $
 
 We now embed $\Lambda(\mathbf{B})$ into $\Lambda(\mathbf{B}')$ with $\gamma$-uSVP structure as follows: % TODO: check if dist = \| \mathbf{z} - \mathbf{s}\| is correct, perhaps just a vector v such that equation is fulfilled???
 \begin{equation}
-  \mathbf{B}' = \begin{pmatrix}
-    \mathbf{B}           & \mathbf{z} \\
-    \mathbf{0}^\intercal & \mu
-  \end{pmatrix}
+    \mathbf{B}' = \begin{pmatrix}
+        \mathbf{B}           & \mathbf{z} \\
+        \mathbf{0}^\intercal & \mu
+    \end{pmatrix}
 \end{equation}
 If $\gamma \geq 1$ and $\mu < \frac{\lambda_1(\Lambda(\mathbf{B})}{2\gamma}$ (or equivalently, $(\Lambda(\mathbf{A}^\intercal), \mathbf{z})$ a BDD$_{1/(2\gamma)}$-instance), then $\Lambda(\mathbf{B}')$ contains a $\gamma$-unique shortest vector $\mathbf{z}' = \left[(\mathbf{A}^\intercal\mathbf{s} - \mathbf{z})^\intercal, -\mu\right]^\intercal = \left[-\mathbf{e}^\intercal, -\mu\right]^\intercal$.
 The statement can be proven by showing by contradiction that all vectors $\mathbf{v} \in \Lambda(\mathbf{B}')$ that are independent of $\mathbf{z}'$ satisfy $\| \mathbf{v}\| \geq \lambda_1{\Lambda(\mathbf{B})}/\sqrt{2} > \sqrt{2}\gamma \mu = \gamma \|\mathbf{z}'\|$ (see \cite[Section~4]{LM09} for more details). Note that the reduction can be done in polynomial time \cite[Theorem~4.1]{LM09}. % TODO possibly sketch the proof
@@ -530,12 +530,12 @@ Let $\mathbf{v}$ be a solution to SVP$_{\delta^2}$, i.e., $\|\mathbf{v}\| \leq \
 % TODO: in practice: GN08
 The attack is successful with high probability if $\lambda_2(\Lambda(\mathbf{B}'))/\lambda_1(\Lambda(\mathbf{B}')) \geq \tau \delta^m$ \cite{AFG13}. We assume that the determinant of $\Lambda_q(\mathbf{A}^\intercal)$ is given by $q^{m-n}$ (see \cref{eq:det-MR}). The length of the error is $\|\mathbf{e}\| \approx \sqrt{m\cdot \left(\alpha q / (\sqrt{2\pi})\right)^2} \approx \sqrt{m / (2\pi)} \alpha q$, and in practice, $\mu=1$ is used \cite{APS15}. Next, we apply the simplified Gaussian heuristic as in \cite{Gop16} on $\lambda_2(\Lambda(\mathbf{B}'))=\lambda_2(\Lambda(\mathbf{A}^\intercal))$ (see \cref{eq:simplified-gaussian-heuristic}) to obtain
 \begin{align*}
-  \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))} \\ &\leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
+    \tau \delta^m & \leq \frac{ \sqrt{\frac{m}{2\pi e}} \text{det}(\Lambda(\mathbf{A}^\intercal))}{\lambda_1(\Lambda(\mathbf{B}'))} \approx \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \lambda_1(\Lambda(\mathbf{B}'))} \\ &\leq \frac{\sqrt{m} q^{1-\frac{n}{m}}}{\sqrt{2\pi e} \|\mathbf{e}\|} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{2\pi e}  \frac{\alpha q}{\sqrt{2\pi}}} \approx \frac{q^{1-\frac{n}{m}}}{\sqrt{e} \alpha q}
 \end{align*}
 
 The success probability of the attack is thus non-negligible if
 \begin{equation}
-  \delta \leq \left(\frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}\right)^{\frac{1}{m}}
+    \delta \leq \left(\frac{q^{1-\frac{n}{m}}}{\tau \sqrt{e} \alpha q}\right)^{\frac{1}{m}}
 \end{equation}
 Experiments show that $\tau \leq 0.4$ achieves a success rate of about $\epsilon = 0.1$ \cite{AFG13}. In order to increase the success probability to some fixed target $\epsilon' > \epsilon$, we can simply repeat the algorithm $\rho$ times and obtain a success probability of $\epsilon' \leq 1 - (1 - \epsilon)^\rho$ \cite{BBGS19}. Consequently, we need at least $\rho \geq \log(1-\epsilon')/\log(1-\epsilon)$ rounds for a successful attack.
 % TODO: Overall runtime - combination of \rho and t_{\text{BKZ}} where the runtime of BKZ depends on the block-size k, block-size k depends on required \delta => see BBGS19
@@ -557,47 +557,47 @@ BKW falls into the regime of dual attacks, that is, it solves LWE by finding a s
 
 
 \begin{algorithm2e}
-  \SetKwBlock{Begin}{function}{end function}
-  \Begin($\text{BKW} {(}\mathbf{A} \in \mathbb{Z}^{n\times m},\mathbf{z} \in \mathbb{Z}^m, b \in \mathbb{Z}, d\in \mathbb{Z}{)}$)
-  {
-  $i = 1$\\
-  $\mathbf{A}^{(i)} = \mathbf{A}$\\
-  $\mathbf{z}^{(i)} = \mathbf{z}$\\
-  \While{the last $n-d$ coefficients of the columns of $\mathbf{A}^{(i)}$ are nonzero}{ % TODO
-  // BKW step\\
-  $j = 1$\\
-  $\mathbf{T}^{(i)} = []$ \Comment Collision table\\
-  \For{$k = 1, \ldots, m^{(i)}$}{
-  // $m^{(i)}$ is number of columns in $\mathbf{A}^{(i)}$\\
-  \uIf{last $(i\cdot b)$ coefficients of $\mathbf{a}_k^{(i)}$ are zero}{
-  $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)}$\\
-  $z_j^{(i+1)} = z_k$\\
-  $j = j + 1$\\
-  }
-  \uElseIf{no match for $\mathbf{a}_k^{(i)}$ in $\mathbf{T}$}{
-  $\mathbf{T} = \mathbf{T} + \left[\mathbf{a}_k^{(i)}\right]$ \Comment append to collision set
-  }
-  \uElseIf{match $\mathbf{a}_l^{(i)}$ for $\mathbf{a}_k^{(i)}$ is found}{
-  \uIf{$\mathbf{a}_l^{(i)}$ matches $\mathbf{a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
-  $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)} - \mathbf{a}_l^{(i)}$; \Comment last $i \cdot b$ coefficients of $\mathbf{a}_j^{(i+1)}$ are now zero\\
-  $z_j^{(i+1)} = z_k^{(i)} - z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \mathbf{s}, \mathbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} - e_l^{(i)}$ \label{alg:BKW-z1}\\
-  $j = j + 1$\\
-  }
-  \uElseIf{the negation of $\mathbf{a}_l^{(i)}$ in $\mathbb{Z}_q^n$ matches $\mathbf{a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
-  $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)} + \mathbf{a}_l^{(i)}$\\
-  $z_j^{(i+1)} = z_k^{(i)} + z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \mathbf{s}, \mathbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} + e_l^{(i)}$\label{alg:BKW-z2}\\
-  $j = j + 1$\\
-  } % TODO: maybe put both cases into one step?
-  }
-  }
-  $i = i + 1$\\
-  // Calculate input for next BKW step\\
-  $\mathbf{A}^{(i)} = (\mathbf{a}_1^{(i)} \cdots \mathbf{a}_{j-1}^{(i)})$\\
-  $\mathbf{z}^{(i)} = (z_1^{(i)}, \ldots, z_{j-1}^{(i)})$\\
-  }
-  Return $(\mathbf{A}^{(i)}, \mathbf{z}^{(i)})$
-  }
-  \caption{BKW (Sample Reduction)}\label{alg:BKW}
+    \SetKwBlock{Begin}{function}{end function}
+    \Begin($\text{BKW} {(}\mathbf{A} \in \mathbb{Z}^{n\times m},\mathbf{z} \in \mathbb{Z}^m, b \in \mathbb{Z}, d\in \mathbb{Z}{)}$)
+    {
+    $i = 1$\\
+    $\mathbf{A}^{(i)} = \mathbf{A}$\\
+    $\mathbf{z}^{(i)} = \mathbf{z}$\\
+    \While{the last $n-d$ coefficients of the columns of $\mathbf{A}^{(i)}$ are nonzero}{ % TODO
+    // BKW step\\
+    $j = 1$\\
+    $\mathbf{T}^{(i)} = []$ \Comment Collision table\\
+    \For{$k = 1, \ldots, m^{(i)}$}{
+    // $m^{(i)}$ is number of columns in $\mathbf{A}^{(i)}$\\
+    \uIf{last $(i\cdot b)$ coefficients of $\mathbf{a}_k^{(i)}$ are zero}{
+    $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)}$\\
+    $z_j^{(i+1)} = z_k$\\
+    $j = j + 1$\\
+    }
+    \uElseIf{no match for $\mathbf{a}_k^{(i)}$ in $\mathbf{T}$}{
+    $\mathbf{T} = \mathbf{T} + \left[\mathbf{a}_k^{(i)}\right]$ \Comment append to collision set
+    }
+    \uElseIf{match $\mathbf{a}_l^{(i)}$ for $\mathbf{a}_k^{(i)}$ is found}{
+    \uIf{$\mathbf{a}_l^{(i)}$ matches $\mathbf{a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
+    $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)} - \mathbf{a}_l^{(i)}$; \Comment last $i \cdot b$ coefficients of $\mathbf{a}_j^{(i+1)}$ are now zero\\
+    $z_j^{(i+1)} = z_k^{(i)} - z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \mathbf{s}, \mathbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} - e_l^{(i)}$ \label{alg:BKW-z1}\\
+    $j = j + 1$\\
+    }
+    \uElseIf{the negation of $\mathbf{a}_l^{(i)}$ in $\mathbb{Z}_q^n$ matches $\mathbf{a}_k^{(i)}$ in the last $(i\cdot b)$ components}{
+    $\mathbf{a}_j^{(i+1)} = \mathbf{a}_k^{(i)} + \mathbf{a}_l^{(i)}$\\
+    $z_j^{(i+1)} = z_k^{(i)} + z_l^{(i)} = y_j^{(i)} + e_j^{(i)}$, where $y_j^{(i)} = \left\langle \mathbf{s}, \mathbf{a}_j^{(i)}\right\rangle$ and $e_j^{(i)} = e_k^{(i)} + e_l^{(i)}$\label{alg:BKW-z2}\\
+    $j = j + 1$\\
+    } % TODO: maybe put both cases into one step?
+    }
+    }
+    $i = i + 1$\\
+    // Calculate input for next BKW step\\
+    $\mathbf{A}^{(i)} = (\mathbf{a}_1^{(i)} \cdots \mathbf{a}_{j-1}^{(i)})$\\
+    $\mathbf{z}^{(i)} = (z_1^{(i)}, \ldots, z_{j-1}^{(i)})$\\
+    }
+    Return $(\mathbf{A}^{(i)}, \mathbf{z}^{(i)})$
+    }
+    \caption{BKW (Sample Reduction)}\label{alg:BKW}
 \end{algorithm2e} % TODO check
 
 For the algorithm, we use the matrix notation of LWE as in \cref{eq:lwe-decoding}, i.e., $\mathbf{z} = \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}$. BKW consists of a series of BKW steps that iteratively reduce the dimension of input matrix $\mathbf{A}$ by finding collisions of its column vectors in the currently examined block of $b$ entries. We start from the last $b$ entries of $\mathbf{A}^{(1)} = \mathbf{A}$. In every step $i$, we maintain a collision table $\mathbf{T}^{(i)}$ and loop over the columns $\mathbf{a}_k^{(i)}$ of $\mathbf{A}^{(i)}$ and distinguish between the following cases: (1) If $\mathbf{a}_k^{(i)}$ only has zero entries in the examined block, pass $\mathbf{a}_k^{(i)}$ and $z_k^{(i)}$ to the next step, (2) if no match of $\mathbf{a}_k^{(i)}$ or the negation of $\mathbf{a}_k^{(i)}$ can be found in the collision table, add $\mathbf{a}_k^{(i)}$ to the collision  table, and (3) if a match $\mathbf{a}_l^{(i)}$ is found, compute $\mathbf{a}_l^{(i)} + \mathbf{a}_k^{(i)}$, or in the case of a negation, match $\mathbf{a}_l^{(i)} - \mathbf{a}_k^{(i)}$ (all operations are modulo $q$) such that the last $b$ nonzero entries cancel out. By exploiting the symmetry of $\mathbb{Z}_q$ in this way, in every step we obtain at most $(q^b - 1)/2$ columns with distinct coefficients in the current $b$ entries. We also make note of ``observed symbols'' $z_j^{(i)}$ that represent the combination of two samples given their respective matching columns (see Lines \ref{alg:BKW-z1} and \ref{alg:BKW-z2} for more details).
@@ -614,14 +614,14 @@ Finally, we can apply back substitution to recover all elements of $\mathbf{s}$.
 
 % TODO: runtime complexity change to APS15 Theorem 3, 4 (DTV15) or Cor 4, or try to take complexity from GSJ15
 \begin{theorem}[BKZ Complexity {\cite[Corollary~2]{ACFFP15a}}]
-  Let $(\mathbf{a}_i, z_i)$ be samples following $\mathcal{A}_{\mathbf{s}, \chi}$, set $a = \lfloor \log_2(1/(2\alpha)^2)\rceil$, $b = n/a$ and $q$ a prime. Let $d$ be a small constant $0 < d < \log_2(n)$. Assume $\alpha$ is such that $q^b = q^{n/a} = q^{n/\lfloor \log_2(1/(2\alpha)^2)\rceil}$ is superpolynomial in $n$. Then, given these parameters the cost of the BKW algorithm to solve Search-LWE is
-  \begin{equation}\label{eq:BKZ-complexity}
-    \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
-  \end{equation}
-  operations in $\mathbb{Z}_q$. Furthermore,
-  \begin{equation}
-    a \cdot \left\lceil\frac{q^b}{2}\right\rceil + \text{poly}(n)\textit{ calls to } \mathcal{A}_{\mathbf{s}, \chi}\textit{ and storage of }  \left(a \cdot \left\lceil\frac{q^b}{2}\right\rceil \cdot n\right) \textit{ elements in } \mathbb{Z}_q \textit{ are needed.}
-  \end{equation}
+    Let $(\mathbf{a}_i, z_i)$ be samples following $\mathcal{A}_{\mathbf{s}, \chi}$, set $a = \lfloor \log_2(1/(2\alpha)^2)\rceil$, $b = n/a$ and $q$ a prime. Let $d$ be a small constant $0 < d < \log_2(n)$. Assume $\alpha$ is such that $q^b = q^{n/a} = q^{n/\lfloor \log_2(1/(2\alpha)^2)\rceil}$ is superpolynomial in $n$. Then, given these parameters the cost of the BKW algorithm to solve Search-LWE is
+    \begin{equation}\label{eq:BKZ-complexity}
+        \left(\frac{q^b-1}{2}\right) \cdot \left(\frac{a(a-1)}{2} \cdot (n + 1) \right) + \left\lceil\frac{q^b}{2}\right\rceil \cdot \left(\left\lceil\frac{n}{d}\right\rceil + 1\right) \cdot d \cdot a + \text{poly}(n) \approx (a^2 n) \cdot \frac{q^b}{2}
+    \end{equation}
+    operations in $\mathbb{Z}_q$. Furthermore,
+    \begin{equation}
+        a \cdot \left\lceil\frac{q^b}{2}\right\rceil + \text{poly}(n)\textit{ calls to } \mathcal{A}_{\mathbf{s}, \chi}\textit{ and storage of }  \left(a \cdot \left\lceil\frac{q^b}{2}\right\rceil \cdot n\right) \textit{ elements in } \mathbb{Z}_q \textit{ are needed.}
+    \end{equation}
 \end{theorem}
 
 The first summand of \cref{eq:BKZ-complexity} roughly corresponds to the cost of creating the collision  tables and the second summand is the cost of back substitution. For a more detailed cost analysis, see \cite[Theorem~2]{ACFFP15a}.
@@ -677,45 +677,45 @@ The \textit{estimator} also includes estimates for an algorithm due to Arora and
 
 
 \section{Algorithms for Solving SIS}
-Recall that the SIS$_{n, q, m, \beta}$ problem asks to find a short vector $\mathbf{s} \in \mathbb{Z}_q^m$ of norm $\|\mathbf{s}\| \leq \beta$ such that such that $\mathbf{A} \cdot \mathbf{s} = 0 \; \text{mod } q$ for some uniformly distributed matrix $\mathbf{A}^{n\times m}$. Solving SIS is equivalent to finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$.
+Recall that the SIS$_{n, q, m, \beta}$ problem asks to find a short vector $\mathbf{s} \in \mathbb{Z}_q^m$ of norm $\|\mathbf{s}\| \leq \beta$ such that such that $\mathbf{A} \cdot \mathbf{s} = \mathbf{0} \; \text{mod } q$ for some uniformly distributed matrix $\mathbf{A}^{n\times m}$. Solving SIS is equivalent to finding a short vector in the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp} = \{ \mathbf{y} \in \mathbb{Z}^m \mid \mathbf{A} \mathbf{y} = \mathbf{0} \mod q\}$.
 
 
 \subsection{Lattice Reduction}\label{sec:dual-attack}
 \subsubsection{MR Variant \cite{MR09}} \label{sec:mr-variant}
-Our first approach to solving SIS, sometimes referred to as the ``dual attack'', follows quite naturally. Given $\mathbf{A}$, we can efficiently compute the basis $\mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ of the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ in polynomial time using Gauss-Jordan elimination or other more modern algorithms.
+Our first approach to solving SIS, sometimes referred to as the ``dual attack'', follows quite naturally. Given a basis of the primal LWE lattice $\mathbf{B} = \mathbf{A}^\intercal$, we can efficiently compute the basis $\mathbf{B} (\mathbf{B}^\intercal \mathbf{B})^{-1}$ of the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ in polynomial time using Gauss-Jordan elimination or other more modern algorithms.
 
 We can then apply a lattice reduction algorithm and obtain a basis with root Hermite factor $\delta$. The first basis $\mathbf{b}_1$ vector of the reduced basis has length $\|\mathbf{b}_1\| = \delta^m \text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp})^{1/m}$. We can see that $\delta$ depends on the subdimension $m$, which we want to be ideal, in order to minimize the cost of the lattice reduction by relaxing $\delta$.
 
 We further assume that $\text{det}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = \text{Vol}(\Lambda(\mathbf{A}^\intercal)^{\perp}) = q^n$ (see \cref{eq:det-MR-dual}). Our first equation then becomes
 \begin{equation}\label{eq:mr-delta}
-  \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}},
+    \|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}},
 \end{equation}
 which is minimal for $m = \sqrt{n \log q / \log \delta}$.
 \begin{theorem}[Optimal subdimension $m$ \cite{MR09}]
-  Given a $q$-ary scaled dual lattice  $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm yields an optimal output if performed in subdimension
-  \begin{equation}
-    m' = \sqrt{\frac{n \log q}{\log \delta}}. \label{eq:mr-m}
-  \end{equation}
+    Given a $q$-ary scaled dual lattice  $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm yields an optimal output if performed in subdimension
+    \begin{equation}
+        m' = \sqrt{\frac{n \log q}{\log \delta}}. \label{eq:mr-m}
+    \end{equation}
 \end{theorem}
 
 Higher dimensions increase the complexity of the reduction algorithms and lower dimensions may cause a lack of sufficiently short lattice vectors \cite{MR09}. In contexts in which \cref{eq:mr-delta} does not hold, we may still choose $m$ as in \cref{eq:mr-m} heuristically. Removing columns from $\mathbf{A}$ does not have a great impact on our results, since we can simply set the corresponding components of the secret vector $\mathbf{s}$ to zero. We reformulate \cref{eq:mr-delta} a bit:
 \begin{align}
-  \qquad\|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}} \iff & \log \beta = m \log \delta + \frac{n \log q}{m}   \nonumber                       \\
-  \iff                                                   & \log \delta = \frac{\log \beta}{m} - \frac{n \log q}{m^2} \label{eq:mr-log-delta}
+    \qquad\|\mathbf{b}_1\| = \delta^m q^{\frac{n}{m}} \iff & \log \beta = m \log \delta + \frac{n \log q}{m}   \nonumber                       \\
+    \iff                                                   & \log \delta = \frac{\log \beta}{m} - \frac{n \log q}{m^2} \label{eq:mr-log-delta}
 \end{align}
 
 We continue by plugging \cref{eq:mr-m} into \cref{eq:mr-log-delta}:
 \begin{align}
-  \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \frac{n \log q}{\left(\sqrt{\frac{n \log q}{\log \delta}}\right)^2} \iff & \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \log \delta \nonumber \\
-  \iff                                                                                                                                            & 2\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}}              \nonumber \\
-  \iff                                                                                                                                            & \log \delta = \frac{\log^2 \beta}{4n \log q}
+    \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \frac{n \log q}{\left(\sqrt{\frac{n \log q}{\log \delta}}\right)^2} \iff & \log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}} - \log \delta \nonumber \\
+    \iff                                                                                                                                            & 2\log \delta = \frac{\log \beta}{\sqrt{\frac{n \log q}{\log \delta}}}              \nonumber \\
+    \iff                                                                                                                                            & \log \delta = \frac{\log^2 \beta}{4n \log q}
 \end{align}
 
 \begin{theorem}[$\log \delta$ in optimal subdimension]
-  Given a $q$-ary scaled dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm performed in its optimal subdimension achieves a log root Hermite factor of
-  \begin{equation}
-    \log \delta = \frac{\log^2 \beta}{4n \log q}. \label{eq:mr-log-RHF}
-  \end{equation}
+    Given a $q$-ary scaled dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$ defined by a matrix $\mathbf{A} \in \mathbb{Z}^{n \times m}$ with $m$ sufficiently larger than $n$ and a prime $q$. Then a lattice reduction algorithm performed in its optimal subdimension achieves a log root Hermite factor of
+    \begin{equation}
+        \log \delta = \frac{\log^2 \beta}{4n \log q}. \label{eq:mr-log-RHF}
+    \end{equation}
 \end{theorem}
 
 To estimate the cost of the lattice reduction for SIS, we call a function from the \textit{estimator} to find the required block size $k$ such that BKZ achieves root Hermite factor $\delta$ and apply a cost model with the optimal subdimension $m'$ and block size $k$.
@@ -735,14 +735,14 @@ Note that for LWE we have $\alpha, q$ as input parameters instead of a bound. Th
 A similar approach is described in \cite{RS10}. The optimal subdimension and required root Hermite factor are given by a slightly different expression. Apart from that, the attack works as described in \cref{sec:mr-variant}.
 
 \begin{theorem}[Optimal subdimension $m$ {\cite[Conjecture~2]{RS10}})]
-  For every $n \geq 128,$ constant $c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))$ and $\beta < q$, the best known approach to solve SIS with parameters ($n, m, q, \beta$) involves solving $\delta$-HSVP in dimension $m' = \min(x : q^{2n/x} \leq \beta)$ with $\delta = \sqrt{d}{\beta / q^{n/m'}}$.
+    For every $n \geq 128,$ constant $c \geq 2, q \geq n^c, m = \Omega(n \log_2(q))$ and $\beta < q$, the best known approach to solve SIS with parameters ($n, m, q, \beta$) involves solving $\delta$-HSVP in dimension $m' = \min(x : q^{2n/x} \leq \beta)$ with $\delta = \sqrt{d}{\beta / q^{n/m'}}$.
 \end{theorem}
 
 We reformulate the expression for $m'$
 \begin{align}
-  q^{2n / m'}           & \leq \beta                          \nonumber       \\
-  \frac{2n}{m' \log(q)} & \leq \log(\beta)                          \nonumber \\
-  m'                    & \geq \frac{2n \log(q)}{\log(\beta)}
+    q^{2n / m'}           & \leq \beta                          \nonumber       \\
+    \frac{2n}{m' \log(q)} & \leq \log(\beta)                          \nonumber \\
+    m'                    & \geq \frac{2n \log(q)}{\log(\beta)}
 \end{align}
 and obtain $m' = \left\lceil \frac{2n \log(q)}{\log(\beta)} \right\rceil$.
 
@@ -755,16 +755,16 @@ If $m' > m$, we take $m' = m$. The root Hermite factor $\delta$ must be larger t
 \subsection[Combinatorial Attack]{Combinatorial Attack \cite{MR09}}\label{sec:combinatorial}
 Micciancio and Regev also describe a combinatorial method for solving SIS \cite{MR09} that is similar to BKW.
 
-Given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n \times m}$ and the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$, we want to find a lattice vector $\mathbf{v} \in \Lambda(\mathbf{A}^\intercal)^{\perp}$ with coefficients bounded by $\beta$. Expressed differently, we want to find $\mathbf{v}$ such that $\mathbf{A}\mathbf{v} = 0 \mod q$ and $\|\mathbf{v}_i\| \leq b$ for all $i \in [m]$.
+Given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n \times m}$ and the dual lattice $\Lambda(\mathbf{A}^\intercal)^{\perp}$, we want to find a lattice vector $\mathbf{v} \in \Lambda(\mathbf{A}^\intercal)^{\perp}$ with coefficients bounded by $\beta$. Expressed differently, we want to find $\mathbf{v}$ such that $\mathbf{A}\mathbf{v} = \mathbf{0} \mod q$ and $\|\mathbf{v}_i\| \leq\beta$ for all $i \in [m]$.
 
-We begin by dividing the columns of $\mathbf{A}$ into $2^k$ for some $k$. Each set contains $m/2^k$ column vectors. We now compute all linear combinations $c_1 \mathbf{b}_1 + \cdots + c_{m/2^k}\mathbf{b}_{m/2^k}$, where $\mathbf{b}_i$ denote the indexed column vectors in each set, such that $|c_i| \leq b$ and obtain $2^k$ new sets $\mathbf{A}_j^{(k)}$ of $L=(2b+1)^{m/2^k}$ vectors, $j\in \left[2^k\right]$. Remember that each $c_i$ represents a coeffient of the lattice vector. By means of these new sets, we satisfy the shorteness criteria of the output vector.
+We begin by dividing the columns of $\mathbf{A}$ into $2^k$ sets for some $k$. Each set contains $m/2^k$ column vectors. We now compute all linear combinations $c_1 \mathbf{b}_1 + \cdots + c_{m/2^k}\mathbf{b}_{m/2^k}$, where $\mathbf{b}_i$ denote the indexed column vectors in each set, such that $|c_i| \leq \beta$, and obtain $2^k$ new sets $\mathbf{A}_j^{(k)}$ of $L=(2\beta+1)^{m/2^k}$ vectors, $j\in \left[2^k\right]$. Remember that each $c_i$ represents a coeffient of the lattice vector. By means of these new sets, we satisfy the shorteness criteria of the output vector.
 
 Next, we continue iteratively for $i=k$ to $i=0$ as follows. In each step, we merge pairs of two sets $\mathbf{A}_j^{(i)}, \mathbf{A}_{j+1}^{(i)}$. If a vector $\mathbf{x}$ in the first set of the pair can be combined with each vector $\mathbf{y}$ in the second set such that the first $\log_q L$ components in $\mathbf{x} \pm \mathbf{y}$ are zero, we put the result in combined set in $\mathbf{A}_j^{(i-1)}$. The size of the combined sets is at most $L$, as we consider a part of the vectors with $\log_q L$ components that can take at most $q^{\log_q L} = L$ different values. We start from $j=0$ and increment $j$ by $2$ after each merge for $j<2^i$.
 After the merge, we have $2^{i-1}$ sets.
 
 We choose $k$ such that
 \begin{equation}
-  n \approx (k+1) \log_q L = (k+1) \log_q (2\beta+1)^{m/2^k} \iff \frac{2^k}{k+1} \approx \frac{m \log(2\beta + 1)}{n \log(q)}
+    n \approx (k+1) \log_q L = (k+1) \log_q (2\beta+1)^{m/2^k} \iff \frac{2^k}{k+1} \approx \frac{m \log(2\beta + 1)}{n \log(q)}
 \end{equation}
 
 After $k$ steps, the first $k \log_q L$ entries of the columns in the result set are cancelled out. We expect that of the remaining $\approx \log_q L$ entries in result set, we should find at least one zero vector, as at there again are most $L$ different vectors. The zero vector represents the linear combination with entries bounded by $\beta$ and we can easily reconstruct the short lattice vector $\mathbf{v}$ with $\|\mathbf{v}\|_\infty \leq \beta$.
@@ -772,7 +772,7 @@ After $k$ steps, the first $k \log_q L$ entries of the columns in the result set
 To find an optimal $k$, we iterate over $k$ starting from $k=1$ to minimize the following expression:
 
 \begin{align}
-  \Delta & = \text{abs}\left(\frac{2^k}{k+1} - \frac{m \log(2\beta + 1)}{n \log(q)}\right).
+    \Delta & = \text{abs}\left(\frac{2^k}{k+1} - \frac{m \log(2\beta + 1)}{n \log(q)}\right).
 \end{align}
 When $\Delta$ does not decrease we for 10 iteration steps, we stop and return $k$ for the lowest value of $\Delta$.
 % We note that $\frac{2^k}{k+1}$ is strictly increasing for $k>1$ and $\frac{m \log(2\beta + 1)}{n \log(q)}$ some constant. As soon as $\Delta$ increases, we stop and take the previous value.

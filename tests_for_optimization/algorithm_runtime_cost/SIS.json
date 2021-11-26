@@ -1,0 +1,696 @@
+{
+    "alg_results": {
+        "SIS": [
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0,
+                    "bound": 990.5371313549535
+                },
+                "sec": 759.3959297259405,
+                "cost": "rop: 2^759.4, k: 128",
+                "runtime": 0.046259403228759766,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0
+                },
+                "sec": 24.88993118391319,
+                "cost": "rop: 2^24.9, m: 414, red: 2^24.9, delta_0: 1.007427, beta:  152, d:  414, |v|: 456.117",
+                "runtime": 0.6530232429504395,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0
+                },
+                "sec": 8009.151985219595,
+                "cost": "rop: 2^8009.2, m: 2^13.8, red: 2^8009.2, delta_0: 1.000347, beta: 9054, d: 14224, |v|: 2^14.2",
+                "runtime": 0.0063555240631103516,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0
+                },
+                "sec": 1242.5860885954344,
+                "cost": "rop: 2^1242.6, m: 2^11.8, red: 2^1242.6, delta_0: 1.001184, beta: 2019, d: 3544, |v|: 2^12.1",
+                "runtime": 0.01284933090209961,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0,
+                    "bound": 456.11684291344534
+                },
+                "sec": 298.646651410171,
+                "cost": "rop: 2^298.6, k: 128",
+                "runtime": 0.7692124843597412,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0,
+                    "bound": 456.11684291344534
+                },
+                "sec": 280.81109689318555,
+                "cost": "rop: 2^280.8, k: 128",
+                "runtime": 0.7710785865783691,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0,
+                    "bound": 39815.715623479984
+                },
+                "sec": 27912.84839473718,
+                "cost": "rop: 2^27912.8, k: 256",
+                "runtime": 0.0588841438293457,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0,
+                    "bound": 39815.715623479984
+                },
+                "sec": 27887.106207599194,
+                "cost": "rop: 2^27887.1, k: 256",
+                "runtime": 0.049901485443115234,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0
+                },
+                "sec": 1242.5860885954344,
+                "cost": "rop: 2^1242.6, m: 2^11.8, red: 2^1242.6, delta_0: 1.001184, beta: 2019, d: 3545, |v|: 2^12.1",
+                "runtime": 0.007991790771484375,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0
+                },
+                "sec": 3254.897498011219,
+                "cost": "rop: 2^3254.9, m: 2^12.8, red: 2^3254.9, delta_0: 1.000640, beta: 4328, d: 7133, |v|: 2^13.2",
+                "runtime": 0.00817561149597168,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0
+                },
+                "sec": 131.96773404042506,
+                "cost": "rop: 2^132.0, m: 869, red: 2^132.0, delta_0: 1.003975, beta:  401, d:  869, |v|: 990.538",
+                "runtime": 0.00979471206665039,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0
+                },
+                "sec": 404.92888283571756,
+                "cost": "rop: 2^404.9, m: 1681, red: 2^404.9, delta_0: 1.002270, beta:  870, d: 1681, |v|: 2045.695",
+                "runtime": 0.010496854782104492,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0,
+                    "bound": 990.5371313549535
+                },
+                "sec": 740.3171572789452,
+                "cost": "rop: 2^740.3, k: 128",
+                "runtime": 0.9934859275817871,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0
+                },
+                "sec": 131.96773404042506,
+                "cost": "rop: 2^132.0, m: 870, red: 2^132.0, delta_0: 1.003975, beta:  401, d:  870, |v|: 990.537",
+                "runtime": 0.016589879989624023,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0
+                },
+                "sec": 19347.44957114317,
+                "cost": "rop: 2^19347.4, m: 2^14.8, red: 2^19347.4, delta_0: 1.000185, beta: 19007, d: 28696, |v|: 2^15.3",
+                "runtime": 0.0038585662841796875,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0
+                },
+                "sec": 3254.897498011219,
+                "cost": "rop: 2^3254.9, m: 2^12.8, red: 2^3254.9, delta_0: 1.000640, beta: 4328, d: 7133, |v|: 2^13.2",
+                "runtime": 0.015537500381469727,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0,
+                    "bound": 4405.091767749779
+                },
+                "sec": 2196.2486674322927,
+                "cost": "rop: 2^2196.2, k: 256",
+                "runtime": 0.06379556655883789,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0,
+                    "bound": 4405.091767749779
+                },
+                "sec": 2218.63743445758,
+                "cost": "rop: 2^2218.6, k: 256",
+                "runtime": 0.06148838996887207,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0
+                },
+                "sec": 3254.897498011219,
+                "cost": "rop: 2^3254.9, m: 2^12.8, red: 2^3254.9, delta_0: 1.000640, beta: 4328, d: 7133, |v|: 2^13.2",
+                "runtime": 0.012712478637695312,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0
+                },
+                "sec": 404.92888283571756,
+                "cost": "rop: 2^404.9, m: 1681, red: 2^404.9, delta_0: 1.002270, beta:  870, d: 1681, |v|: 2045.695",
+                "runtime": 0.015659332275390625,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0,
+                    "bound": 2045.6953899814266
+                },
+                "sec": 866.471403478575,
+                "cost": "rop: 2^866.5, k: 256",
+                "runtime": 0.12926173210144043,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0
+                },
+                "sec": 1242.5860885954344,
+                "cost": "rop: 2^1242.6, m: 2^11.8, red: 2^1242.6, delta_0: 1.001184, beta: 2019, d: 3545, |v|: 2^12.1",
+                "runtime": 0.011704206466674805,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0
+                },
+                "sec": 131.96773404042506,
+                "cost": "rop: 2^132.0, m: 869, red: 2^132.0, delta_0: 1.003975, beta:  401, d:  869, |v|: 990.538",
+                "runtime": 0.017305374145507812,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0
+                },
+                "sec": 19347.44957114317,
+                "cost": "rop: 2^19347.4, m: 2^14.8, red: 2^19347.4, delta_0: 1.000185, beta: 19007, d: 28695, |v|: 2^15.3",
+                "runtime": 0.010642528533935547,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0
+                },
+                "sec": 8009.151985219595,
+                "cost": "rop: 2^8009.2, m: 2^13.8, red: 2^8009.2, delta_0: 1.000347, beta: 9054, d: 14224, |v|: 2^14.2",
+                "runtime": 0.08850550651550293,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0,
+                    "bound": 2045.6953899814266
+                },
+                "sec": 887.6456022138494,
+                "cost": "rop: 2^887.6, k: 256",
+                "runtime": 0.9013981819152832,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 1024.0,
+                    "m": 42902.289675100554,
+                    "q": 2023447.0
+                },
+                "sec": 1242.5860885954344,
+                "cost": "rop: 2^1242.6, m: 2^11.8, red: 2^1242.6, delta_0: 1.001184, beta: 2019, d: 3544, |v|: 2^12.1",
+                "runtime": 0.03524518013000488,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0,
+                    "bound": 9216.103409255804
+                },
+                "sec": 5223.211414332921,
+                "cost": "rop: 2^5223.2, k: 256",
+                "runtime": 0.19455909729003906,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0
+                },
+                "sec": 404.92888283571756,
+                "cost": "rop: 2^404.9, m: 1681, red: 2^404.9, delta_0: 1.002270, beta:  870, d: 1681, |v|: 2045.695",
+                "runtime": 0.014253616333007812,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0
+                },
+                "sec": 19347.44957114317,
+                "cost": "rop: 2^19347.4, m: 2^14.8, red: 2^19347.4, delta_0: 1.000185, beta: 19007, d: 28696, |v|: 2^15.3",
+                "runtime": 0.01147317886352539,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0,
+                    "bound": 9216.103409255804
+                },
+                "sec": 5199.691973720939,
+                "cost": "rop: 2^5199.7, k: 256",
+                "runtime": 0.20125341415405273,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial-cons",
+                "cost_model": "",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0,
+                    "bound": 19124.50327413603
+                },
+                "sec": 12030.231359558986,
+                "cost": "rop: 2^12030.2, k: 256",
+                "runtime": 0.06407976150512695,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0
+                },
+                "sec": 24.88993118391319,
+                "cost": "rop: 2^24.9, m: 414, red: 2^24.9, delta_0: 1.007427, beta:  152, d:  414, |v|: 456.117",
+                "runtime": 0.012949466705322266,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "combinatorial",
+                "cost_model": "",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0,
+                    "bound": 19124.50327413603
+                },
+                "sec": 12054.857539196593,
+                "cost": "rop: 2^12054.9, k: 256",
+                "runtime": 0.15906548500061035,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 512.0,
+                    "m": 18486.682556891035,
+                    "q": 272029.0
+                },
+                "sec": 404.92888283571756,
+                "cost": "rop: 2^404.9, m: 1681, red: 2^404.9, delta_0: 1.002270, beta:  870, d: 1681, |v|: 2045.695",
+                "runtime": 0.012706279754638672,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 256.0,
+                    "m": 8651.727118034683,
+                    "q": 122117.0
+                },
+                "sec": 131.96773404042506,
+                "cost": "rop: 2^132.0, m: 870, red: 2^132.0, delta_0: 1.003975, beta:  401, d:  870, |v|: 990.537",
+                "runtime": 0.011425495147705078,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction-rs",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0
+                },
+                "sec": 24.88993118391319,
+                "cost": "rop: 2^24.9, m: 414, red: 2^24.9, delta_0: 1.007427, beta:  152, d:  414, |v|: 456.117",
+                "runtime": 0.01027369499206543,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 2048.0,
+                    "m": 93939.2602293044,
+                    "q": 8015659.0
+                },
+                "sec": 3254.897498011219,
+                "cost": "rop: 2^3254.9, m: 2^12.8, red: 2^3254.9, delta_0: 1.000640, beta: 4328, d: 7133, |v|: 2^13.2",
+                "runtime": 0.012970924377441406,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0
+                },
+                "sec": 8009.151985219595,
+                "cost": "rop: 2^8009.2, m: 2^13.8, red: 2^8009.2, delta_0: 1.000347, beta: 9054, d: 14224, |v|: 2^14.2",
+                "runtime": 0.006732940673828125,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 8192.0,
+                    "m": 438490.8273011696,
+                    "q": 113912921.0
+                },
+                "sec": 19347.44957114317,
+                "cost": "rop: 2^19347.4, m: 2^14.8, red: 2^19347.4, delta_0: 1.000185, beta: 19007, d: 28695, |v|: 2^15.3",
+                "runtime": 0.012982368469238281,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Lotus",
+                "params": {
+                    "n": 128.0,
+                    "m": 3654.74368978803,
+                    "q": 19843.0
+                },
+                "sec": 24.88993118391319,
+                "cost": "rop: 2^24.9, m: 414, red: 2^24.9, delta_0: 1.007427, beta:  152, d:  414, |v|: 456.117",
+                "runtime": 0.015327215194702148,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            },
+            {
+                "inst": "SIS",
+                "alg_name": "lattice-reduction",
+                "cost_model": "Q\u2011Sieve",
+                "params": {
+                    "n": 4096.0,
+                    "m": 202306.0077305843,
+                    "q": 27170873.0
+                },
+                "sec": 8009.151985219595,
+                "cost": "rop: 2^8009.2, m: 2^13.8, red: 2^8009.2, delta_0: 1.000347, beta: 9054, d: 14224, |v|: 2^14.2",
+                "runtime": 0.010977745056152344,
+                "is_successful": true,
+                "is_insecure": false,
+                "error": null
+            }
+        ]
+    },
+    "error": null,
+    "is_insecure": false,
+    "lowest_sec": 24.88993118391319,
+    "runtime": 2.2192413806915283
+}

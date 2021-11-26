@@ -145,7 +145,8 @@ The dual $\Lambda^{\perp}$ of a lattice $\Lambda(\mathbf{B})$ is defined as the 
 
 In cryptography, we are mainly interested in modular integer (or $q$-ary) lattices. A $q$-ary lattice is a lattice $\Lambda_q$ such that $q\mathbb{Z}^m \subseteq	\Lambda \subseteq	\mathbb{Z}^m$ given $q \in \mathbb{N}\setminus \{0\}$. This means that a vector $\mathbf{x} \in \mathbb{Z}^m$ is in $\Lambda$ if and only if $\mathbf{x} \text{ mod } q$ also is in $\Lambda$.
 
-We now look at two important ways of specifying a $q$-ary lattice given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$ \cite{BBGS19}.\begin{equation}\label{eq:lwe-lattice}
+We now look at two important ways of specifying a $q$-ary lattice given a matrix $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$ \cite{BBGS19}.
+\begin{equation}\label{eq:lwe-lattice}
     \Lambda_q(\mathbf{A}^\intercal) = \left\{ \mathbf{v} \in \mathbb{Z}^m \mid \exists \mathbf{y} \in \mathbb{Z}^n : \mathbf{v} = \mathbf{A}^\intercal \mathbf{y} \mod q \right\}
 \end{equation}
 $\Lambda_q(\mathbf{A}^\intercal)$ is commonly referred to as the \textit{(primal) LWE lattice}, since finding a short vector in $\Lambda_q(\mathbf{A}^\intercal)$ corresponds to solving LWE. The second, referred to as the \textit{(dual) SIS lattice}, is given by
@@ -292,7 +293,7 @@ The equivalence of the search and decision versions is convenient when we consid
 \subsubsection{LWE as a Decoding Problem} \label{sec:lwe-decoding}
 We request $m$ samples $(\mathbf{a}_1, z_1), \ldots, (\mathbf{a}_m, z_m)$ where $z_i = \langle \mathbf{a}_i, \mathbf{s} \rangle + e_i \in \mathbb{Z}_q$ and $\mathbf{s} \in \mathbb{Z}_q^n$. Let $A = \left[ \mathbf{a}_1 \cdots \mathbf{a}_m\right] \in \mathbb{Z}_q^{n\times m}$, $\mathbf{z} = \left[z_1, \ldots, z_m\right]^\intercal$ and $e = \left[e_1, \ldots, e_n\right]^\intercal \in \mathbb{Z}_q^n$. Hence, we can formulate LWE as a decoding problem as in \cite{GJS15}:
 \begin{equation} \label{eq:lwe-decoding}
-    \mathbf{z} =  \mathbf{A}^\intercal \mathbf{s} + \mathbf{e}
+    \mathbf{z} =  \mathbf{A}^\intercal \mathbf{s} + \mathbf{e} \mod q
 \end{equation}
 with generator matrix $\mathbf{A}$ for a linear code over $\mathbb{Z}_q$ and $\mathbf{z}$ as the received word (see \cref{sec:linear-code} for more details about linear codes). Finding the secret vector $\mathbf{z}$ is equivalent to finding the codeword $\mathbf{y} = \mathbf{A}^\intercal\mathbf{s}$ with minimum distance $\| \mathbf{y} - \mathbf{z} \|$.
 
@@ -345,10 +346,10 @@ In the ring variant, instead of vectors of the group $\mathbb{Z}_q^n$, the colum
 % TODO: put norms here or refer to them...
 
 \begin{definition}[RSIS \cite{LS15}]
-    The Ring-SIS problem \text{RSIS}$_{n, q, m, \beta}$ is defined as follows: Given $a_1, \ldots, a_m \in \mathcal{R}_q$ chosen independently from the uniform distribution, find $s_1, \ldots, s_m \in \mathcal{R}$ such that $\sum_{i=1}^m \mathbf{a}_i \cdot s_i = 0 \mod q$ and $0 < \| \mathbf{s}\| \leq \beta$, where $\mathbf{s} = \left[s_1, \ldots, s_m\right]^\intercal \in \mathcal{R}^m$.
+    The Ring-SIS problem \text{RSIS}$_{n, q, m, \beta}$ is defined as follows: Given $a_1, \ldots, a_m \in \mathcal{R}_q$ chosen independently from the uniform distribution, find $s_1, \ldots, s_m \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0 \mod q$ and $0 < \| \mathbf{s}\| \leq \beta$, where $\mathbf{s} = \left[s_1, \ldots, s_m\right]^\intercal \in \mathcal{R}^m$.
 \end{definition} % TODO: need n? say sth more about n power of 2?
 % TODO: matrix version?
-We can interpret a ring element $r \in \mathcal{R}$ as an $n$ dimensional vector with coefficients $r_i$ such that $r = \sum_{i=0}^{n-1} r_i x^i$. If we compare RSIS to standard SIS, each $a_i$ in RSIS corresponds to a $n\times n$ block in the standard SIS matrix. The $n$ columns are obtained by rotation, similar to what we described above. We thus, for example, have $\mathbf{A} = [\text{Rot}(a_1)\mid \dots \mid \text{Rot}(a_m)]$ where each block $\text{Rot}$ is given by
+We can interpret a ring element $r \in \mathcal{R}$ as an $n$ dimensional vector with coefficients $r_i$ such that $r = \sum_{i=0}^{n-1} r_i x^i$. If we compare RSIS to standard SIS, each $a_i$ in RSIS corresponds to an $n\times n$ block in the standard SIS matrix. The $n$ columns are obtained by rotation, similar to what we described above. We thus, for example, have $\mathbf{A} = [\text{Rot}(a_1)\mid \dots \mid \text{Rot}(a_m)]$ where each block $\text{Rot}$ is given by
 \begin{equation*}
     \text{Rot}(a) = \begin{pmatrix}
         a_0     & -a_{n-1} & \cdots & -a_{1} \\
@@ -360,7 +361,7 @@ We can interpret a ring element $r \in \mathcal{R}$ as an $n$ dimensional vector
 An RSIS$_{n, q, m, \beta}$ instance can thus be seen as an SIS$_{n, q, m \cdot n, \beta}$ instance.
 
 \begin{definition}[MSIS \cite{LS15}]
-    The Module-SIS problem \text{MSIS}$_{n, d, q, m, \beta}$ is defined as follows: Given  $\mathbf{a}_1, \ldots, \mathbf{a}_m \in \mathcal{R}_q^d$ chosen independently from the uniform distribution, find $s_1, \ldots, s_n \in \mathcal{R}$ such that $\sum_{i=1}^m a_i \cdot s_i = 0\mod q$ and $0 < \| \mathbf{s}\| \leq \beta$, where $\mathbf{s} = \left[s_1, \ldots, s_m\right]^\intercal \in \mathcal{R}^m$.
+    The Module-SIS problem \text{MSIS}$_{n, d, q, m, \beta}$ is defined as follows: Given  $\mathbf{a}_1, \ldots, \mathbf{a}_m \in \mathcal{R}_q^d$ chosen independently from the uniform distribution, find $s_1, \ldots, s_m \in \mathcal{R}$ such that $\sum_{i=1}^m \mathbf{a}_i \cdot s_i = \mathbf{0}\mod q$ and $0 < \| \mathbf{s}\| \leq \beta$, where $\mathbf{s} = \left[s_1, \ldots, s_m\right]^\intercal \in \mathcal{R}^m$.
 \end{definition} % TODO: need n? say sth more about n power of 2?
 % TODO: matrix version?
 As for RSIS, we can view the vectors $\mathbf{a}_i$ in MSIS as blocks of $\mathbf{A}$ in SIS. Each vector $\mathbf{a}_i$ has $d$ coefficients and corresponds to a $n\cdot d \times n$ block in $\mathbf{A}$, as follows:
