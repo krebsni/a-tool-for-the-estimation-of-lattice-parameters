@@ -1,5 +1,0 @@
-{
-    "python.pythonPath": "/usr/bin/python3",
-    "python.analysis.extraPaths": ["${workspaceFolder}/a-tool-for-the-estimation-of-lattice-parameters/estimate_all", "${workspaceFolder}/a-tool-for-the-estimation-of-lattice-parameters/estimate_all/estimator", "${workspaceFolder}/a-tool-for-the-estimation-of-lattice-parameters/lib", "${workspaceFolder}/a-tool-for-the-estimation-of-lattice-parameters"],
-    "restructuredtext.confPath": "${workspaceFolder}/a-tool-for-the-estimation-of-lattice-parameters/malb-lwe-estimator/doc"
-}

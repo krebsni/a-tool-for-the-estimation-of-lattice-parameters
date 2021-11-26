@@ -1,4 +1,0 @@
-2to3
-fire
-sphinx
-sphinxcontrib-bibtex
